@@ -1,74 +1,98 @@
-import { ISignalRow } from "../interfaces/Strategy.interface";
+import { ISignalDto, ISignalRow } from "../interfaces/Strategy.interface";
 
-const COST_BASIS_PER_ENTRY = 100;
+interface Signal extends ISignalDto {
+  priceOpen: number;
+  _entry?: ISignalRow['_entry'];
+  _partial?: ISignalRow['_partial'];
+}
 
 /**
- * Returns the effective entry price for price calculations.
+ * Returns the effective (DCA-weighted) entry price for a signal.
  *
- * Uses harmonic mean (correct for fixed-dollar DCA: $100 per entry).
+ * Uses cost-weighted harmonic mean: effectivePrice = Σcost / Σ(cost/price)
+ * This is the correct formula for fixed-dollar DCA positions where each entry
+ * has its own cost (e.g. $100, $200, etc.).
  *
- * When partial closes exist, replays the partial sequence to reconstruct
- * the running cost basis at each partial — no extra stored fields needed.
+ * When partial closes exist, iterates through all partials to maintain a running
+ * effective price, then blends with any new DCA entries after the last partial:
+ *   - partial[0]: effectivePrice = costBasisAtClose[0] / Σ(cost/price for entries[0..cnt[0]])
+ *   - partial[j>0]: remainingCB = prev.costBasisAtClose * (1 - prev.percent/100)
+ *                   oldCoins = remainingCB / prevEffPrice
+ *                   blend with new entries between prev and curr partial
+ *   - final: blend remaining position with entries added after last partial
  *
- * Cost basis replay:
- *   costBasis starts at 0
- *   for each partial[i]:
- *     newEntries = entryCountAtClose[i] - entryCountAtClose[i-1]  (or entryCountAtClose[0] for i=0)
- *     costBasis += newEntries × $100          ← add DCA entries up to this partial
- *     positionCostBasisAtClose[i] = costBasis ← snapshot BEFORE close
- *     costBasis × = (1 - percent[i] / 100)    ← reduce after close
- *
- * @param signal - Signal row
+ * @param signal - Signal row with _entry and optional _partial
  * @returns Effective entry price for PNL calculations
  */
-export const getEffectivePriceOpen = (signal: ISignalRow): number => {
-  if (!signal._entry || signal._entry.length === 0) return signal.priceOpen;
-
+export const getEffectivePriceOpen = (signal: Signal): number => {
   const entries = signal._entry;
+  if (!entries || entries.length === 0) return signal.priceOpen;
+
   const partials = signal._partial ?? [];
 
-  // No partial exits — pure harmonic mean of all entries
   if (partials.length === 0) {
-    return harmonicMean(entries.map((e) => e.price));
+    return weightedHarmonicMean(entries);
   }
 
-  // Replay cost basis through all partials to get snapshot at the last one
-  let costBasis = 0;
-  for (let i = 0; i < partials.length; i++) {
-    const prevCount = i === 0 ? 0 : partials[i - 1].entryCountAtClose;
-    const newEntryCount = partials[i].entryCountAtClose - prevCount;
-    costBasis += newEntryCount * COST_BASIS_PER_ENTRY;
-    // costBasis is now positionCostBasisAtClose for partials[i]
-    if (i < partials.length - 1) {
-      costBasis *= 1 - partials[i].percent / 100;
-    }
-  }
+  // Compute effective price iteratively through all partials
+  const effAtLast = computeEffectivePriceAtPartial(entries, partials, partials.length - 1, signal.priceOpen);
 
-  const lastPartial = partials[partials.length - 1];
+  const last = partials[partials.length - 1];
+  const remainingCostBasis = last.costBasisAtClose * (1 - last.percent / 100);
+  const oldCoins = effAtLast === 0 ? 0 : remainingCostBasis / effAtLast;
 
-  // Dollar cost basis remaining after the last partial close
-  const remainingCostBasis = costBasis * (1 - lastPartial.percent / 100);
-
-  // Coins remaining from the old position
-  const oldCoins = remainingCostBasis / lastPartial.effectivePrice;
-
-  // New DCA entries added AFTER the last partial close
-  const newEntries = entries.slice(lastPartial.entryCountAtClose);
-
-  // Coins from new DCA entries (each costs $100)
-  const newCoins = newEntries.reduce((sum, e) => sum + 100 / e.price, 0);
+  // New DCA entries added AFTER last partial
+  const newEntries = entries.slice(last.entryCountAtClose);
+  const newCoins = newEntries.reduce((s, e) => s + e.cost / e.price, 0);
+  const newCost = newEntries.reduce((s, e) => s + e.cost, 0);
 
   const totalCoins = oldCoins + newCoins;
-  if (totalCoins === 0) return lastPartial.effectivePrice;
+  if (totalCoins === 0) return effAtLast;
 
-  const totalCost = remainingCostBasis + newEntries.length * 100;
-
-  return totalCost / totalCoins;
+  return (remainingCostBasis + newCost) / totalCoins;
 };
 
-const harmonicMean = (prices: number[]): number => {
-  if (prices.length === 0) return 0;
-  return prices.length / prices.reduce((sum, p) => sum + 1 / p, 0);
+/**
+ * Computes the effective entry price at the moment of partials[targetIndex].
+ *
+ * Iterates from partial[0] up to partial[targetIndex], maintaining a running
+ * effective price using the costBasisAtClose snapshots.
+ */
+export const computeEffectivePriceAtPartial = (
+  entries: Array<{ price: number; cost: number }>,
+  partials: Array<{ costBasisAtClose: number; entryCountAtClose: number; percent: number }>,
+  targetIndex: number,
+  fallbackPrice: number,
+): number => {
+  const p0 = partials[0];
+  const entriesAtP0 = entries.slice(0, p0.entryCountAtClose);
+  const coinsAtP0 = entriesAtP0.reduce((s, e) => s + e.cost / e.price, 0);
+  let effPrice = coinsAtP0 === 0 ? fallbackPrice : p0.costBasisAtClose / coinsAtP0;
+
+  for (let j = 1; j <= targetIndex; j++) {
+    const prev = partials[j - 1];
+    const curr = partials[j];
+    const remainingCB = prev.costBasisAtClose * (1 - prev.percent / 100);
+    const oldCoins = effPrice === 0 ? 0 : remainingCB / effPrice;
+    const newEntries = entries.slice(prev.entryCountAtClose, curr.entryCountAtClose);
+    const newCoins = newEntries.reduce((s, e) => s + e.cost / e.price, 0);
+    const newCost = newEntries.reduce((s, e) => s + e.cost, 0);
+    const totalCoins = oldCoins + newCoins;
+    effPrice = totalCoins === 0 ? effPrice : (remainingCB + newCost) / totalCoins;
+  }
+
+  return effPrice;
+};
+
+/**
+ * Cost-weighted harmonic mean: Σcost / Σ(cost/price)
+ * Equivalent to standard harmonic mean when all costs are equal.
+ */
+const weightedHarmonicMean = (entries: Array<{ price: number; cost: number }>): number => {
+  const totalCost = entries.reduce((s, e) => s + e.cost, 0);
+  const totalCoins = entries.reduce((s, e) => s + e.cost / e.price, 0);
+  if (totalCoins === 0) return 0;
+  return totalCost / totalCoins;
 };
 
 export default getEffectivePriceOpen;

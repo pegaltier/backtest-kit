@@ -183,7 +183,7 @@ test("TRAILING STOP: Move to breakeven using getPendingSignal", async ({ pass, f
       onPartialProfit: async (_symbol, _signal, _currentPrice, revenuePercent, _backtest) => {
         // Применяем breakeven при достижении 50% пути к TP
         if (!breakevenApplied && revenuePercent >= 50) {
-          const pendingSignal = await Backtest.getPendingSignal("BTCUSDT", {
+          const pendingSignal = await Backtest.getPendingSignal("BTCUSDT", _currentPrice, {
             strategyName: "test-trailing-breakeven",
             exchangeName: "binance-trailing-breakeven",
             frameName: "30m-trailing-breakeven",

@@ -142,6 +142,15 @@ export const risk_columns: ColumnModel<RiskEvent>[] = [
     isVisible: () => true,
   },
   {
+    key: "totalPartials",
+    label: "Partial Closes",
+    format: (data) =>
+      data.currentSignal.totalPartials !== undefined
+        ? String(data.currentSignal.totalPartials)
+        : "N/A",
+    isVisible: () => true,
+  },
+  {
     key: "partialExecuted",
     label: "Partial Executed %",
     format: (data) =>

@@ -70,13 +70,13 @@ export const fetchSuccessRateMeasure = async (
     const TOLERANCE = 0.005;
 
     const isAtTP = (s: ClosedSignal): boolean =>
-        Math.abs(s.pnl.priceClose - s.originalPriceTakeProfit) /
-            s.originalPriceTakeProfit <
+        Math.abs(s.pnl.priceClose - s.priceTakeProfit) /
+            s.priceTakeProfit <
         TOLERANCE;
 
     const isAtSL = (s: ClosedSignal): boolean =>
-        Math.abs(s.pnl.priceClose - s.originalPriceStopLoss) /
-            s.originalPriceStopLoss <
+        Math.abs(s.pnl.priceClose - s.priceStopLoss) /
+            s.priceStopLoss <
         TOLERANCE;
 
     return {
@@ -146,16 +146,8 @@ export const fetchRevenueCountMeasure = async (
     const isThirtyOneDays = (s: ClosedSignal) =>
         s.updatedAt >= thirtyOneDaysStart;
 
-    // Each DCA entry represents a fixed $100 position, so a signal with
-    // totalEntries = N has an effective position of N × $100. The percentage
-    // PNL stays the same, but the dollar contribution scales proportionally.
     const sumPnl = (arr: ClosedSignal[]) =>
-        arr.reduce((acc, s) => {
-            if (s.totalEntries) {
-                return acc + s.pnl.pnlPercentage * s.totalEntries;
-            }
-            return acc + s.pnl.pnlPercentage;
-        }, 0);
+        arr.reduce((acc, s) => acc + s.pnl.pnlCost, 0);
 
     const todaySignals = closed.filter(isToday);
     const yesterdaySignals = closed.filter(isYesterday);

@@ -306,6 +306,33 @@ export const signal_fields: TypedField[] = [
                         compute: (obj) =>
                             `${obj.partialExecuted?.toFixed(2) || 0}%`,
                     },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "totalPartials",
+                        title: "Partial Closes",
+                        readonly: true,
+                        isVisible: (obj) => obj.totalPartials != null && obj.totalPartials > 0,
+                        compute: (obj) => String(obj.totalPartials),
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "cost",
+                        title: "Cost",
+                        readonly: true,
+                        isVisible: (obj) => obj.cost != null,
+                        compute: (obj) =>
+                            obj.cost != null
+                                ? `${obj.cost.toFixed(2)}$`
+                                : "Not specified",
+                    },
                 ],
             },
             {
@@ -361,6 +388,36 @@ export const signal_fields: TypedField[] = [
                         compute: (obj) =>
                             obj.pnl?.priceClose
                                 ? `${obj.pnl.priceClose.toFixed(6)}$`
+                                : "N/A",
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "pnl.pnlCost",
+                        title: "PNL ($)",
+                        readonly: true,
+                        compute: (obj) => {
+                            const v = obj.pnl?.pnlCost;
+                            if (v == null) return "N/A";
+                            const sign = v >= 0 ? "+" : "";
+                            return `${sign}${v.toFixed(2)}$`;
+                        },
+                    },
+                    {
+                        type: FieldType.Text,
+                        outlined: false,
+                        desktopColumns: "4",
+                        tabletColumns: "4",
+                        phoneColumns: "12",
+                        name: "pnl.pnlEntries",
+                        title: "Invested",
+                        readonly: true,
+                        compute: (obj) =>
+                            obj.pnl?.pnlEntries != null
+                                ? `${obj.pnl.pnlEntries.toFixed(2)}$`
                                 : "N/A",
                     },
                 ],

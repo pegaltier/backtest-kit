@@ -108,6 +108,8 @@ export {
   listenActivePingOnce,
   listenStrategyCommit,
   listenStrategyCommitOnce,
+  listenSync,
+  listenSyncOnce,
 } from "./function/event";
 export {
   getCandles,
@@ -244,6 +246,9 @@ export {
   SignalOpenedNotification,
   SignalScheduledNotification,
   ValidationErrorNotification,
+  AverageBuyCommitNotification,
+  SignalSyncCloseNotification,
+  SignalSyncOpenNotification,
 } from "./model/Notification.model";
 
 export { BacktestStatisticsModel } from "./model/BacktestStatistics.model";
@@ -289,6 +294,12 @@ export {
   ActivateScheduledCommit,
   AverageBuyCommit,
 } from "./contract/StrategyCommit.contract";
+
+export {
+  SignalCloseContract,
+  SignalOpenContract,
+  SignalSyncContract
+} from "./contract/SignalSync.contract";
 
 export { ExecutionContextService } from "./lib/services/context/ExecutionContextService";
 export { MethodContextService } from "./lib/services/context/MethodContextService";
@@ -354,6 +365,7 @@ export { PositionSize } from "./classes/PositionSize";
 export { Partial } from "./classes/Partial";
 export { Constant } from "./classes/Constant";
 export { Risk } from "./classes/Risk";
+export { Sync } from "./classes/Sync";
 export {
   Storage,
   StorageLive,
@@ -378,6 +390,7 @@ export { type TickEvent } from "./model/LiveStatistics.model";
 export { type PartialEvent } from "./model/PartialStatistics.model";
 export { type MetricStats } from "./model/PerformanceStatistics.model";
 export { type RiskEvent } from "./model/RiskStatistics.model";
+export { type SyncEvent, type SyncStatisticsModel } from "./model/SyncStatistics.model";
 export { type ScheduledEvent } from "./model/ScheduleStatistics.model";
 export { type IStrategyResult } from "./model/WalkerStatistics.model";
 export { type SignalData as WalkerSignalData } from "./model/WalkerStatistics.model";

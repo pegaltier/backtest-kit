@@ -23,6 +23,9 @@ import { get } from "../utils/get";
 import { ExchangeName } from "../interfaces/Exchange.interface";
 import { FrameName } from "../interfaces/Frame.interface";
 import { IRiskSignalRow, ISignalDto, ISignalRow, StrategyName } from "../interfaces/Strategy.interface";
+import { GLOBAL_CONFIG } from "../config/params";
+import toProfitLossDto from "../helpers/toProfitLossDto";
+import { getContextTimestamp } from "src/helpers/getContextTimestamp";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
@@ -72,10 +75,12 @@ const TO_RISK_SIGNAL = <T extends ISignalRow>(signal: T, currentPrice: number): 
   const partialExecuted = ("_partial" in signal && Array.isArray(signal._partial))
     ? signal._partial.reduce((sum, partial) => sum + partial.percent, 0)
     : 0;
-
   return {
     ...structuredClone(signal) as ISignalRow,
+    cost: signal.cost || GLOBAL_CONFIG.CC_POSITION_ENTRY_COST,
+    timestamp: signal.timestamp || getContextTimestamp(),
     totalEntries: 1,
+    totalPartials: 0,
     priceOpen: signal.priceOpen ?? currentPrice,
     priceStopLoss: hasTrailingSL ? signal._trailingPriceStopLoss : signal.priceStopLoss,
     priceTakeProfit: hasTrailingTP ? signal._trailingPriceTakeProfit : signal.priceTakeProfit,
@@ -83,6 +88,7 @@ const TO_RISK_SIGNAL = <T extends ISignalRow>(signal: T, currentPrice: number): 
     originalPriceTakeProfit: signal.priceTakeProfit,
     originalPriceOpen: signal.priceOpen ?? currentPrice,
     partialExecuted,
+    pnl: toProfitLossDto(signal, currentPrice),
   };
 };
 

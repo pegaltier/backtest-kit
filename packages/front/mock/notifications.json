@@ -18,6 +18,20 @@
     "originalPriceStopLoss": 50862,
     "scheduledAt": 1708876600000,
     "pendingAt": 1708876700000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": -0.15,
+      "priceOpen": 51900,
+      "priceClose": 51820.5,
+      "pnlCost": -0.15,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.15,
+    "pnlPriceOpen": 51900,
+    "pnlPriceClose": 51820.5,
+    "pnlCost": -0.15,
+    "pnlEntries": 100,
     "createdAt": 1708876700000
   },
   {
@@ -35,11 +49,15 @@
     "priceStopLoss": 3346.11,
     "originalPriceTakeProfit": 3198.49,
     "originalPriceStopLoss": 3346.11,
+    "originalPriceOpen": 3280.5,
+    "totalEntries": 1,
+    "totalPartials": 0,
     "cancelReason": "user_cancelled",
-    "note": "Cancelled due to market conditions",
-    "createdAt": 1708876600000,
+    "cancelId": "",
+    "duration": 0,
     "scheduledAt": 1708876599000,
-    "pendingAt": 1708876599500
+    "pendingAt": 1708876599500,
+    "createdAt": 1708876600000
   },
   {
     "type": "risk.rejection",
@@ -71,17 +89,66 @@
     "position": "long",
     "priceOpen": 51754,
     "priceClose": 51685.30894301844,
-    "pnlPercentage": -0.5322610957936598,
-    "closeReason": "time_expired",
-    "duration": 60,
-    "note": "",
-    "createdAt": 1708875300000,
-    "scheduledAt": 1708875240000,
-    "pendingAt": 1708871700000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 2,
+    "totalPartials": 1,
+    "pnlPercentage": -0.5322610957936598,
+    "pnl": {
+      "pnlPercentage": -0.5322610957936598,
+      "priceOpen": 51754,
+      "priceClose": 51685.30894301844,
+      "pnlCost": -0.53,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51685.30894301844,
+    "pnlCost": -0.53,
+    "pnlEntries": 100,
+    "closeReason": "time_expired",
+    "duration": 60,
+    "scheduledAt": 1708875240000,
+    "pendingAt": 1708871700000,
+    "createdAt": 1708875300000
+  },
+  {
+    "type": "signal_sync.close",
+    "id": "a0b1c2d3-0001-4000-8000-000000000001",
+    "timestamp": 1708875300000,
+    "backtest": true,
+    "symbol": "BTCUSDT",
+    "strategyName": "main_strategy",
+    "exchangeName": "binance_exchange",
+    "signalId": "d56caee8-46c7-4000-a77f-cb0434f35000",
+    "currentPrice": 51685.30894301844,
+    "pnl": {
+      "pnlPercentage": -1.03,
+      "priceOpen": 51754,
+      "priceClose": 51219.65,
+      "pnlCost": -1.03,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -1.03,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51219.65,
+    "pnlCost": -1.03,
+    "pnlEntries": 100,
+    "position": "long",
+    "priceOpen": 51754,
+    "priceTakeProfit": 53306.62,
+    "priceStopLoss": 50718.92,
+    "originalPriceTakeProfit": 53306.62,
+    "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 2,
+    "totalPartials": 1,
+    "closeReason": "time_expired",
+    "scheduledAt": 1708871700000,
+    "pendingAt": 1708871700000,
+    "createdAt": 1708875300000
   },
   {
     "type": "partial_loss.commit",
@@ -100,8 +167,23 @@
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708873140000,
     "pendingAt": 1708873170000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": -0.1,
+      "priceOpen": 51754,
+      "priceClose": 51700,
+      "pnlCost": -0.1,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.1,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51700,
+    "pnlCost": -0.1,
+    "pnlEntries": 100,
     "signalId": "1a95ee20-68d5-42be-a876-3e1fe948bd0b"
   },
   {
@@ -117,13 +199,28 @@
     "currentPrice": 51700,
     "priceOpen": 51754,
     "position": "long",
-    "createdAt": 1708873200000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": -0.1,
+      "priceOpen": 51754,
+      "priceClose": 51700,
+      "pnlCost": -0.1,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.1,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51700,
+    "pnlCost": -0.1,
+    "pnlEntries": 100,
     "scheduledAt": 1708873140000,
-    "pendingAt": 1708873170000
+    "pendingAt": 1708873170000,
+    "createdAt": 1708873200000
   },
   {
     "type": "trailing_take.commit",
@@ -142,8 +239,23 @@
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708872840000,
     "pendingAt": 1708872870000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.48,
+      "priceOpen": 51754,
+      "priceClose": 52000,
+      "pnlCost": 0.48,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.48,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 52000,
+    "pnlCost": 0.48,
+    "pnlEntries": 100,
     "signalId": "7fd557d2-b764-4e8b-bef1-dfc6b4a74b6e"
   },
   {
@@ -163,8 +275,23 @@
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708872540000,
     "pendingAt": 1708872570000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.38,
+      "priceOpen": 51754,
+      "priceClose": 51950.75,
+      "pnlCost": 0.38,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.38,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51950.75,
+    "pnlCost": 0.38,
+    "pnlEntries": 100,
     "signalId": "11a786c9-611b-44ed-a570-cdd7e1864b27"
   },
   {
@@ -176,15 +303,30 @@
     "strategyName": "main_strategy",
     "exchangeName": "binance_exchange",
     "currentPrice": 51900.25,
-    "createdAt": 1708872300000,
     "position": "long",
     "priceOpen": 51754,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708872240000,
-    "pendingAt": 1708872270000
+    "pendingAt": 1708872270000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.28,
+      "priceOpen": 51754,
+      "priceClose": 51900.25,
+      "pnlCost": 0.28,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.28,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51900.25,
+    "pnlCost": 0.28,
+    "pnlEntries": 100,
+    "createdAt": 1708872300000
   },
   {
     "type": "breakeven.available",
@@ -198,13 +340,28 @@
     "currentPrice": 51900.25,
     "priceOpen": 51754,
     "position": "long",
-    "createdAt": 1708872300000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.28,
+      "priceOpen": 51754,
+      "priceClose": 51900.25,
+      "pnlCost": 0.28,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.28,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51900.25,
+    "pnlCost": 0.28,
+    "pnlEntries": 100,
     "scheduledAt": 1708872240000,
-    "pendingAt": 1708872270000
+    "pendingAt": 1708872270000,
+    "createdAt": 1708872300000
   },
   {
     "type": "partial_profit.commit",
@@ -216,15 +373,30 @@
     "exchangeName": "binance_exchange",
     "percentToClose": 25,
     "currentPrice": 51850.5,
-    "createdAt": 1708872000000,
     "position": "long",
     "priceOpen": 51754,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708871940000,
-    "pendingAt": 1708871970000
+    "pendingAt": 1708871970000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.19,
+      "priceOpen": 51754,
+      "priceClose": 51850.5,
+      "pnlCost": 0.19,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.19,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51850.5,
+    "pnlCost": 0.19,
+    "pnlEntries": 100,
+    "createdAt": 1708872000000
   },
   {
     "type": "average_buy.commit",
@@ -235,9 +407,11 @@
     "strategyName": "main_strategy",
     "exchangeName": "binance_exchange",
     "signalId": "d56caee8-46c7-4000-a77f-cb0434f35000",
-    "currentPrice": 51680.0,
-    "effectivePriceOpen": 51717.0,
+    "currentPrice": 51680,
+    "cost": 100,
+    "effectivePriceOpen": 51717,
     "totalEntries": 2,
+    "totalPartials": 0,
     "position": "long",
     "priceOpen": 51754,
     "priceTakeProfit": 53306.62,
@@ -245,6 +419,18 @@
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
     "originalPriceOpen": 51754,
+    "pnl": {
+      "pnlPercentage": -0.07,
+      "priceOpen": 51717,
+      "priceClose": 51680,
+      "pnlCost": -0.07,
+      "pnlEntries": 200
+    },
+    "pnlPercentage": -0.07,
+    "pnlPriceOpen": 51717,
+    "pnlPriceClose": 51680,
+    "pnlCost": -0.07,
+    "pnlEntries": 200,
     "scheduledAt": 1708871640000,
     "pendingAt": 1708871700000,
     "createdAt": 1708871800000
@@ -262,13 +448,28 @@
     "currentPrice": 51850.5,
     "priceOpen": 51754,
     "position": "long",
-    "createdAt": 1708872000000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
     "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "pnl": {
+      "pnlPercentage": 0.19,
+      "priceOpen": 51754,
+      "priceClose": 51850.5,
+      "pnlCost": 0.19,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.19,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51850.5,
+    "pnlCost": 0.19,
+    "pnlEntries": 100,
     "scheduledAt": 1708871940000,
-    "pendingAt": 1708871970000
+    "pendingAt": 1708871970000,
+    "createdAt": 1708872000000
   },
   {
     "type": "signal.opened",
@@ -283,12 +484,63 @@
     "priceOpen": 51754,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
-    "note": "",
-    "createdAt": 1708871700000,
+    "originalPriceTakeProfit": 53306.62,
+    "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
     "scheduledAt": 1708871640000,
     "pendingAt": 1708871700000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51754,
+      "priceClose": 51754,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51754,
+    "pnlCost": 0,
+    "pnlEntries": 100,
+    "createdAt": 1708871700000
+  },
+  {
+    "type": "signal_sync.open",
+    "id": "a0b1c2d3-0002-4000-8000-000000000002",
+    "timestamp": 1708871700000,
+    "backtest": true,
+    "symbol": "BTCUSDT",
+    "strategyName": "main_strategy",
+    "exchangeName": "binance_exchange",
+    "signalId": "d56caee8-46c7-4000-a77f-cb0434f35000",
+    "currentPrice": 51754,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51754,
+      "priceClose": 51754,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51754,
+    "pnlPriceClose": 51754,
+    "pnlCost": 0,
+    "pnlEntries": 100,
+    "cost": 100,
+    "position": "long",
+    "priceOpen": 51754,
+    "priceTakeProfit": 53306.62,
+    "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "originalPriceOpen": 51754,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "scheduledAt": 1708871640000,
+    "pendingAt": 1708871700000,
+    "createdAt": 1708871700000
   },
   {
     "type": "signal.closed",
@@ -305,14 +557,27 @@
     "pnlPercentage": -0.4357844948024554,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708871640000,
     "scheduledAt": 1708871580000,
     "pendingAt": 1708868040000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51677.02,
+    "pnl": {
+      "pnlPercentage": -0.4357844948024554,
+      "priceOpen": 51677.02,
+      "priceClose": 51658.38716022372,
+      "pnlCost": -0.44,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51677.02,
+    "pnlPriceClose": 51658.38716022372,
+    "pnlCost": -0.44,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -327,12 +592,27 @@
     "priceOpen": 51677.02,
     "priceTakeProfit": 53227.3306,
     "priceStopLoss": 50643.4796,
-    "note": "",
     "createdAt": 1708868040000,
     "scheduledAt": 1708867980000,
     "pendingAt": 1708868040000,
     "originalPriceTakeProfit": 53227.3306,
-    "originalPriceStopLoss": 50643.4796
+    "originalPriceStopLoss": 50643.4796,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51677.02,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51677.02,
+      "priceClose": 51677.02,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51677.02,
+    "pnlPriceClose": 51677.02,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -349,14 +629,27 @@
     "pnlPercentage": -0.24731496497392433,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708840080000,
     "scheduledAt": 1708840020000,
     "pendingAt": 1708836480000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51617.56,
+    "pnl": {
+      "pnlPercentage": -0.24731496497392433,
+      "priceOpen": 51617.56,
+      "priceClose": 51696.42673346863,
+      "pnlCost": -0.25,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51617.56,
+    "pnlPriceClose": 51696.42673346863,
+    "pnlCost": -0.25,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -371,12 +664,27 @@
     "priceOpen": 51617.56,
     "priceTakeProfit": 53166.0868,
     "priceStopLoss": 50585.2088,
-    "note": "",
     "createdAt": 1708836480000,
     "scheduledAt": 1708836420000,
     "pendingAt": 1708836480000,
     "originalPriceTakeProfit": 53166.0868,
-    "originalPriceStopLoss": 50585.2088
+    "originalPriceStopLoss": 50585.2088,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51617.56,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51617.56,
+      "priceClose": 51617.56,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51617.56,
+    "pnlPriceClose": 51617.56,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -393,14 +701,27 @@
     "pnlPercentage": -0.5309569076362168,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708836420000,
     "scheduledAt": 1708836360000,
     "pendingAt": 1708832820000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51624.99,
+    "pnl": {
+      "pnlPercentage": -0.5309569076362168,
+      "priceOpen": 51624.99,
+      "priceClose": 51557.14480786588,
+      "pnlCost": -0.53,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51624.99,
+    "pnlPriceClose": 51557.14480786588,
+    "pnlCost": -0.53,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -415,12 +736,27 @@
     "priceOpen": 51624.99,
     "priceTakeProfit": 53173.7397,
     "priceStopLoss": 50592.4902,
-    "note": "",
     "createdAt": 1708832820000,
     "scheduledAt": 1708832760000,
     "pendingAt": 1708832820000,
     "originalPriceTakeProfit": 53173.7397,
-    "originalPriceStopLoss": 50592.4902
+    "originalPriceStopLoss": 50592.4902,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51624.99,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51624.99,
+      "priceClose": 51624.99,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51624.99,
+    "pnlPriceClose": 51624.99,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -437,14 +773,27 @@
     "pnlPercentage": -0.6197942481787726,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708832460000,
     "scheduledAt": 1708832400000,
     "pendingAt": 1708828860000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51695.22,
+    "pnl": {
+      "pnlPercentage": -0.6197942481787726,
+      "priceOpen": 51695.22,
+      "priceClose": 51581.2659122087,
+      "pnlCost": -0.62,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51695.22,
+    "pnlPriceClose": 51581.2659122087,
+    "pnlCost": -0.62,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -465,7 +814,22 @@
     "originalPriceTakeProfit": 53246.0766,
     "originalPriceStopLoss": 50661.3156,
     "scheduledAt": 1708829640000,
-    "pendingAt": 1708829670000
+    "pendingAt": 1708829670000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51695.22,
+    "pnl": {
+      "pnlPercentage": -0.22,
+      "priceOpen": 51695.22,
+      "priceClose": 51582.65415952071,
+      "pnlCost": -0.22,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.22,
+    "pnlPriceOpen": 51695.22,
+    "pnlPriceClose": 51582.65415952071,
+    "pnlCost": -0.22,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -480,12 +844,27 @@
     "priceOpen": 51695.22,
     "priceTakeProfit": 53246.0766,
     "priceStopLoss": 50661.3156,
-    "note": "",
     "createdAt": 1708828860000,
     "scheduledAt": 1708828800000,
     "pendingAt": 1708828860000,
     "originalPriceTakeProfit": 53246.0766,
-    "originalPriceStopLoss": 50661.3156
+    "originalPriceStopLoss": 50661.3156,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51695.22,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51695.22,
+      "priceClose": 51695.22,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51695.22,
+    "pnlPriceClose": 51695.22,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -504,7 +883,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51695.22,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.12,
+      "priceOpen": 51695.22,
+      "priceClose": 51755.37138327176,
+      "pnlCost": 0.12,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.12,
+    "pnlPriceOpen": 51695.22,
+    "pnlPriceClose": 51755.37138327176,
+    "pnlCost": 0.12,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -521,14 +916,27 @@
     "pnlPercentage": -0.1370701761415468,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708828500000,
     "scheduledAt": 1708828440000,
     "pendingAt": 1708824900000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51619.48,
+    "pnl": {
+      "pnlPercentage": -0.1370701761415468,
+      "priceOpen": 51619.48,
+      "priceClose": 51755.37138327176,
+      "pnlCost": -0.14,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51619.48,
+    "pnlPriceClose": 51755.37138327176,
+    "pnlCost": -0.14,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -549,7 +957,22 @@
     "originalPriceTakeProfit": 53168.0644,
     "originalPriceStopLoss": 50587.0904,
     "scheduledAt": 1708826760000,
-    "pendingAt": 1708826790000
+    "pendingAt": 1708826790000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51619.48,
+    "pnl": {
+      "pnlPercentage": 0.32,
+      "priceOpen": 51619.48,
+      "priceClose": 51784.55981361557,
+      "pnlCost": 0.32,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.32,
+    "pnlPriceOpen": 51619.48,
+    "pnlPriceClose": 51784.55981361557,
+    "pnlCost": 0.32,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -570,7 +993,22 @@
     "originalPriceTakeProfit": 53168.0644,
     "originalPriceStopLoss": 50587.0904,
     "scheduledAt": 1708824840000,
-    "pendingAt": 1708824870000
+    "pendingAt": 1708824870000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51619.48,
+    "pnl": {
+      "pnlPercentage": -0.2,
+      "priceOpen": 51619.48,
+      "priceClose": 51515.3246377242,
+      "pnlCost": -0.2,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.2,
+    "pnlPriceOpen": 51619.48,
+    "pnlPriceClose": 51515.3246377242,
+    "pnlCost": -0.2,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -585,12 +1023,27 @@
     "priceOpen": 51619.48,
     "priceTakeProfit": 53168.0644,
     "priceStopLoss": 50587.0904,
-    "note": "",
     "createdAt": 1708824900000,
     "scheduledAt": 1708824840000,
     "pendingAt": 1708824900000,
     "originalPriceTakeProfit": 53168.0644,
-    "originalPriceStopLoss": 50587.0904
+    "originalPriceStopLoss": 50587.0904,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51619.48,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51619.48,
+      "priceClose": 51619.48,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51619.48,
+    "pnlPriceClose": 51619.48,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -607,14 +1060,27 @@
     "pnlPercentage": -0.28397401494166186,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708787640000,
     "scheduledAt": 1708787580000,
     "pendingAt": 1708784040000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51088,
+    "pnl": {
+      "pnlPercentage": -0.28397401494166186,
+      "priceOpen": 51088,
+      "priceClose": 51147.29174634819,
+      "pnlCost": -0.28,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51088,
+    "pnlPriceClose": 51147.29174634819,
+    "pnlCost": -0.28,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -629,12 +1095,27 @@
     "priceOpen": 51088,
     "priceTakeProfit": 52620.64,
     "priceStopLoss": 50066.24,
-    "note": "",
     "createdAt": 1708784040000,
     "scheduledAt": 1708783980000,
     "pendingAt": 1708784040000,
     "originalPriceTakeProfit": 52620.64,
-    "originalPriceStopLoss": 50066.24
+    "originalPriceStopLoss": 50066.24,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51088,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51088,
+      "priceClose": 51088,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51088,
+    "pnlPriceClose": 51088,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -653,7 +1134,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51088,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.07,
+      "priceOpen": 51088,
+      "priceClose": 51123.376318928415,
+      "pnlCost": 0.07,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.07,
+    "pnlPriceOpen": 51088,
+    "pnlPriceClose": 51123.376318928415,
+    "pnlCost": 0.07,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -670,14 +1167,27 @@
     "pnlPercentage": -0.34343669164795476,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708783500000,
     "scheduledAt": 1708783440000,
     "pendingAt": 1708779900000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51094.52,
+    "pnl": {
+      "pnlPercentage": -0.34343669164795476,
+      "priceOpen": 51094.52,
+      "priceClose": 51123.376318928415,
+      "pnlCost": -0.34,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51094.52,
+    "pnlPriceClose": 51123.376318928415,
+    "pnlCost": -0.34,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -692,12 +1202,27 @@
     "priceOpen": 51094.52,
     "priceTakeProfit": 52627.355599999995,
     "priceStopLoss": 50072.62959999999,
-    "note": "",
     "createdAt": 1708779900000,
     "scheduledAt": 1708779840000,
     "pendingAt": 1708779900000,
     "originalPriceTakeProfit": 52627.355599999995,
-    "originalPriceStopLoss": 50072.62959999999
+    "originalPriceStopLoss": 50072.62959999999,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51094.52,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51094.52,
+      "priceClose": 51094.52,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51094.52,
+    "pnlPriceClose": 51094.52,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -714,14 +1239,27 @@
     "pnlPercentage": -0.17029720095592144,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708706040000,
     "scheduledAt": 1708705980000,
     "pendingAt": 1708702440000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50977.99,
+    "pnl": {
+      "pnlPercentage": -0.17029720095592144,
+      "priceOpen": 50977.99,
+      "priceClose": 50861.0242377258,
+      "pnlCost": -0.17,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 50977.99,
+    "pnlPriceClose": 50861.0242377258,
+    "pnlCost": -0.17,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -742,7 +1280,22 @@
     "originalPriceTakeProfit": 49448.650299999994,
     "originalPriceStopLoss": 51997.5498,
     "scheduledAt": 1708704300000,
-    "pendingAt": 1708704330000
+    "pendingAt": 1708704330000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50977.99,
+    "pnl": {
+      "pnlPercentage": 0.35,
+      "priceOpen": 50977.99,
+      "priceClose": 50800.19241163556,
+      "pnlCost": 0.35,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.35,
+    "pnlPriceOpen": 50977.99,
+    "pnlPriceClose": 50800.19241163556,
+    "pnlCost": 0.35,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -757,12 +1310,27 @@
     "priceOpen": 50977.99,
     "priceTakeProfit": 49448.650299999994,
     "priceStopLoss": 51997.5498,
-    "note": "",
     "createdAt": 1708702440000,
     "scheduledAt": 1708702380000,
     "pendingAt": 1708702440000,
     "originalPriceTakeProfit": 49448.650299999994,
-    "originalPriceStopLoss": 51997.5498
+    "originalPriceStopLoss": 51997.5498,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50977.99,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 50977.99,
+      "priceClose": 50977.99,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 50977.99,
+    "pnlPriceClose": 50977.99,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -781,7 +1349,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50977.99,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.12,
+      "priceOpen": 50977.99,
+      "priceClose": 50918.45105553351,
+      "pnlCost": 0.12,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.12,
+    "pnlPriceOpen": 50977.99,
+    "pnlPriceClose": 50918.45105553351,
+    "pnlCost": 0.12,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -798,14 +1382,27 @@
     "pnlPercentage": -0.4050040772745537,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708702380000,
     "scheduledAt": 1708702320000,
     "pendingAt": 1708698780000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50916.01,
+    "pnl": {
+      "pnlPercentage": -0.4050040772745537,
+      "priceOpen": 50916.01,
+      "priceClose": 50918.45105553351,
+      "pnlCost": -0.41,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 50916.01,
+    "pnlPriceClose": 50918.45105553351,
+    "pnlCost": -0.41,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -826,7 +1423,22 @@
     "originalPriceTakeProfit": 49388.5297,
     "originalPriceStopLoss": 51934.330200000004,
     "scheduledAt": 1708698720000,
-    "pendingAt": 1708698750000
+    "pendingAt": 1708698750000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50916.01,
+    "pnl": {
+      "pnlPercentage": -0.62,
+      "priceOpen": 50916.01,
+      "priceClose": 51232.98823845023,
+      "pnlCost": -0.62,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.62,
+    "pnlPriceOpen": 50916.01,
+    "pnlPriceClose": 51232.98823845023,
+    "pnlCost": -0.62,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -847,7 +1459,22 @@
     "originalPriceTakeProfit": 49388.5297,
     "originalPriceStopLoss": 51934.330200000004,
     "scheduledAt": 1708698720000,
-    "pendingAt": 1708698750000
+    "pendingAt": 1708698750000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50916.01,
+    "pnl": {
+      "pnlPercentage": -0.62,
+      "priceOpen": 50916.01,
+      "priceClose": 51232.98823845023,
+      "pnlCost": -0.62,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.62,
+    "pnlPriceOpen": 50916.01,
+    "pnlPriceClose": 51232.98823845023,
+    "pnlCost": -0.62,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -868,7 +1495,22 @@
     "originalPriceTakeProfit": 49388.5297,
     "originalPriceStopLoss": 51934.330200000004,
     "scheduledAt": 1708698720000,
-    "pendingAt": 1708698750000
+    "pendingAt": 1708698750000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50916.01,
+    "pnl": {
+      "pnlPercentage": -0.62,
+      "priceOpen": 50916.01,
+      "priceClose": 51232.98823845023,
+      "pnlCost": -0.62,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.62,
+    "pnlPriceOpen": 50916.01,
+    "pnlPriceClose": 51232.98823845023,
+    "pnlCost": -0.62,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -883,12 +1525,27 @@
     "priceOpen": 50916.01,
     "priceTakeProfit": 49388.5297,
     "priceStopLoss": 51934.330200000004,
-    "note": "",
     "createdAt": 1708698780000,
     "scheduledAt": 1708698720000,
     "pendingAt": 1708698780000,
     "originalPriceTakeProfit": 49388.5297,
-    "originalPriceStopLoss": 51934.330200000004
+    "originalPriceStopLoss": 51934.330200000004,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50916.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 50916.01,
+      "priceClose": 50916.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 50916.01,
+    "pnlPriceClose": 50916.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -905,14 +1562,27 @@
     "pnlPercentage": -0.09992723703074387,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708586220000,
     "scheduledAt": 1708586160000,
     "pendingAt": 1708582620000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51616.71,
+    "pnl": {
+      "pnlPercentage": -0.09992723703074387,
+      "priceOpen": 51616.71,
+      "priceClose": 51771.80443655523,
+      "pnlCost": -0.1,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51616.71,
+    "pnlPriceClose": 51771.80443655523,
+    "pnlCost": -0.1,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -933,7 +1603,22 @@
     "originalPriceTakeProfit": 53165.2113,
     "originalPriceStopLoss": 50584.3758,
     "scheduledAt": 1708584660000,
-    "pendingAt": 1708584690000
+    "pendingAt": 1708584690000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51616.71,
+    "pnl": {
+      "pnlPercentage": 0.31,
+      "priceOpen": 51616.71,
+      "priceClose": 51776.13314720883,
+      "pnlCost": 0.31,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.31,
+    "pnlPriceOpen": 51616.71,
+    "pnlPriceClose": 51776.13314720883,
+    "pnlCost": 0.31,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -948,12 +1633,27 @@
     "priceOpen": 51616.71,
     "priceTakeProfit": 53165.2113,
     "priceStopLoss": 50584.3758,
-    "note": "",
     "createdAt": 1708582620000,
     "scheduledAt": 1708582560000,
     "pendingAt": 1708582620000,
     "originalPriceTakeProfit": 53165.2113,
-    "originalPriceStopLoss": 50584.3758
+    "originalPriceStopLoss": 50584.3758,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51616.71,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51616.71,
+      "priceClose": 51616.71,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51616.71,
+    "pnlPriceClose": 51616.71,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -970,14 +1670,27 @@
     "pnlPercentage": -0.4629542689238969,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708582560000,
     "scheduledAt": 1708582500000,
     "pendingAt": 1708578960000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51620.87,
+    "pnl": {
+      "pnlPercentage": -0.4629542689238969,
+      "priceOpen": 51620.87,
+      "priceClose": 51588.20405345147,
+      "pnlCost": -0.46,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51620.87,
+    "pnlPriceClose": 51588.20405345147,
+    "pnlCost": -0.46,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -998,7 +1711,22 @@
     "originalPriceTakeProfit": 53169.496100000004,
     "originalPriceStopLoss": 50588.452600000004,
     "scheduledAt": 1708578900000,
-    "pendingAt": 1708578930000
+    "pendingAt": 1708578930000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51620.87,
+    "pnl": {
+      "pnlPercentage": -0.24,
+      "priceOpen": 51620.87,
+      "priceClose": 51497.72660877685,
+      "pnlCost": -0.24,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.24,
+    "pnlPriceOpen": 51620.87,
+    "pnlPriceClose": 51497.72660877685,
+    "pnlCost": -0.24,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1013,12 +1741,27 @@
     "priceOpen": 51620.87,
     "priceTakeProfit": 53169.496100000004,
     "priceStopLoss": 50588.452600000004,
-    "note": "",
     "createdAt": 1708578960000,
     "scheduledAt": 1708578900000,
     "pendingAt": 1708578960000,
     "originalPriceTakeProfit": 53169.496100000004,
-    "originalPriceStopLoss": 50588.452600000004
+    "originalPriceStopLoss": 50588.452600000004,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51620.87,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51620.87,
+      "priceClose": 51620.87,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51620.87,
+    "pnlPriceClose": 51620.87,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1035,14 +1778,27 @@
     "pnlPercentage": -0.6312100791981607,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708556400000,
     "scheduledAt": 1708556340000,
     "pendingAt": 1708552800000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51385.34,
+    "pnl": {
+      "pnlPercentage": -0.6312100791981607,
+      "priceOpen": 51385.34,
+      "priceClose": 51503.80803850643,
+      "pnlCost": -0.63,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51385.34,
+    "pnlPriceClose": 51503.80803850643,
+    "pnlCost": -0.63,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1063,7 +1819,22 @@
     "originalPriceTakeProfit": 49843.7798,
     "originalPriceStopLoss": 52413.0468,
     "scheduledAt": 1708556220000,
-    "pendingAt": 1708556250000
+    "pendingAt": 1708556250000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51385.34,
+    "pnl": {
+      "pnlPercentage": -0.2,
+      "priceOpen": 51385.34,
+      "priceClose": 51488.71366372467,
+      "pnlCost": -0.2,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.2,
+    "pnlPriceOpen": 51385.34,
+    "pnlPriceClose": 51488.71366372467,
+    "pnlCost": -0.2,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1078,12 +1849,27 @@
     "priceOpen": 51385.34,
     "priceTakeProfit": 49843.7798,
     "priceStopLoss": 52413.0468,
-    "note": "",
     "createdAt": 1708552800000,
     "scheduledAt": 1708552740000,
     "pendingAt": 1708552800000,
     "originalPriceTakeProfit": 49843.7798,
-    "originalPriceStopLoss": 52413.0468
+    "originalPriceStopLoss": 52413.0468,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51385.34,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51385.34,
+      "priceClose": 51385.34,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51385.34,
+    "pnlPriceClose": 51385.34,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1102,7 +1888,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51385.34,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.04,
+      "priceOpen": 51385.34,
+      "priceClose": 51363.58111709624,
+      "pnlCost": 0.04,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.04,
+    "pnlPriceOpen": 51385.34,
+    "pnlPriceClose": 51363.58111709624,
+    "pnlCost": 0.04,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1119,14 +1921,27 @@
     "pnlPercentage": -1.1978250873615592,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708552740000,
     "scheduledAt": 1708552680000,
     "pendingAt": 1708549140000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "pnl": {
+      "pnlPercentage": -1.1978250873615592,
+      "priceOpen": 50957.94,
+      "priceClose": 51363.58111709624,
+      "pnlCost": -1.2,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 51363.58111709624,
+    "pnlCost": -1.2,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1147,7 +1962,22 @@
     "originalPriceTakeProfit": 49429.2018,
     "originalPriceStopLoss": 51977.0988,
     "scheduledAt": 1708550940000,
-    "pendingAt": 1708550970000
+    "pendingAt": 1708550970000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "pnl": {
+      "pnlPercentage": -0.6,
+      "priceOpen": 50957.94,
+      "priceClose": 51265.80381142919,
+      "pnlCost": -0.6,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.6,
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 51265.80381142919,
+    "pnlCost": -0.6,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1168,7 +1998,22 @@
     "originalPriceTakeProfit": 49429.2018,
     "originalPriceStopLoss": 51977.0988,
     "scheduledAt": 1708550820000,
-    "pendingAt": 1708550850000
+    "pendingAt": 1708550850000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "pnl": {
+      "pnlPercentage": -0.44,
+      "priceOpen": 50957.94,
+      "priceClose": 51184.31465517547,
+      "pnlCost": -0.44,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.44,
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 51184.31465517547,
+    "pnlCost": -0.44,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1189,7 +2034,22 @@
     "originalPriceTakeProfit": 49429.2018,
     "originalPriceStopLoss": 51977.0988,
     "scheduledAt": 1708549680000,
-    "pendingAt": 1708549710000
+    "pendingAt": 1708549710000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "pnl": {
+      "pnlPercentage": -0.23,
+      "priceOpen": 50957.94,
+      "priceClose": 51074.460187261786,
+      "pnlCost": -0.23,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.23,
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 51074.460187261786,
+    "pnlCost": -0.23,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1204,12 +2064,27 @@
     "priceOpen": 50957.94,
     "priceTakeProfit": 49429.2018,
     "priceStopLoss": 51977.0988,
-    "note": "",
     "createdAt": 1708549140000,
     "scheduledAt": 1708549080000,
     "pendingAt": 1708549140000,
     "originalPriceTakeProfit": 49429.2018,
-    "originalPriceStopLoss": 51977.0988
+    "originalPriceStopLoss": 51977.0988,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 50957.94,
+      "priceClose": 50957.94,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 50957.94,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1228,7 +2103,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 50957.94,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.03,
+      "priceOpen": 50957.94,
+      "priceClose": 50940.64023284996,
+      "pnlCost": 0.03,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.03,
+    "pnlPriceOpen": 50957.94,
+    "pnlPriceClose": 50940.64023284996,
+    "pnlCost": 0.03,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1245,14 +2136,27 @@
     "pnlPercentage": -0.04062823404615279,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708391940000,
     "scheduledAt": 1708391880000,
     "pendingAt": 1708388340000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51800,
+    "pnl": {
+      "pnlPercentage": -0.04062823404615279,
+      "priceOpen": 51800,
+      "priceClose": 51614.11386594473,
+      "pnlCost": -0.04,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51800,
+    "pnlPriceClose": 51614.11386594473,
+    "pnlCost": -0.04,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -1273,7 +2177,22 @@
     "originalPriceTakeProfit": 50246,
     "originalPriceStopLoss": 52836,
     "scheduledAt": 1708389660000,
-    "pendingAt": 1708389690000
+    "pendingAt": 1708389690000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51800,
+    "pnl": {
+      "pnlPercentage": 0.33,
+      "priceOpen": 51800,
+      "priceClose": 51629.19460888641,
+      "pnlCost": 0.33,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.33,
+    "pnlPriceOpen": 51800,
+    "pnlPriceClose": 51629.19460888641,
+    "pnlCost": 0.33,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1288,12 +2207,27 @@
     "priceOpen": 51800,
     "priceTakeProfit": 50246,
     "priceStopLoss": 52836,
-    "note": "",
     "createdAt": 1708388340000,
     "scheduledAt": 1708388280000,
     "pendingAt": 1708388340000,
     "originalPriceTakeProfit": 50246,
-    "originalPriceStopLoss": 52836
+    "originalPriceStopLoss": 52836,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51800,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51800,
+      "priceClose": 51800,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51800,
+    "pnlPriceClose": 51800,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1312,7 +2246,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51800,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.02,
+      "priceOpen": 51800,
+      "priceClose": 51790.73439011578,
+      "pnlCost": 0.02,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.02,
+    "pnlPriceOpen": 51800,
+    "pnlPriceClose": 51790.73439011578,
+    "pnlCost": 0.02,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1329,14 +2279,27 @@
     "pnlPercentage": -0.33949550906136605,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708388280000,
     "scheduledAt": 1708388220000,
     "pendingAt": 1708384680000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51822.13,
+    "pnl": {
+      "pnlPercentage": -0.33949550906136605,
+      "priceOpen": 51822.13,
+      "priceClose": 51790.73439011578,
+      "pnlCost": -0.34,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 51822.13,
+    "pnlPriceClose": 51790.73439011578,
+    "pnlCost": -0.34,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1357,7 +2320,22 @@
     "originalPriceTakeProfit": 50267.4661,
     "originalPriceStopLoss": 52858.5726,
     "scheduledAt": 1708384620000,
-    "pendingAt": 1708384650000
+    "pendingAt": 1708384650000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51822.13,
+    "pnl": {
+      "pnlPercentage": -0.24,
+      "priceOpen": 51822.13,
+      "priceClose": 51947.95924540789,
+      "pnlCost": -0.24,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.24,
+    "pnlPriceOpen": 51822.13,
+    "pnlPriceClose": 51947.95924540789,
+    "pnlCost": -0.24,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1372,12 +2350,27 @@
     "priceOpen": 51822.13,
     "priceTakeProfit": 50267.4661,
     "priceStopLoss": 52858.5726,
-    "note": "",
     "createdAt": 1708384680000,
     "scheduledAt": 1708384620000,
     "pendingAt": 1708384680000,
     "originalPriceTakeProfit": 50267.4661,
-    "originalPriceStopLoss": 52858.5726
+    "originalPriceStopLoss": 52858.5726,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 51822.13,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 51822.13,
+      "priceClose": 51822.13,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 51822.13,
+    "pnlPriceClose": 51822.13,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1394,14 +2387,27 @@
     "pnlPercentage": -0.5119563189264364,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708342320000,
     "scheduledAt": 1708342260000,
     "pendingAt": 1708338720000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52427.32,
+    "pnl": {
+      "pnlPercentage": -0.5119563189264364,
+      "priceOpen": 52427.32,
+      "priceClose": 52368.40183391254,
+      "pnlCost": -0.51,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 52427.32,
+    "pnlPriceClose": 52368.40183391254,
+    "pnlCost": -0.51,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1422,7 +2428,22 @@
     "originalPriceTakeProfit": 54000.1396,
     "originalPriceStopLoss": 51378.7736,
     "scheduledAt": 1708338660000,
-    "pendingAt": 1708338690000
+    "pendingAt": 1708338690000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52427.32,
+    "pnl": {
+      "pnlPercentage": -0.36,
+      "priceOpen": 52427.32,
+      "priceClose": 52237.10842426467,
+      "pnlCost": -0.36,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.36,
+    "pnlPriceOpen": 52427.32,
+    "pnlPriceClose": 52237.10842426467,
+    "pnlCost": -0.36,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1437,12 +2458,27 @@
     "priceOpen": 52427.32,
     "priceTakeProfit": 54000.1396,
     "priceStopLoss": 51378.7736,
-    "note": "",
     "createdAt": 1708338720000,
     "scheduledAt": 1708338660000,
     "pendingAt": 1708338720000,
     "originalPriceTakeProfit": 54000.1396,
-    "originalPriceStopLoss": 51378.7736
+    "originalPriceStopLoss": 51378.7736,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52427.32,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 52427.32,
+      "priceClose": 52427.32,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 52427.32,
+    "pnlPriceClose": 52427.32,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1459,14 +2495,27 @@
     "pnlPercentage": -0.6524006417010343,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1708338660000,
     "scheduledAt": 1708338600000,
     "pendingAt": 1708335060000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52357.01,
+    "pnl": {
+      "pnlPercentage": -0.6524006417010343,
+      "priceOpen": 52357.01,
+      "priceClose": 52224.491188523825,
+      "pnlCost": -0.65,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 52357.01,
+    "pnlPriceClose": 52224.491188523825,
+    "pnlCost": -0.65,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1487,7 +2536,22 @@
     "originalPriceTakeProfit": 53927.7203,
     "originalPriceStopLoss": 51309.8698,
     "scheduledAt": 1708337040000,
-    "pendingAt": 1708337070000
+    "pendingAt": 1708337070000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52357.01,
+    "pnl": {
+      "pnlPercentage": -0.2,
+      "priceOpen": 52357.01,
+      "priceClose": 52251.403048889675,
+      "pnlCost": -0.2,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.2,
+    "pnlPriceOpen": 52357.01,
+    "pnlPriceClose": 52251.403048889675,
+    "pnlCost": -0.2,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1502,12 +2566,27 @@
     "priceOpen": 52357.01,
     "priceTakeProfit": 53927.7203,
     "priceStopLoss": 51309.8698,
-    "note": "",
     "createdAt": 1708335060000,
     "scheduledAt": 1708335000000,
     "pendingAt": 1708335060000,
     "originalPriceTakeProfit": 53927.7203,
-    "originalPriceStopLoss": 51309.8698
+    "originalPriceStopLoss": 51309.8698,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52357.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 52357.01,
+      "priceClose": 52357.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 52357.01,
+    "pnlPriceClose": 52357.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1524,14 +2603,27 @@
     "pnlPercentage": -0.0941445600560232,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707996600000,
     "scheduledAt": 1707996540000,
     "pendingAt": 1707993000000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52200.01,
+    "pnl": {
+      "pnlPercentage": -0.0941445600560232,
+      "priceOpen": 52200.01,
+      "priceClose": 52359.88169848502,
+      "pnlCost": -0.09,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 52200.01,
+    "pnlPriceClose": 52359.88169848502,
+    "pnlCost": -0.09,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1546,12 +2638,27 @@
     "priceOpen": 52200.01,
     "priceTakeProfit": 53766.0103,
     "priceStopLoss": 51156.0098,
-    "note": "",
     "createdAt": 1707993000000,
     "scheduledAt": 1707992940000,
     "pendingAt": 1707993000000,
     "originalPriceTakeProfit": 53766.0103,
-    "originalPriceStopLoss": 51156.0098
+    "originalPriceStopLoss": 51156.0098,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52200.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 52200.01,
+      "priceClose": 52200.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 52200.01,
+    "pnlPriceClose": 52200.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1570,7 +2677,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52200.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.03,
+      "priceOpen": 52200.01,
+      "priceClose": 52214.10540623115,
+      "pnlCost": 0.03,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.03,
+    "pnlPriceOpen": 52200.01,
+    "pnlPriceClose": 52214.10540623115,
+    "pnlCost": 0.03,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1587,14 +2710,27 @@
     "pnlPercentage": -0.13897323379234564,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707992940000,
     "scheduledAt": 1707992880000,
     "pendingAt": 1707989340000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52078,
+    "pnl": {
+      "pnlPercentage": -0.13897323379234564,
+      "priceOpen": 52078,
+      "priceClose": 52214.10540623115,
+      "pnlCost": -0.14,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 52078,
+    "pnlPriceClose": 52214.10540623115,
+    "pnlCost": -0.14,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -1615,7 +2751,22 @@
     "originalPriceTakeProfit": 53640.340000000004,
     "originalPriceStopLoss": 51036.44,
     "scheduledAt": 1707991920000,
-    "pendingAt": 1707991950000
+    "pendingAt": 1707991950000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52078,
+    "pnl": {
+      "pnlPercentage": 0.31,
+      "priceOpen": 52078,
+      "priceClose": 52237.88281979302,
+      "pnlCost": 0.31,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.31,
+    "pnlPriceOpen": 52078,
+    "pnlPriceClose": 52237.88281979302,
+    "pnlCost": 0.31,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1630,12 +2781,27 @@
     "priceOpen": 52078,
     "priceTakeProfit": 53640.340000000004,
     "priceStopLoss": 51036.44,
-    "note": "",
     "createdAt": 1707989340000,
     "scheduledAt": 1707989280000,
     "pendingAt": 1707989340000,
     "originalPriceTakeProfit": 53640.340000000004,
-    "originalPriceStopLoss": 51036.44
+    "originalPriceStopLoss": 51036.44,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52078,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 52078,
+      "priceClose": 52078,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 52078,
+    "pnlPriceClose": 52078,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1654,7 +2820,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 52078,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.1,
+      "priceOpen": 52078,
+      "priceClose": 52128.187391537096,
+      "pnlCost": 0.1,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.1,
+    "pnlPriceOpen": 52078,
+    "pnlPriceClose": 52128.187391537096,
+    "pnlCost": 0.1,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1671,14 +2853,27 @@
     "pnlPercentage": 0.013108211797057956,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707896640000,
     "scheduledAt": 1707896580000,
     "pendingAt": 1707893040000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49568.01,
+    "pnl": {
+      "pnlPercentage": 0.013108211797057956,
+      "priceOpen": 49568.01,
+      "priceClose": 49773.090233467585,
+      "pnlCost": 0.01,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 49568.01,
+    "pnlPriceClose": 49773.090233467585,
+    "pnlCost": 0.01,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -1699,7 +2894,22 @@
     "originalPriceTakeProfit": 51055.0503,
     "originalPriceStopLoss": 48576.6498,
     "scheduledAt": 1707895560000,
-    "pendingAt": 1707895590000
+    "pendingAt": 1707895590000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49568.01,
+    "pnl": {
+      "pnlPercentage": 0.31,
+      "priceOpen": 49568.01,
+      "priceClose": 49723.87861223433,
+      "pnlCost": 0.31,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.31,
+    "pnlPriceOpen": 49568.01,
+    "pnlPriceClose": 49723.87861223433,
+    "pnlCost": 0.31,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1714,12 +2924,27 @@
     "priceOpen": 49568.01,
     "priceTakeProfit": 51055.0503,
     "priceStopLoss": 48576.6498,
-    "note": "",
     "createdAt": 1707893040000,
     "scheduledAt": 1707892980000,
     "pendingAt": 1707893040000,
     "originalPriceTakeProfit": 51055.0503,
-    "originalPriceStopLoss": 48576.6498
+    "originalPriceStopLoss": 48576.6498,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49568.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 49568.01,
+      "priceClose": 49568.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 49568.01,
+    "pnlPriceClose": 49568.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1738,7 +2963,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49568.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.08,
+      "priceOpen": 49568.01,
+      "priceClose": 49606.85203357287,
+      "pnlCost": 0.08,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.08,
+    "pnlPriceOpen": 49568.01,
+    "pnlPriceClose": 49606.85203357287,
+    "pnlCost": 0.08,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1755,14 +2996,27 @@
     "pnlPercentage": -0.23412958863466393,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707892920000,
     "scheduledAt": 1707892860000,
     "pendingAt": 1707889320000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49524.64,
+    "pnl": {
+      "pnlPercentage": -0.23412958863466393,
+      "priceOpen": 49524.64,
+      "priceClose": 49606.85203357287,
+      "pnlCost": -0.23,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 49524.64,
+    "pnlPriceClose": 49606.85203357287,
+    "pnlCost": -0.23,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1777,12 +3031,27 @@
     "priceOpen": 49524.64,
     "priceTakeProfit": 51010.3792,
     "priceStopLoss": 48534.1472,
-    "note": "",
     "createdAt": 1707889320000,
     "scheduledAt": 1707889260000,
     "pendingAt": 1707889320000,
     "originalPriceTakeProfit": 51010.3792,
-    "originalPriceStopLoss": 48534.1472
+    "originalPriceStopLoss": 48534.1472,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49524.64,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 49524.64,
+      "priceClose": 49524.64,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 49524.64,
+    "pnlPriceClose": 49524.64,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -1801,7 +3070,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 49524.64,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 49524.64,
+      "priceClose": 49526.347967362584,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 49524.64,
+    "pnlPriceClose": 49526.347967362584,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1818,14 +3103,27 @@
     "pnlPercentage": -0.5964063737155393,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707734820000,
     "scheduledAt": 1707734760000,
     "pendingAt": 1707731220000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47880.92,
+    "pnl": {
+      "pnlPercentage": -0.5964063737155393,
+      "priceOpen": 47880.92,
+      "priceClose": 47974.67761803693,
+      "pnlCost": -0.6,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 47880.92,
+    "pnlPriceClose": 47974.67761803693,
+    "pnlCost": -0.6,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1846,7 +3144,22 @@
     "originalPriceTakeProfit": 46444.492399999996,
     "originalPriceStopLoss": 48838.5384,
     "scheduledAt": 1707731160000,
-    "pendingAt": 1707731190000
+    "pendingAt": 1707731190000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47880.92,
+    "pnl": {
+      "pnlPercentage": -0.22,
+      "priceOpen": 47880.92,
+      "priceClose": 47987.58254913077,
+      "pnlCost": -0.22,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.22,
+    "pnlPriceOpen": 47880.92,
+    "pnlPriceClose": 47987.58254913077,
+    "pnlCost": -0.22,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1861,12 +3174,27 @@
     "priceOpen": 47880.92,
     "priceTakeProfit": 46444.492399999996,
     "priceStopLoss": 48838.5384,
-    "note": "",
     "createdAt": 1707731220000,
     "scheduledAt": 1707731160000,
     "pendingAt": 1707731220000,
     "originalPriceTakeProfit": 46444.492399999996,
-    "originalPriceStopLoss": 48838.5384
+    "originalPriceStopLoss": 48838.5384,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47880.92,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 47880.92,
+      "priceClose": 47880.92,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 47880.92,
+    "pnlPriceClose": 47880.92,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1883,14 +3211,27 @@
     "pnlPercentage": -0.1343332345335311,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707731160000,
     "scheduledAt": 1707731100000,
     "pendingAt": 1707727560000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48114.01,
+    "pnl": {
+      "pnlPercentage": -0.1343332345335311,
+      "priceOpen": 48114.01,
+      "priceClose": 47986.34632448641,
+      "pnlCost": -0.13,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 48114.01,
+    "pnlPriceClose": 47986.34632448641,
+    "pnlCost": -0.13,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1905,12 +3246,27 @@
     "priceOpen": 48114.01,
     "priceTakeProfit": 46670.589700000004,
     "priceStopLoss": 49076.2902,
-    "note": "",
     "createdAt": 1707727560000,
     "scheduledAt": 1707727500000,
     "pendingAt": 1707727560000,
     "originalPriceTakeProfit": 46670.589700000004,
-    "originalPriceStopLoss": 49076.2902
+    "originalPriceStopLoss": 49076.2902,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48114.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 48114.01,
+      "priceClose": 48114.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 48114.01,
+    "pnlPriceClose": 48114.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -1927,14 +3283,27 @@
     "pnlPercentage": -0.7863171610812789,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707702600000,
     "scheduledAt": 1707702540000,
     "pendingAt": 1707699000000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48604,
+    "pnl": {
+      "pnlPercentage": -0.7863171610812789,
+      "priceOpen": 48604,
+      "priceClose": 48415.761194629704,
+      "pnlCost": -0.79,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 48604,
+    "pnlPriceClose": 48415.761194629704,
+    "pnlCost": -0.79,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1955,7 +3324,22 @@
     "originalPriceTakeProfit": 50062.12,
     "originalPriceStopLoss": 47631.92,
     "scheduledAt": 1707700080000,
-    "pendingAt": 1707700110000
+    "pendingAt": 1707700110000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48604,
+    "pnl": {
+      "pnlPercentage": -0.41,
+      "priceOpen": 48604,
+      "priceClose": 48404.513339379286,
+      "pnlCost": -0.41,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.41,
+    "pnlPriceOpen": 48604,
+    "pnlPriceClose": 48404.513339379286,
+    "pnlCost": -0.41,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -1976,7 +3360,22 @@
     "originalPriceTakeProfit": 50062.12,
     "originalPriceStopLoss": 47631.92,
     "scheduledAt": 1707699780000,
-    "pendingAt": 1707699810000
+    "pendingAt": 1707699810000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48604,
+    "pnl": {
+      "pnlPercentage": -0.2,
+      "priceOpen": 48604,
+      "priceClose": 48504.481680080266,
+      "pnlCost": -0.2,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.2,
+    "pnlPriceOpen": 48604,
+    "pnlPriceClose": 48504.481680080266,
+    "pnlCost": -0.2,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -1991,12 +3390,27 @@
     "priceOpen": 48604,
     "priceTakeProfit": 50062.12,
     "priceStopLoss": 47631.92,
-    "note": "",
     "createdAt": 1707699000000,
     "scheduledAt": 1707698940000,
     "pendingAt": 1707699000000,
     "originalPriceTakeProfit": 50062.12,
-    "originalPriceStopLoss": 47631.92
+    "originalPriceStopLoss": 47631.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48604,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 48604,
+      "priceClose": 48604,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 48604,
+    "pnlPriceClose": 48604,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2015,7 +3429,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48604,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.02,
+      "priceOpen": 48604,
+      "priceClose": 48615.39414973843,
+      "pnlCost": 0.02,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.02,
+    "pnlPriceOpen": 48604,
+    "pnlPriceClose": 48615.39414973843,
+    "pnlCost": 0.02,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2032,14 +3462,27 @@
     "pnlPercentage": 0.25190588050557783,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707698940000,
     "scheduledAt": 1707698880000,
     "pendingAt": 1707695340000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "pnl": {
+      "pnlPercentage": 0.25190588050557783,
+      "priceOpen": 48299.99,
+      "priceClose": 48615.39414973843,
+      "pnlCost": 0.25,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48615.39414973843,
+    "pnlCost": 0.25,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -2060,7 +3503,22 @@
     "originalPriceTakeProfit": 49748.9897,
     "originalPriceStopLoss": 47333.9902,
     "scheduledAt": 1707697620000,
-    "pendingAt": 1707697650000
+    "pendingAt": 1707697650000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "pnl": {
+      "pnlPercentage": 0.6,
+      "priceOpen": 48299.99,
+      "priceClose": 48591.647004992425,
+      "pnlCost": 0.6,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.6,
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48591.647004992425,
+    "pnlCost": 0.6,
+    "pnlEntries": 100
   },
   {
     "type": "breakeven.available",
@@ -2080,7 +3538,22 @@
     "originalPriceTakeProfit": 49748.9897,
     "originalPriceStopLoss": 47333.9902,
     "scheduledAt": 1707697620000,
-    "pendingAt": 1707697650000
+    "pendingAt": 1707697650000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "pnl": {
+      "pnlPercentage": 0.6,
+      "priceOpen": 48299.99,
+      "priceClose": 48591.647004992425,
+      "pnlCost": 0.6,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.6,
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48591.647004992425,
+    "pnlCost": 0.6,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -2101,7 +3574,22 @@
     "originalPriceTakeProfit": 49748.9897,
     "originalPriceStopLoss": 47333.9902,
     "scheduledAt": 1707697440000,
-    "pendingAt": 1707697470000
+    "pendingAt": 1707697470000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "pnl": {
+      "pnlPercentage": 0.37,
+      "priceOpen": 48299.99,
+      "priceClose": 48480.640286992624,
+      "pnlCost": 0.37,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.37,
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48480.640286992624,
+    "pnlCost": 0.37,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2122,7 +3610,22 @@
     "originalPriceTakeProfit": 49748.9897,
     "originalPriceStopLoss": 47333.9902,
     "scheduledAt": 1707695280000,
-    "pendingAt": 1707695310000
+    "pendingAt": 1707695310000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "pnl": {
+      "pnlPercentage": -0.28,
+      "priceOpen": 48299.99,
+      "priceClose": 48167.01001433432,
+      "pnlCost": -0.28,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.28,
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48167.01001433432,
+    "pnlCost": -0.28,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2137,12 +3640,27 @@
     "priceOpen": 48299.99,
     "priceTakeProfit": 49748.9897,
     "priceStopLoss": 47333.9902,
-    "note": "",
     "createdAt": 1707695340000,
     "scheduledAt": 1707695280000,
     "pendingAt": 1707695340000,
     "originalPriceTakeProfit": 49748.9897,
-    "originalPriceStopLoss": 47333.9902
+    "originalPriceStopLoss": 47333.9902,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48299.99,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 48299.99,
+      "priceClose": 48299.99,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 48299.99,
+    "pnlPriceClose": 48299.99,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2159,14 +3677,27 @@
     "pnlPercentage": -0.7401279989872576,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707684480000,
     "scheduledAt": 1707684420000,
     "pendingAt": 1707680880000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48284,
+    "pnl": {
+      "pnlPercentage": -0.7401279989872576,
+      "priceOpen": 48284,
+      "priceClose": 48119.34714871467,
+      "pnlCost": -0.74,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 48284,
+    "pnlPriceClose": 48119.34714871467,
+    "pnlCost": -0.74,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2187,7 +3718,22 @@
     "originalPriceTakeProfit": 49732.520000000004,
     "originalPriceStopLoss": 47318.32,
     "scheduledAt": 1707684000000,
-    "pendingAt": 1707684030000
+    "pendingAt": 1707684030000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48284,
+    "pnl": {
+      "pnlPercentage": -0.21,
+      "priceOpen": 48284,
+      "priceClose": 48180.51668356712,
+      "pnlCost": -0.21,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.21,
+    "pnlPriceOpen": 48284,
+    "pnlPriceClose": 48180.51668356712,
+    "pnlCost": -0.21,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2202,12 +3748,27 @@
     "priceOpen": 48284,
     "priceTakeProfit": 49732.520000000004,
     "priceStopLoss": 47318.32,
-    "note": "",
     "createdAt": 1707680880000,
     "scheduledAt": 1707680820000,
     "pendingAt": 1707680880000,
     "originalPriceTakeProfit": 49732.520000000004,
-    "originalPriceStopLoss": 47318.32
+    "originalPriceStopLoss": 47318.32,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48284,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 48284,
+      "priceClose": 48284,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 48284,
+    "pnlPriceClose": 48284,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2226,7 +3787,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48284,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.03,
+      "priceOpen": 48284,
+      "priceClose": 48299.63674674899,
+      "pnlCost": 0.03,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.03,
+    "pnlPriceOpen": 48284,
+    "pnlPriceClose": 48299.63674674899,
+    "pnlCost": 0.03,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2243,14 +3820,27 @@
     "pnlPercentage": -0.3637994772688159,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707680760000,
     "scheduledAt": 1707680700000,
     "pendingAt": 1707677160000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48282.22,
+    "pnl": {
+      "pnlPercentage": -0.3637994772688159,
+      "priceOpen": 48282.22,
+      "priceClose": 48299.63674674899,
+      "pnlCost": -0.36,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 48282.22,
+    "pnlPriceClose": 48299.63674674899,
+    "pnlCost": -0.36,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2271,7 +3861,22 @@
     "originalPriceTakeProfit": 49730.6866,
     "originalPriceStopLoss": 47316.575600000004,
     "scheduledAt": 1707677100000,
-    "pendingAt": 1707677130000
+    "pendingAt": 1707677130000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48282.22,
+    "pnl": {
+      "pnlPercentage": -0.24,
+      "priceOpen": 48282.22,
+      "priceClose": 48165.432533539046,
+      "pnlCost": -0.24,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.24,
+    "pnlPriceOpen": 48282.22,
+    "pnlPriceClose": 48165.432533539046,
+    "pnlCost": -0.24,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2286,12 +3891,27 @@
     "priceOpen": 48282.22,
     "priceTakeProfit": 49730.6866,
     "priceStopLoss": 47316.575600000004,
-    "note": "",
     "createdAt": 1707677160000,
     "scheduledAt": 1707677100000,
     "pendingAt": 1707677160000,
     "originalPriceTakeProfit": 49730.6866,
-    "originalPriceStopLoss": 47316.575600000004
+    "originalPriceStopLoss": 47316.575600000004,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 48282.22,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 48282.22,
+      "priceClose": 48282.22,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 48282.22,
+    "pnlPriceClose": 48282.22,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2308,14 +3928,27 @@
     "pnlPercentage": 0.42745929484330386,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707501900000,
     "scheduledAt": 1707501840000,
     "pendingAt": 1707498300000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "pnl": {
+      "pnlPercentage": 0.42745929484330386,
+      "priceOpen": 47377.98,
+      "priceClose": 47770.70350025848,
+      "pnlCost": 0.43,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47770.70350025848,
+    "pnlCost": 0.43,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -2336,7 +3969,22 @@
     "originalPriceTakeProfit": 48799.31940000001,
     "originalPriceStopLoss": 46430.4204,
     "scheduledAt": 1707501540000,
-    "pendingAt": 1707501570000
+    "pendingAt": 1707501570000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "pnl": {
+      "pnlPercentage": 0.68,
+      "priceOpen": 47377.98,
+      "priceClose": 47700.222651160446,
+      "pnlCost": 0.68,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.68,
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47700.222651160446,
+    "pnlCost": 0.68,
+    "pnlEntries": 100
   },
   {
     "type": "breakeven.available",
@@ -2356,7 +4004,22 @@
     "originalPriceTakeProfit": 48799.31940000001,
     "originalPriceStopLoss": 46430.4204,
     "scheduledAt": 1707501540000,
-    "pendingAt": 1707501570000
+    "pendingAt": 1707501570000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "pnl": {
+      "pnlPercentage": 0.68,
+      "priceOpen": 47377.98,
+      "priceClose": 47700.222651160446,
+      "pnlCost": 0.68,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.68,
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47700.222651160446,
+    "pnlCost": 0.68,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -2377,7 +4040,22 @@
     "originalPriceTakeProfit": 48799.31940000001,
     "originalPriceStopLoss": 46430.4204,
     "scheduledAt": 1707499320000,
-    "pendingAt": 1707499350000
+    "pendingAt": 1707499350000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "pnl": {
+      "pnlPercentage": 0.3,
+      "priceOpen": 47377.98,
+      "priceClose": 47521.97894283117,
+      "pnlCost": 0.3,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.3,
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47521.97894283117,
+    "pnlCost": 0.3,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2398,7 +4076,22 @@
     "originalPriceTakeProfit": 48799.31940000001,
     "originalPriceStopLoss": 46430.4204,
     "scheduledAt": 1707498240000,
-    "pendingAt": 1707498270000
+    "pendingAt": 1707498270000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "pnl": {
+      "pnlPercentage": -0.27,
+      "priceOpen": 47377.98,
+      "priceClose": 47249.33259419059,
+      "pnlCost": -0.27,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.27,
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47249.33259419059,
+    "pnlCost": -0.27,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2413,12 +4106,27 @@
     "priceOpen": 47377.98,
     "priceTakeProfit": 48799.31940000001,
     "priceStopLoss": 46430.4204,
-    "note": "",
     "createdAt": 1707498300000,
     "scheduledAt": 1707498240000,
     "pendingAt": 1707498300000,
     "originalPriceTakeProfit": 48799.31940000001,
-    "originalPriceStopLoss": 46430.4204
+    "originalPriceStopLoss": 46430.4204,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47377.98,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 47377.98,
+      "priceClose": 47377.98,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 47377.98,
+    "pnlPriceClose": 47377.98,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2435,14 +4143,27 @@
     "pnlPercentage": -0.6597696452156802,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707498240000,
     "scheduledAt": 1707498180000,
     "pendingAt": 1707494640000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47378.01,
+    "pnl": {
+      "pnlPercentage": -0.6597696452156802,
+      "priceOpen": 47378.01,
+      "priceClose": 47254.59506687113,
+      "pnlCost": -0.66,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 47378.01,
+    "pnlPriceClose": 47254.59506687113,
+    "pnlCost": -0.66,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2463,7 +4184,22 @@
     "originalPriceTakeProfit": 48799.350300000006,
     "originalPriceStopLoss": 46430.4498,
     "scheduledAt": 1707494580000,
-    "pendingAt": 1707494610000
+    "pendingAt": 1707494610000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47378.01,
+    "pnl": {
+      "pnlPercentage": -0.37,
+      "priceOpen": 47378.01,
+      "priceClose": 47202.518127277806,
+      "pnlCost": -0.37,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.37,
+    "pnlPriceOpen": 47378.01,
+    "pnlPriceClose": 47202.518127277806,
+    "pnlCost": -0.37,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2478,12 +4214,27 @@
     "priceOpen": 47378.01,
     "priceTakeProfit": 48799.350300000006,
     "priceStopLoss": 46430.4498,
-    "note": "",
     "createdAt": 1707494640000,
     "scheduledAt": 1707494580000,
     "pendingAt": 1707494640000,
     "originalPriceTakeProfit": 48799.350300000006,
-    "originalPriceStopLoss": 46430.4498
+    "originalPriceStopLoss": 46430.4498,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 47378.01,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 47378.01,
+      "priceClose": 47378.01,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 47378.01,
+    "pnlPriceClose": 47378.01,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2500,14 +4251,27 @@
     "pnlPercentage": -0.5382535038448476,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707404580000,
     "scheduledAt": 1707404520000,
     "pendingAt": 1707400980000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 45181.99,
+    "pnl": {
+      "pnlPercentage": -0.5382535038448476,
+      "priceOpen": 45181.99,
+      "priceClose": 45119.308804858745,
+      "pnlCost": -0.54,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 45181.99,
+    "pnlPriceClose": 45119.308804858745,
+    "pnlCost": -0.54,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2528,7 +4292,22 @@
     "originalPriceTakeProfit": 46537.4497,
     "originalPriceStopLoss": 44278.3502,
     "scheduledAt": 1707400920000,
-    "pendingAt": 1707400950000
+    "pendingAt": 1707400950000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 45181.99,
+    "pnl": {
+      "pnlPercentage": -0.47,
+      "priceOpen": 45181.99,
+      "priceClose": 44970.67899904455,
+      "pnlCost": -0.47,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.47,
+    "pnlPriceOpen": 45181.99,
+    "pnlPriceClose": 44970.67899904455,
+    "pnlCost": -0.47,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2549,7 +4328,22 @@
     "originalPriceTakeProfit": 46537.4497,
     "originalPriceStopLoss": 44278.3502,
     "scheduledAt": 1707400920000,
-    "pendingAt": 1707400950000
+    "pendingAt": 1707400950000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 45181.99,
+    "pnl": {
+      "pnlPercentage": -0.47,
+      "priceOpen": 45181.99,
+      "priceClose": 44970.67899904455,
+      "pnlCost": -0.47,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.47,
+    "pnlPriceOpen": 45181.99,
+    "pnlPriceClose": 44970.67899904455,
+    "pnlCost": -0.47,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2564,12 +4358,27 @@
     "priceOpen": 45181.99,
     "priceTakeProfit": 46537.4497,
     "priceStopLoss": 44278.3502,
-    "note": "",
     "createdAt": 1707400980000,
     "scheduledAt": 1707400920000,
     "pendingAt": 1707400980000,
     "originalPriceTakeProfit": 46537.4497,
-    "originalPriceStopLoss": 44278.3502
+    "originalPriceStopLoss": 44278.3502,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 45181.99,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 45181.99,
+      "priceClose": 45181.99,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 45181.99,
+    "pnlPriceClose": 45181.99,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2586,14 +4395,27 @@
     "pnlPercentage": -0.019687116420438494,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707400920000,
     "scheduledAt": 1707400860000,
     "pendingAt": 1707397320000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44799.45,
+    "pnl": {
+      "pnlPercentage": -0.019687116420438494,
+      "priceOpen": 44799.45,
+      "priceClose": 44970.07948879169,
+      "pnlCost": -0.02,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 44799.45,
+    "pnlPriceClose": 44970.07948879169,
+    "pnlCost": -0.02,
+    "pnlEntries": 100
   },
   {
     "type": "partial_profit.available",
@@ -2614,7 +4436,22 @@
     "originalPriceTakeProfit": 46143.4335,
     "originalPriceStopLoss": 43903.460999999996,
     "scheduledAt": 1707400620000,
-    "pendingAt": 1707400650000
+    "pendingAt": 1707400650000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44799.45,
+    "pnl": {
+      "pnlPercentage": 0.33,
+      "priceOpen": 44799.45,
+      "priceClose": 44947.87126421306,
+      "pnlCost": 0.33,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.33,
+    "pnlPriceOpen": 44799.45,
+    "pnlPriceClose": 44947.87126421306,
+    "pnlCost": 0.33,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2635,7 +4472,22 @@
     "originalPriceTakeProfit": 46143.4335,
     "originalPriceStopLoss": 43903.460999999996,
     "scheduledAt": 1707397260000,
-    "pendingAt": 1707397290000
+    "pendingAt": 1707397290000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44799.45,
+    "pnl": {
+      "pnlPercentage": -0.22,
+      "priceOpen": 44799.45,
+      "priceClose": 44700.93075689441,
+      "pnlCost": -0.22,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.22,
+    "pnlPriceOpen": 44799.45,
+    "pnlPriceClose": 44700.93075689441,
+    "pnlCost": -0.22,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2650,12 +4502,27 @@
     "priceOpen": 44799.45,
     "priceTakeProfit": 46143.4335,
     "priceStopLoss": 43903.460999999996,
-    "note": "",
     "createdAt": 1707397320000,
     "scheduledAt": 1707397260000,
     "pendingAt": 1707397320000,
     "originalPriceTakeProfit": 46143.4335,
-    "originalPriceStopLoss": 43903.460999999996
+    "originalPriceStopLoss": 43903.460999999996,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44799.45,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 44799.45,
+      "priceClose": 44799.45,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 44799.45,
+    "pnlPriceClose": 44799.45,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2672,14 +4539,27 @@
     "pnlPercentage": -0.23224991918192545,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707387060000,
     "scheduledAt": 1707387000000,
     "pendingAt": 1707383460000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44624.15,
+    "pnl": {
+      "pnlPercentage": -0.23224991918192545,
+      "priceOpen": 44624.15,
+      "priceClose": 44699.067574011075,
+      "pnlCost": -0.23,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 44624.15,
+    "pnlPriceClose": 44699.067574011075,
+    "pnlCost": -0.23,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2694,12 +4574,27 @@
     "priceOpen": 44624.15,
     "priceTakeProfit": 45962.874500000005,
     "priceStopLoss": 43731.667,
-    "note": "",
     "createdAt": 1707383460000,
     "scheduledAt": 1707383400000,
     "pendingAt": 1707383460000,
     "originalPriceTakeProfit": 45962.874500000005,
-    "originalPriceStopLoss": 43731.667
+    "originalPriceStopLoss": 43731.667,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44624.15,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 44624.15,
+      "priceClose": 44624.15,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 44624.15,
+    "pnlPriceClose": 44624.15,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2718,7 +4613,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44624.15,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.21,
+      "priceOpen": 44624.15,
+      "priceClose": 44718.045209230186,
+      "pnlCost": 0.21,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.21,
+    "pnlPriceOpen": 44624.15,
+    "pnlPriceClose": 44718.045209230186,
+    "pnlCost": 0.21,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2735,14 +4646,27 @@
     "pnlPercentage": -0.1681303792952385,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707382860000,
     "scheduledAt": 1707382800000,
     "pendingAt": 1707379260000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44614.48,
+    "pnl": {
+      "pnlPercentage": -0.1681303792952385,
+      "priceOpen": 44614.48,
+      "priceClose": 44718.045209230186,
+      "pnlCost": -0.17,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 44614.48,
+    "pnlPriceClose": 44718.045209230186,
+    "pnlCost": -0.17,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2757,12 +4681,27 @@
     "priceOpen": 44614.48,
     "priceTakeProfit": 45952.9144,
     "priceStopLoss": 43722.1904,
-    "note": "",
     "createdAt": 1707379260000,
     "scheduledAt": 1707379200000,
     "pendingAt": 1707379260000,
     "originalPriceTakeProfit": 45952.9144,
-    "originalPriceStopLoss": 43722.1904
+    "originalPriceStopLoss": 43722.1904,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 44614.48,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 44614.48,
+      "priceClose": 44614.48,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 44614.48,
+    "pnlPriceClose": 44614.48,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2779,14 +4718,27 @@
     "pnlPercentage": -0.768939002318682,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707311700000,
     "scheduledAt": 1707311640000,
     "pendingAt": 1707308100000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42939.71,
+    "pnl": {
+      "pnlPercentage": -0.768939002318682,
+      "priceOpen": 42939.71,
+      "priceClose": 43097.72901789697,
+      "pnlCost": -0.77,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 42939.71,
+    "pnlPriceClose": 43097.72901789697,
+    "pnlCost": -0.77,
+    "pnlEntries": 100
   },
   {
     "type": "partial_loss.available",
@@ -2807,7 +4759,22 @@
     "originalPriceTakeProfit": 41651.5187,
     "originalPriceStopLoss": 43798.5042,
     "scheduledAt": 1707309720000,
-    "pendingAt": 1707309750000
+    "pendingAt": 1707309750000,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42939.71,
+    "pnl": {
+      "pnlPercentage": -0.21,
+      "priceOpen": 42939.71,
+      "priceClose": 43027.803603820954,
+      "pnlCost": -0.21,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": -0.21,
+    "pnlPriceOpen": 42939.71,
+    "pnlPriceClose": 43027.803603820954,
+    "pnlCost": -0.21,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2822,12 +4789,27 @@
     "priceOpen": 42939.71,
     "priceTakeProfit": 41651.5187,
     "priceStopLoss": 43798.5042,
-    "note": "",
     "createdAt": 1707308100000,
     "scheduledAt": 1707308040000,
     "pendingAt": 1707308100000,
     "originalPriceTakeProfit": 41651.5187,
-    "originalPriceStopLoss": 43798.5042
+    "originalPriceStopLoss": 43798.5042,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42939.71,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 42939.71,
+      "priceClose": 42939.71,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 42939.71,
+    "pnlPriceClose": 42939.71,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2846,7 +4828,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42939.71,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.05,
+      "priceOpen": 42939.71,
+      "priceClose": 42917.28753843722,
+      "pnlCost": 0.05,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.05,
+    "pnlPriceOpen": 42939.71,
+    "pnlPriceClose": 42917.28753843722,
+    "pnlCost": 0.05,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2863,14 +4861,27 @@
     "pnlPercentage": -0.27760796523343323,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1707308040000,
     "scheduledAt": 1707307980000,
     "pendingAt": 1707304440000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42969.86,
+    "pnl": {
+      "pnlPercentage": -0.27760796523343323,
+      "priceOpen": 42969.86,
+      "priceClose": 42917.28753843722,
+      "pnlCost": -0.28,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 42969.86,
+    "pnlPriceClose": 42917.28753843722,
+    "pnlCost": -0.28,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2885,12 +4896,27 @@
     "priceOpen": 42969.86,
     "priceTakeProfit": 41680.7642,
     "priceStopLoss": 43829.2572,
-    "note": "",
     "createdAt": 1707304440000,
     "scheduledAt": 1707304380000,
     "pendingAt": 1707304440000,
     "originalPriceTakeProfit": 41680.7642,
-    "originalPriceStopLoss": 43829.2572
+    "originalPriceStopLoss": 43829.2572,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42969.86,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 42969.86,
+      "priceClose": 42969.86,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 42969.86,
+    "pnlPriceClose": 42969.86,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2909,7 +4935,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 42969.86,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.21,
+      "priceOpen": 42969.86,
+      "priceClose": 42880.56728618986,
+      "pnlCost": 0.21,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.21,
+    "pnlPriceOpen": 42969.86,
+    "pnlPriceClose": 42880.56728618986,
+    "pnlCost": 0.21,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2926,14 +4968,27 @@
     "pnlPercentage": -0.4465806286801963,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1706878260000,
     "scheduledAt": 1706878200000,
     "pendingAt": 1706874660000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 43148.41,
+    "pnl": {
+      "pnlPercentage": -0.4465806286801963,
+      "priceOpen": 43148.41,
+      "priceClose": 43128.18457831416,
+      "pnlCost": -0.45,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 43148.41,
+    "pnlPriceClose": 43128.18457831416,
+    "pnlCost": -0.45,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -2948,12 +5003,27 @@
     "priceOpen": 43148.41,
     "priceTakeProfit": 44442.86230000001,
     "priceStopLoss": 42285.4418,
-    "note": "",
     "createdAt": 1706874660000,
     "scheduledAt": 1706874600000,
     "pendingAt": 1706874660000,
     "originalPriceTakeProfit": 44442.86230000001,
-    "originalPriceStopLoss": 42285.4418
+    "originalPriceStopLoss": 42285.4418,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 43148.41,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 43148.41,
+      "priceClose": 43148.41,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 43148.41,
+    "pnlPriceClose": 43148.41,
+    "pnlCost": 0,
+    "pnlEntries": 100
   },
   {
     "type": "signal.scheduled",
@@ -2972,7 +5042,23 @@
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 43148.41,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0.02,
+      "priceOpen": 43148.41,
+      "priceClose": 43157.55515625796,
+      "pnlCost": 0.02,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0.02,
+    "pnlPriceOpen": 43148.41,
+    "pnlPriceClose": 43157.55515625796,
+    "pnlCost": 0.02,
+    "pnlEntries": 100
   },
   {
     "type": "signal.closed",
@@ -2989,14 +5075,27 @@
     "pnlPercentage": -0.3186242655179572,
     "closeReason": "time_expired",
     "duration": 60,
-    "note": "",
     "createdAt": 1706874600000,
     "scheduledAt": 1706874540000,
     "pendingAt": 1706871000000,
     "priceTakeProfit": 53306.62,
     "priceStopLoss": 50718.92,
     "originalPriceTakeProfit": 53306.62,
-    "originalPriceStopLoss": 50718.92
+    "originalPriceStopLoss": 50718.92,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 43122.48,
+    "pnl": {
+      "pnlPercentage": -0.3186242655179572,
+      "priceOpen": 43122.48,
+      "priceClose": 43157.55515625796,
+      "pnlCost": -0.32,
+      "pnlEntries": 100
+    },
+    "pnlPriceOpen": 43122.48,
+    "pnlPriceClose": 43157.55515625796,
+    "pnlCost": -0.32,
+    "pnlEntries": 100
   },
   {
     "type": "signal.opened",
@@ -3011,11 +5110,26 @@
     "priceOpen": 43122.48,
     "priceTakeProfit": 44416.15440000001,
     "priceStopLoss": 42260.0304,
-    "note": "",
     "createdAt": 1706871000000,
     "scheduledAt": 1706870940000,
     "pendingAt": 1706871000000,
     "originalPriceTakeProfit": 44416.15440000001,
-    "originalPriceStopLoss": 42260.0304
+    "originalPriceStopLoss": 42260.0304,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "originalPriceOpen": 43122.48,
+    "cost": 100,
+    "pnl": {
+      "pnlPercentage": 0,
+      "priceOpen": 43122.48,
+      "priceClose": 43122.48,
+      "pnlCost": 0,
+      "pnlEntries": 100
+    },
+    "pnlPercentage": 0,
+    "pnlPriceOpen": 43122.48,
+    "pnlPriceClose": 43122.48,
+    "pnlCost": 0,
+    "pnlEntries": 100
   }
 ]

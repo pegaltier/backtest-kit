@@ -2,8 +2,7 @@ import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { compose, memoize, singleshot } from "functools-kit";
-import StrategyCoreService from "../core/StrategyCoreService";
-import { StrategyName } from "../../../interfaces/Strategy.interface";
+import { IStrategyPnL, StrategyName } from "../../../interfaces/Strategy.interface";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { Markdown } from "../../../classes/Markdown";
@@ -321,9 +320,6 @@ class ReportStorage {
  */
 export class StrategyMarkdownService {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  readonly strategyCoreService = inject<StrategyCoreService>(
-    TYPES.strategyCoreService,
-  );
 
   /**
    * Memoized factory for ReportStorage instances.
@@ -352,6 +348,8 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
     cancelId?: string,
   ) => {
     this.loggerService.log("strategyMarkdownService cancelScheduled", {
@@ -362,18 +360,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const scheduledRow = await this.strategyCoreService.getScheduledSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!scheduledRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -382,8 +368,9 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: scheduledRow.id,
+      signalId,
       action: "cancel-scheduled",
+      pnl,
       cancelId,
       createdAt,
       backtest: isBacktest,
@@ -404,6 +391,8 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
     closeId?: string,
   ) => {
     this.loggerService.log("strategyMarkdownService closePending", {
@@ -414,18 +403,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -434,8 +411,9 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "close-pending",
+      pnl,
       closeId,
       createdAt,
       backtest: isBacktest,
@@ -467,6 +445,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -487,18 +468,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -507,8 +476,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "partial-profit",
+      pnl,
+      totalPartials,
       percentToClose,
       currentPrice,
       createdAt,
@@ -551,6 +522,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -571,18 +545,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -591,8 +553,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "partial-loss",
+      pnl,
+      totalPartials,
       percentToClose,
       currentPrice,
       createdAt,
@@ -635,6 +599,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -655,18 +622,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -675,8 +630,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "trailing-stop",
+      pnl,
+      totalPartials,
       percentShift,
       currentPrice,
       createdAt,
@@ -719,6 +676,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -739,18 +699,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -759,8 +707,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "trailing-take",
+      pnl,
+      totalPartials,
       percentShift,
       currentPrice,
       createdAt,
@@ -801,6 +751,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -820,18 +773,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -840,8 +781,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "breakeven",
+      pnl,
+      totalPartials,
       currentPrice,
       createdAt,
       backtest: isBacktest,
@@ -882,6 +825,9 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -903,18 +849,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const scheduledRow = await this.strategyCoreService.getScheduledSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!scheduledRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -923,8 +857,10 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: scheduledRow.id,
+      signalId,
       action: "activate-scheduled",
+      pnl,
+      totalPartials,
       activateId,
       currentPrice,
       createdAt,
@@ -969,6 +905,10 @@ export class StrategyMarkdownService {
     isBacktest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
     timestamp: number,
+    signalId: string,
+    pnl: IStrategyPnL,
+    totalPartials: number,
+    cost: number,
     position: "long" | "short",
     priceOpen: number,
     priceTakeProfit: number,
@@ -989,18 +929,6 @@ export class StrategyMarkdownService {
     if (!this.subscribe.hasValue()) {
       return;
     }
-    const pendingRow = await this.strategyCoreService.getPendingSignal(
-      isBacktest,
-      symbol,
-      {
-        exchangeName: context.exchangeName,
-        strategyName: context.strategyName,
-        frameName: context.frameName,
-      },
-    );
-    if (!pendingRow) {
-      return;
-    }
     const createdAt = new Date(timestamp).toISOString();
     const storage = this.getStorage(symbol, context.strategyName, context.exchangeName, context.frameName, isBacktest);
     storage.addEvent({
@@ -1009,8 +937,11 @@ export class StrategyMarkdownService {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,
       frameName: context.frameName,
-      signalId: pendingRow.id,
+      signalId,
       action: "average-buy",
+      pnl,
+      totalPartials,
+      cost,
       currentPrice,
       effectivePriceOpen,
       totalEntries,
@@ -1195,6 +1126,8 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
           event.cancelId,
         )
       );
@@ -1211,6 +1144,8 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
           event.closeId,
         )
       );
@@ -1229,6 +1164,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1256,6 +1194,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1283,6 +1224,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1310,6 +1254,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1336,6 +1283,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1362,6 +1312,9 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,
@@ -1391,6 +1344,10 @@ export class StrategyMarkdownService {
             strategyName: event.strategyName,
           },
           event.timestamp,
+          event.signalId,
+          event.pnl,
+          event.totalPartials,
+          event.cost,
           event.position,
           event.priceOpen,
           event.priceTakeProfit,

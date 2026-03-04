@@ -115,6 +115,7 @@ export class StrategyCoreService implements TStrategy {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyCoreService getPendingSignal", {
@@ -122,7 +123,7 @@ export class StrategyCoreService implements TStrategy {
       context,
     });
     await this.validate(context);
-    return await this.strategyConnectionService.getPendingSignal(backtest, symbol, context);
+    return await this.strategyConnectionService.getPendingSignal(backtest, symbol, currentPrice, context);
   };
 
   /**
@@ -278,6 +279,7 @@ export class StrategyCoreService implements TStrategy {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyCoreService getScheduledSignal", {
@@ -285,7 +287,7 @@ export class StrategyCoreService implements TStrategy {
       context,
     });
     await this.validate(context);
-    return await this.strategyConnectionService.getScheduledSignal(backtest, symbol, context);
+    return await this.strategyConnectionService.getScheduledSignal(backtest, symbol, currentPrice, context);
   };
 
   /**
@@ -830,7 +832,8 @@ export class StrategyCoreService implements TStrategy {
     backtest: boolean,
     symbol: string,
     currentPrice: number,
-    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+    cost: number,
   ): Promise<boolean> => {
     this.loggerService.log("strategyCoreService averageBuy", {
       symbol,
@@ -839,8 +842,31 @@ export class StrategyCoreService implements TStrategy {
       backtest,
     });
     await this.validate(context);
-    return await this.strategyConnectionService.averageBuy(backtest, symbol, currentPrice, context);
+    return await this.strategyConnectionService.averageBuy(backtest, symbol, currentPrice, context, cost);
   };
+
+  /**
+   * Checks if there is an active pending signal for the symbol.
+   * Validates strategy existence and delegates to connection service
+   * to check if a pending signal exists for the symbol.
+   * Does not require execution context as this is a state query operation.
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if pending signal exists, false otherwise
+   */
+  public hasPendingSignal = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyCoreService hasPendingSignal", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.hasPendingSignal(backtest, symbol, context);
+  }
 }
 
 export default StrategyCoreService;

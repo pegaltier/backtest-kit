@@ -1,3 +1,5 @@
+import { IStrategyPnL } from "../interfaces/Strategy.interface";
+
 /**
  * Unified scheduled signal event data for report generation.
  * Contains all information about scheduled, opened and cancelled events.
@@ -29,10 +31,14 @@ export interface ScheduledEvent {
   originalPriceStopLoss?: number;
   /** Total number of DCA entries (present when averageBuy was applied) */
   totalEntries?: number;
+  /** Total number of partial closes executed (_partial.length) */
+  totalPartials?: number;
   /** Original entry price before DCA averaging (present when averageBuy was applied) */
   originalPriceOpen?: number;
   /** Total executed percentage from partial closes */
   partialExecuted?: number;
+  /** Unrealized PNL at the moment of this event */
+  pnl?: IStrategyPnL;
   /** Close timestamp (only for cancelled) */
   closeTimestamp?: number;
   /** Duration in minutes (only for cancelled/opened) */

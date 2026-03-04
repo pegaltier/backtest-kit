@@ -14,6 +14,17 @@ import { RiskContract } from "../contract/Risk.contract";
 import { SchedulePingContract } from "../contract/SchedulePing.contract";
 import { ActivePingContract } from "../contract/ActivePing.contract";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
+import SignalSyncContract from "src/contract/SignalSync.contract";
+
+/**
+ * Exchange signal synchronization emitter.
+ * If listenner throws, it means the signal was not properly synchronized to the exchange (e.g. limit order failed to fill).
+ * 
+ * The framework will skip position open/close and will try again on the next tick until successful synchronization.
+ * This ensures that the framework's internal state remains consistent with the exchange's state.
+ * Consumers should implement retry logic in their listeners to handle transient synchronization failures.
+ */
+export const syncSubject = new Subject<SignalSyncContract>();
 
 /**
  * Global signal emitter for all trading events (live + backtest).

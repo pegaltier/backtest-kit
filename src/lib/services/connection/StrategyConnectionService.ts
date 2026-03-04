@@ -25,6 +25,7 @@ import {
   activePingSubject,
   errorEmitter,
   strategyCommitSubject,
+  syncSubject,
 } from "../../../config/emitters";
 import { StrategyCommitContract } from "../../../contract/StrategyCommit.contract";
 import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
@@ -37,6 +38,31 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import ActionCoreService from "../core/ActionCoreService";
 import backtest from "../../../lib";
 import beginTime from "../../../utils/beginTime";
+import SignalSyncContract from "src/contract/SignalSync.contract";
+
+/**
+ * If syncSubject listener or any registered action throws, it means the signal was not properly synchronized
+ * to the exchange (e.g. limit order failed to fill).
+ * ClientStrategy will skip position open/close and will try again on the next tick until successful synchronization.
+ */
+const CREATE_SYNC_FN = (
+  self: StrategyConnectionService,
+  strategyName: StrategyName,
+  exchangeName: ExchangeName,
+  frameName: FrameName,
+  backtest: boolean
+) => trycatch(
+  async (event: SignalSyncContract) => {
+    if (event.backtest) {
+      return true;
+    }
+    await syncSubject.next(event);
+    await self.actionCoreService.signalSync(backtest, event, { strategyName, exchangeName, frameName });
+    return true;
+  }, {
+    defaultValue: false,
+  }
+);
 
 /**
  * Emits signal tick results with correct execution context timestamp.
@@ -470,6 +496,7 @@ export class StrategyConnectionService implements TStrategy {
         onActivePing: CREATE_COMMIT_ACTIVE_PING_FN(this),
         onDispose: CREATE_COMMIT_DISPOSE_FN(this),
         onCommit: CREATE_COMMIT_FN(this),
+        onSignalSync: CREATE_SYNC_FN(this, strategyName, exchangeName, frameName, backtest),
       });
     }
   );
@@ -488,6 +515,7 @@ export class StrategyConnectionService implements TStrategy {
   public getPendingSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<ISignalRow | null> => {
     this.loggerService.log("strategyConnectionService getPendingSignal", {
@@ -496,7 +524,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getPendingSignal(symbol);
+    return await strategy.getPendingSignal(symbol, currentPrice);
   };
 
   /**
@@ -662,6 +690,7 @@ export class StrategyConnectionService implements TStrategy {
   public getScheduledSignal = async (
     backtest: boolean,
     symbol: string,
+    currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<IScheduledSignalRow | null> => {
     this.loggerService.log("strategyConnectionService getScheduledSignal", {
@@ -670,7 +699,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getScheduledSignal(symbol);
+    return await strategy.getScheduledSignal(symbol, currentPrice);
   };
 
   /**
@@ -828,6 +857,28 @@ export class StrategyConnectionService implements TStrategy {
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.stopStrategy(symbol, backtest);
   };
+
+  /**
+   * Checks if there is an active pending signal for the strategy.
+   * Delegates to ClientStrategy.hasPendingSignal() which checks if there is an active position
+   * that has not been fully closed.
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to true if there is an active pending signal, false otherwise
+   */
+  public hasPendingSignal = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService hasPendingSignal", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.hasPendingSignal(symbol);
+  }
 
   /**
    * Disposes the ClientStrategy instance for the given context.
@@ -1232,6 +1283,7 @@ export class StrategyConnectionService implements TStrategy {
     symbol: string,
     currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+    cost: number,
   ): Promise<boolean> => {
     this.loggerService.log("strategyConnectionService averageBuy", {
       symbol,
@@ -1240,7 +1292,7 @@ export class StrategyConnectionService implements TStrategy {
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.averageBuy(symbol, currentPrice, backtest);
+    return await strategy.averageBuy(symbol, currentPrice, backtest, cost);
   };
 }
 

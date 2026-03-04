@@ -31,8 +31,14 @@ export interface TickEvent {
   originalPriceOpen?: number;
   /** Total number of DCA entries (_entry.length). 1 = no averaging. */
   totalEntries?: number;
+  /** Total number of partial closes executed (_partial.length) */
+  totalPartials?: number;
   /** Total executed percentage from partial closes (only for scheduled/waiting/opened/active/closed/cancelled) */
   partialExecuted?: number;
+  /** Absolute profit/loss in USD (for active/waiting: unrealized, for closed: realized) */
+  pnlCost?: number;
+  /** Total invested capital in USD */
+  pnlEntries?: number;
   /** Percentage progress towards take profit (only for active/waiting) */
   percentTp?: number;
   /** Percentage progress towards stop loss (only for active/waiting) */

@@ -8,6 +8,7 @@ import { IBreakeven } from "./Breakeven.interface";
 import { FrameName } from "./Frame.interface";
 import { ActionName } from "./Action.interface";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
+import { SignalSyncContract } from "../contract/SignalSync.contract";
 
 /**
  * Signal generation interval for throttling.
@@ -40,6 +41,8 @@ export interface ISignalDto {
   priceStopLoss: number;
   /** Expected duration in minutes before time_expired */
   minuteEstimatedTime: number;
+  /** Cost of this entry in USD. Default: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST */
+  cost?: number;
 }
 
 /**
@@ -49,6 +52,8 @@ export interface ISignalDto {
 export interface ISignalRow extends ISignalDto {
   /** Unique signal identifier (UUID v4 auto-generated) */
   id: string;
+  /** Cost of this entry in USD (e.g. 100 for $100 position) */
+  cost: number;
   /** Entry price for the position */
   priceOpen: number;
   /** Unique exchange identifier for execution */
@@ -82,23 +87,20 @@ export interface ISignalRow extends ISignalDto {
     percent: number;
     /** Price at which this partial was executed */
     currentPrice: number;
-    /** Debug only timestamp in milliseconds */
-    debugTimestamp?: number;
     /**
-     * Effective entry price (DCA average) at the moment this partial close was executed.
-     * Captured from GET_EFFECTIVE_PRICE_OPEN at partial close time.
-     * Used in PNL calculation when averageBuy() is called after partial closes,
-     * so each partial's profit is calculated against the correct entry price at that moment.
+     * Running cost basis (sum of entry costs) at the moment this partial was executed,
+     * BEFORE applying the percent reduction.
+     * Stored as a snapshot so helpers don't need to replay the full entry history.
+     * Effective entry price at this partial = costBasisAtClose / Σ(entry.cost/entry.price for entries[0..entryCountAtClose])
      */
-    effectivePrice: number;
+    costBasisAtClose: number;
     /**
-     * Entry count (number of entries in _entry history) at the moment this partial close was executed.
-     * Used to determine which entries are included in the effective price calculation for this partial close.
-     * When averageBuy() is called after partial closes, new entries are added to _entry, but they should not affect the effective price used for already executed partial closes.
-     * By capturing entryCountAtClose, we can slice the _entry array to include only the entries that were part of the position at the time of this partial close when calculating the effective price for PNL.
-     * This ensures that each partial close's PNL is calculated against the correct average entry price, even if more averaging happens after the partial close.
+     * Number of _entry elements at the moment this partial close was executed.
+     * Used to slice _entry to only entries that existed at this partial.
      */
     entryCountAtClose: number;
+    /** Debug only timestamp in milliseconds */
+    debugTimestamp?: number;
   }>;
   /**
    * Trailing stop-loss price that overrides priceStopLoss when set.
@@ -119,6 +121,8 @@ export interface ISignalRow extends ISignalDto {
   _entry?: Array<{
     /** Price at which this entry was executed */
     price: number;
+    /** Cost of this entry in USD (e.g. 100 for $100 position) */
+    cost: number;
     /** Debug only timestamp in milliseconds */
     debugTimestamp?: number;
   }>;
@@ -159,6 +163,11 @@ export interface IScheduledSignalRow extends ISignalRow {
  */
 export interface IPublicSignalRow extends ISignalRow {
   /**
+   * Cost of the initial position entry in USD (first entry, not DCA).
+   * Inherited from ISignalRow. Explicitly surfaced here for consumer visibility.
+   */
+  cost: number;
+  /**
    * Original stop-loss price set at signal creation.
    * Remains unchanged even if trailing stop-loss modifies effective SL.
    * Used for user visibility of initial SL parameters.
@@ -183,10 +192,20 @@ export interface IPublicSignalRow extends ISignalRow {
    */
   totalEntries: number;
   /**
+   * Total number of partial closes executed (_partial.length).
+   * 0 = no partial closes done. 1+ = partial closes executed.
+   */
+  totalPartials: number;
+  /**
    * Original entry price set at signal creation (unchanged by averaging).
    * Mirrors signal.priceOpen which is preserved for identity/audit purposes.
    */
   originalPriceOpen: number;
+  /**
+   * Unrealized PNL at the time this public signal was created.
+   * Calculated using toProfitLossDto with the currentPrice at the moment of emission.
+   */
+  pnl: IStrategyPnL;
 }
 
 /**
@@ -347,6 +366,8 @@ export interface IAverageBuyCommitRow extends ICommitRowBase {
   action: "average-buy";
   /** Price at which the new averaging entry was executed */
   currentPrice: number;
+  /** Cost of this averaging entry in USD */
+  cost: number;
   /** Total number of entries in _entry after this addition */
   totalEntries: number;
 }
@@ -437,6 +458,8 @@ export interface IStrategyParams extends IStrategySchema {
   onDispose: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<void>;
   /** System callback for commit events (emits to strategyCommitSubject) */
   onCommit: (event: StrategyCommitContract) => Promise<void>;
+  /** System callback for signal synchronization events (emits to syncSubject) */
+  onSignalSync: (event: SignalSyncContract) => Promise<boolean> | boolean;
 }
 
 /**
@@ -464,7 +487,7 @@ export interface IStrategyCallbacks {
   /** Called when scheduled signal is cancelled without opening position */
   onCancel: (symbol: string, data: IPublicSignalRow, currentPrice: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is written to persist storage (for testing) */
-  onWrite: (symbol: string, data: IPublicSignalRow | null, backtest: boolean) => void;
+  onWrite: (symbol: string, data: ISignalRow | null, backtest: boolean) => void;
   /** Called when signal is in partial profit state (price moved favorably but not reached TP yet) */
   onPartialProfit: (symbol: string, data: IPublicSignalRow, currentPrice: number, revenuePercent: number, backtest: boolean) => void | Promise<void>;
   /** Called when signal is in partial loss state (price moved against position but not hit SL yet) */
@@ -527,6 +550,10 @@ export interface IStrategyPnL {
   priceOpen: number;
   /** Exit price adjusted with slippage and fees */
   priceClose: number;
+  /** Absolute profit/loss in USD: pnlPercentage / 100 * pnlEntries */
+  pnlCost: number;
+  /** Total invested capital in USD: sum of all entry costs */
+  pnlEntries: number;
 }
 
 /**
@@ -771,7 +798,7 @@ export interface IStrategy {
    * @param symbol - Trading pair symbol
    * @returns Promise resolving to pending signal or null
    */
-  getPendingSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+  getPendingSignal: (symbol: string, currentPrice: number) => Promise<IPublicSignalRow | null>;
 
   /**
    * Retrieves the currently active scheduled signal for the symbol.
@@ -781,7 +808,7 @@ export interface IStrategy {
    * @param symbol - Trading pair symbol
    * @returns Promise resolving to scheduled signal or null
    */
-  getScheduledSignal: (symbol: string) => Promise<IPublicSignalRow | null>;
+  getScheduledSignal: (symbol: string, currentPrice: number) => Promise<IPublicSignalRow | null>;
 
   /**
    * Checks if breakeven threshold has been reached for the current pending signal.
@@ -1255,6 +1282,16 @@ export interface IStrategy {
    * @returns Promise<boolean> - true if entry added, false if rejected by direction check
    */
   averageBuy: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>;
+
+  /**
+   * Checks if there is an active pending signal for the symbol.
+   *
+   * Used internally to determine if TP/SL monitoring should occur on tick.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to true if pending signal exists, false otherwise
+   */
+  hasPendingSignal: (symbol: string) => Promise<boolean>;
 
   /**
    * Disposes the strategy instance and cleans up resources.

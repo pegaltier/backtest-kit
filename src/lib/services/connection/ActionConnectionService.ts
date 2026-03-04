@@ -15,6 +15,7 @@ import { PartialLossContract } from "../../../contract/PartialLoss.contract";
 import { SchedulePingContract } from "../../../contract/SchedulePing.contract";
 import { ActivePingContract } from "../../../contract/ActivePing.contract";
 import { RiskContract } from "../../../contract/Risk.contract";
+import { SignalSyncContract } from "../../../contract/SignalSync.contract";
 
 /**
  * Creates a unique key for memoizing ClientAction instances.
@@ -311,6 +312,28 @@ export class ActionConnectionService implements TAction {
     });
     const action = this.getAction(context.actionName, context.strategyName, context.exchangeName, context.frameName, backtest)
     await action.riskRejection(event);
+  };
+
+  /**
+   * Routes signalSync event to appropriate ClientAction instance.
+   * NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
+   *
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   * @param backtest - Whether running in backtest mode
+   * @param context - Execution context
+   * @returns true to allow, false to reject
+   */
+  public signalSync = async (
+    event: SignalSyncContract,
+    backtest: boolean,
+    context: { actionName: ActionName; strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<void> => {
+    this.loggerService.log("actionConnectionService signalSync", {
+      backtest,
+      context,
+    });
+    const action = this.getAction(context.actionName, context.strategyName, context.exchangeName, context.frameName, backtest);
+    await action.signalSync(event);
   };
 
   /**

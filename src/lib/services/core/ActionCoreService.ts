@@ -17,6 +17,7 @@ import { PartialLossContract } from "../../../contract/PartialLoss.contract";
 import { SchedulePingContract } from "../../../contract/SchedulePing.contract";
 import { ActivePingContract } from "../../../contract/ActivePing.contract";
 import { RiskContract } from "../../../contract/Risk.contract";
+import { SignalSyncContract } from "../../../contract/SignalSync.contract";
 import StrategySchemaService from "../schema/StrategySchemaService";
 import StrategyValidationService from "../validation/StrategyValidationService";
 import RiskValidationService from "../validation/RiskValidationService";
@@ -402,6 +403,33 @@ export class ActionCoreService implements TAction {
 
     for (const actionName of actions) {
       await this.actionConnectionService.riskRejection(event, backtest, { actionName, ...context });
+    }
+  };
+
+  /**
+   * Gates position open/close across all registered actions.
+   * NOT wrapped in trycatch — exceptions propagate to CREATE_SYNC_FN.
+   * Returns true only if ALL actions return true.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param event - Sync event with action "signal-open" or "signal-close"
+   * @param context - Strategy execution context
+   */
+  public signalSync = async (
+    backtest: boolean,
+    event: SignalSyncContract,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<void> => {
+    this.loggerService.log("actionCoreService signalSync", {
+      context,
+    });
+
+    await this.validate(context);
+
+    const { actions = [] } = this.strategySchemaService.get(context.strategyName);
+
+    for (const actionName of actions) {
+      await this.actionConnectionService.signalSync(event, backtest, { actionName, ...context });
     }
   };
 

@@ -3,14 +3,18 @@ export interface ISignal {
     symbol: string;
     position: string;
     profitLossPercentage: number;
+    pnlCost: number;
+    pnlEntries: number;
     takeProfitPrice: number;
     originalTakeProfitPrice: number;
     stopLossPrice: number;
     originalStopLossPrice: number;
     buyPrice: number;
     originalBuyPrice: number;
+    cost: number;
     totalEntries: number;
-    quantity: number;
+    totalPartials: number;
+    partialExecuted: number;
     date: string;
     status: "finished" | "pending";
 }

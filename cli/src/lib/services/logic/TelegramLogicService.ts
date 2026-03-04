@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { compose, singleshot } from "functools-kit";
+import { compose, singleshot, trycatch } from "functools-kit";
 import { getTelegram } from "../../../config/telegram";
 import {
   BreakevenCommit,
@@ -12,12 +12,15 @@ import {
   listenRisk,
   listenSignal,
   listenStrategyCommit,
+  listenSync,
   PartialLossCommit,
   PartialProfitCommit,
   RiskContract,
   TrailingStopCommit,
   TrailingTakeCommit,
   AverageBuyCommit,
+  SignalOpenContract,
+  SignalCloseContract,
 } from "backtest-kit";
 import TelegramTemplateService from "../template/TelegramTemplateService";
 import TelegramWebService from "../web/TelegramWebService";
@@ -165,7 +168,29 @@ export class TelegramLogicService {
       symbol: event.symbol,
       markdown,
     });
-  }
+  };
+
+  private notifySignalOpen = trycatch(async (event: SignalOpenContract) => {
+    this.loggerService.log("telegramLogicService notifySignalOpen", {
+      event,
+    });
+    const markdown = await this.telegramTemplateService.getSignalOpenMarkdown(event);
+    await this.telegramWebService.publishNotify({
+      symbol: event.symbol,
+      markdown,
+    });
+  });
+
+  private notifySignalClose = trycatch(async (event: SignalCloseContract) => {
+    this.loggerService.log("telegramLogicService notifySignalClose", {
+      event,
+    });
+    const markdown = await this.telegramTemplateService.getSignalCloseMarkdown(event);
+    await this.telegramWebService.publishNotify({
+      symbol: event.symbol,
+      markdown,
+    });
+  });
 
   public connect = singleshot(() => {
     this.loggerService.log("telegramLogicService connect");
@@ -220,12 +245,24 @@ export class TelegramLogicService {
       }
     });
 
+    const unSync = listenSync(async (event) => {
+      if (event.action === "signal-open") {
+        await this.notifySignalOpen(event);
+        return;
+      }
+      if (event.action === "signal-close") {
+        await this.notifySignalClose(event);
+        return;
+      }
+    });
+
     const unConnect = () => this.connect.clear();
 
     const unListen = compose(
       () => unRisk(),
       () => unSignal(),
       () => unCommit(),
+      () => unSync(),
       () => unConnect(),
     );
 

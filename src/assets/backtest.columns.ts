@@ -110,12 +110,24 @@ export const backtest_columns: ColumnModel<IStrategyTickResultClosed>[] = [
     isVisible: () => true,
   },
   {
+    key: "totalPartials",
+    label: "Partial Closes",
+    format: (data) => String(data.signal.totalPartials),
+    isVisible: () => true,
+  },
+  {
     key: "pnl",
     label: "PNL (net)",
     format: (data) => {
       const pnlPercentage = data.pnl.pnlPercentage;
       return `${pnlPercentage > 0 ? "+" : ""}${pnlPercentage.toFixed(2)}%`;
     },
+    isVisible: () => true,
+  },
+  {
+    key: "pnlCost",
+    label: "PNL (USD)",
+    format: (data) => `${data.pnl.pnlCost > 0 ? "+" : ""}${data.pnl.pnlCost.toFixed(2)} USD`,
     isVisible: () => true,
   },
   {

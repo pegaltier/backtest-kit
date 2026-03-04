@@ -1,8 +1,12 @@
-import { ISignalRow, IStrategyPnL } from "../interfaces/Strategy.interface";
+import { ISignalDto, ISignalRow, IStrategyPnL } from "../interfaces/Strategy.interface";
 import { GLOBAL_CONFIG } from "../config/params";
-import { getEffectivePriceOpen } from "./getEffectivePriceOpen";
+import { getEffectivePriceOpen, computeEffectivePriceAtPartial } from "./getEffectivePriceOpen";
 
-const COST_BASIS_PER_ENTRY = 100;
+interface Signal extends ISignalDto {
+  priceOpen: number;
+  _entry?: ISignalRow['_entry'];
+  _partial?: ISignalRow['_partial'];
+}
 
 /**
  * Calculates profit/loss for a closed signal with slippage and fees.
@@ -11,13 +15,8 @@ const COST_BASIS_PER_ENTRY = 100;
  * - Weights are calculated by ACTUAL DOLLAR VALUE of each partial relative to total invested.
  *   This correctly handles DCA entries that occur before or after partial closes.
  *
- * Cost basis is reconstructed by replaying the partial sequence via entryCountAtClose + percent:
- *   costBasis = 0
- *   for each partial[i]:
- *     costBasis += (entryCountAtClose[i] - entryCountAtClose[i-1]) × $100
- *     partialDollarValue[i] = (percent[i] / 100) × costBasis
- *     weight[i]             = partialDollarValue[i] / totalInvested
- *     costBasis            *= (1 - percent[i] / 100)
+ * Partial effective price is computed from costBasisAtClose snapshot:
+ *   effectivePrice = costBasisAtClose / Σ(entry.cost/entry.price for entries[0..entryCountAtClose])
  *
  * Fee structure:
  *   - Open fee:  CC_PERCENT_FEE (charged once)
@@ -25,12 +24,17 @@ const COST_BASIS_PER_ENTRY = 100;
  *
  * @param signal - Closed signal with position details and optional partial history
  * @param priceClose - Actual close price at final exit
- * @returns PNL data with percentage and prices
+ * @returns PNL data with percentage, prices, and USD amounts
  */
 export const toProfitLossDto = (
-  signal: ISignalRow,
+  signal: Signal,
   priceClose: number
 ): IStrategyPnL => {
+  const entries = signal._entry ?? [];
+  const totalInvested = entries.length > 0
+    ? entries.reduce((s, e) => s + e.cost, 0)
+    : GLOBAL_CONFIG.CC_POSITION_ENTRY_COST;
+
   const priceOpen = getEffectivePriceOpen(signal);
 
   // Calculate weighted PNL with partial closes
@@ -40,39 +44,30 @@ export const toProfitLossDto = (
     // Open fee is paid once for the whole position
     let totalFees = GLOBAL_CONFIG.CC_PERCENT_FEE;
 
-    // Total invested capital = number of DCA entries × $100 per entry
-    const totalInvested = signal._entry ? signal._entry.length * 100 : 100;
-
     let closedDollarValue = 0;
-
-    // Running cost basis — replayed from entryCountAtClose + percent
-    let costBasis = 0;
 
     // Calculate PNL for each partial close
     for (let i = 0; i < signal._partial.length; i++) {
       const partial = signal._partial[i];
 
-      // Add DCA entries that existed at this partial but not at the previous one
-      const prevCount = i === 0 ? 0 : signal._partial[i - 1].entryCountAtClose;
-      const newEntryCount = partial.entryCountAtClose - prevCount;
-      costBasis += newEntryCount * COST_BASIS_PER_ENTRY;
-
       // Real dollar value sold in this partial
-      const partialDollarValue = (partial.percent / 100) * costBasis;
+      const partialDollarValue = (partial.percent / 100) * partial.costBasisAtClose;
 
       // Weight relative to total invested capital
       const weight = partialDollarValue / totalInvested;
 
       closedDollarValue += partialDollarValue;
 
-      // Reduce cost basis after close
-      costBasis *= 1 - partial.percent / 100;
+      // Effective entry price at this partial — computed using the snapshot approach:
+      // same as getEffectivePriceOpen but limited to partials[0..i-1] and entries[0..entryCountAtClose]
+      const effectivePrice = computeEffectivePriceAtPartial(
+        entries, signal._partial!, i, signal.priceOpen
+      );
 
-      // Use the effective entry price snapshot captured at the time of this partial close
       const priceOpenWithSlippage =
         signal.position === "long"
-          ? partial.effectivePrice * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
-          : partial.effectivePrice * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
+          ? effectivePrice * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
+          : effectivePrice * (1 - GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100);
 
       const priceCloseWithSlippage =
         signal.position === "long"
@@ -104,7 +99,6 @@ export const toProfitLossDto = (
     const remainingWeight = remainingDollarValue / totalInvested;
 
     if (remainingWeight > 0) {
-      // Use current effective price — reflects all DCA including post-partial entries
       const remainingOpenWithSlippage =
         signal.position === "long"
           ? priceOpen * (1 + GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE / 100)
@@ -134,10 +128,12 @@ export const toProfitLossDto = (
       pnlPercentage,
       priceOpen,
       priceClose,
+      pnlCost: (pnlPercentage / 100) * totalInvested,
+      pnlEntries: totalInvested,
     };
   }
 
-  // Original logic for signals without partial closes
+  // No partial closes
   let priceOpenWithSlippage: number;
   let priceCloseWithSlippage: number;
 
@@ -169,6 +165,8 @@ export const toProfitLossDto = (
     pnlPercentage,
     priceOpen,
     priceClose,
+    pnlCost: (pnlPercentage / 100) * totalInvested,
+    pnlEntries: totalInvested,
   };
 };
 
