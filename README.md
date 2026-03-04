@@ -327,6 +327,8 @@ These three functions work together to dynamically manage the position. To reduc
     The code
   </summary>
 
+**Spot**
+
 ```tsx
 import ccxt from "ccxt";
 import { singleshot, sleep } from "functools-kit";
@@ -346,7 +348,7 @@ import {
 const FILL_POLL_INTERVAL_MS = 10_000;
 const FILL_POLL_ATTEMPTS = 10;
 
-const getExchange = singleshot(async () => {
+const getSpotExchange = singleshot(async () => {
   const exchange = new ccxt.binance({
     apiKey: process.env.BINANCE_API_KEY,
     secret: process.env.BINANCE_API_SECRET,
@@ -363,8 +365,7 @@ const getExchange = singleshot(async () => {
 
 /**
  * Place a limit order and poll until filled.
- * If not filled within FILL_POLL_ATTEMPTS * FILL_POLL_INTERVAL_MS ms,
- * cancels the order and throws — backtest-kit will retry the entire commit.
+ * Cancels and throws on timeout — backtest-kit will retry the commit.
  */
 async function createLimitOrderAndWait(
   exchange: ccxt.binance,
@@ -383,7 +384,6 @@ async function createLimitOrderAndWait(
     }
   }
 
-  // Cancel the stale order before throwing so no orphan orders are left on the book
   await exchange.cancelOrder(order.id, symbol);
   throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — backtest-kit will retry`);
 }
@@ -392,46 +392,39 @@ Broker.useBrokerAdapter(
   class implements IBroker {
 
     async waitForInit(): Promise<void> {
-      await getExchange();
+      await getSpotExchange();
     }
 
     async onSignalOpenCommit(payload: BrokerSignalOpenPayload): Promise<void> {
       const { symbol, cost, priceOpen, priceTakeProfit, priceStopLoss, position } = payload;
-      const exchange = await getExchange();
 
-      const qty      = parseFloat(exchange.amountToPrecision(symbol, cost / priceOpen));
+      // Spot does not support short selling — reject immediately so backtest-kit skips the mutation
+      if (position === "short") {
+        throw new Error(`SpotBrokerAdapter: short position is not supported on spot (symbol=${symbol})`);
+      }
+
+      const exchange = await getSpotExchange();
+
+      const qty       = parseFloat(exchange.amountToPrecision(symbol, cost / priceOpen));
       const openPrice = parseFloat(exchange.priceToPrecision(symbol, priceOpen));
-      const tpPrice  = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
-      const slPrice  = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
+      const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
+      const slPrice   = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
 
-      // Entry: limit order, waits for fill — throws on timeout, backtest-kit retries
-      await createLimitOrderAndWait(
-        exchange, symbol,
-        position === "long" ? "buy" : "sell",
-        qty, openPrice
-      );
+      // Entry: limit buy, waits for fill — throws on timeout, backtest-kit retries
+      await createLimitOrderAndWait(exchange, symbol, "buy", qty, openPrice);
 
-      // Take-profit: resting limit order, no need to wait for fill
-      await exchange.createOrder(
-        symbol, "limit",
-        position === "long" ? "sell" : "buy",
-        qty, tpPrice
-      );
+      // Take-profit: resting limit sell
+      await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
 
-      // Stop-loss: stop-limit order, no need to wait for fill
-      await exchange.createOrder(
-        symbol, "stop_loss_limit",
-        position === "long" ? "sell" : "buy",
-        qty, slPrice,
-        { stopPrice: slPrice }
-      );
+      // Stop-loss: stop-limit sell
+      await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
     async onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void> {
-      const { symbol, position, currentPrice } = payload;
-      const exchange = await getExchange();
+      const { symbol, currentPrice } = payload;
+      const exchange = await getSpotExchange();
 
-      // Cancel all resting SL/TP orders before closing — throws on exchange error, backtest-kit retries
+      // Cancel all resting SL/TP orders — throws on exchange error, backtest-kit retries
       const orders = await exchange.fetchOpenOrders(symbol);
       for (const order of orders) {
         await exchange.cancelOrder(order.id, symbol);
@@ -443,18 +436,250 @@ Broker.useBrokerAdapter(
 
       if (qty > 0) {
         const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
-        // Close: limit order, waits for fill — throws on timeout, backtest-kit retries
-        await createLimitOrderAndWait(
-          exchange, symbol,
-          position === "long" ? "sell" : "buy",
-          qty, closePrice
-        );
+        // Close: limit sell, waits for fill — throws on timeout, backtest-kit retries
+        await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
       }
     }
 
     async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
       const { symbol, cost, currentPrice } = payload;
-      const exchange = await getExchange();
+      const exchange = await getSpotExchange();
+
+      // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
+      const orders = await exchange.fetchOpenOrders(symbol);
+      for (const order of orders) {
+        await exchange.cancelOrder(order.id, symbol);
+      }
+
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+
+      // Partial close: limit sell, waits for fill — throws on timeout, backtest-kit retries
+      await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
+    }
+
+    async onPartialLossCommit(payload: BrokerPartialLossPayload): Promise<void> {
+      const { symbol, cost, currentPrice } = payload;
+      const exchange = await getSpotExchange();
+
+      // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
+      const orders = await exchange.fetchOpenOrders(symbol);
+      for (const order of orders) {
+        await exchange.cancelOrder(order.id, symbol);
+      }
+
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+
+      // Partial close: limit sell, waits for fill — throws on timeout, backtest-kit retries
+      await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
+    }
+
+    async onTrailingStopCommit(payload: BrokerTrailingStopPayload): Promise<void> {
+      const { symbol, newStopLossPrice } = payload;
+      const exchange = await getSpotExchange();
+
+      // Cancel existing SL order only — TP stays untouched
+      const orders  = await exchange.fetchOpenOrders(symbol);
+      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      if (slOrder) {
+        await exchange.cancelOrder(slOrder.id, symbol);
+      }
+
+      const balance = await exchange.fetchBalance();
+      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+
+      // Place updated SL resting order — throws on exchange error, backtest-kit retries
+      await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
+    }
+
+    async onTrailingTakeCommit(payload: BrokerTrailingTakePayload): Promise<void> {
+      const { symbol, newTakeProfitPrice } = payload;
+      const exchange = await getSpotExchange();
+
+      // Cancel existing TP order only — SL stays untouched
+      const orders  = await exchange.fetchOpenOrders(symbol);
+      const tpOrder = orders.find((o) => ["limit", "LIMIT"].includes(o.type ?? "")) ?? null;
+      if (tpOrder) {
+        await exchange.cancelOrder(tpOrder.id, symbol);
+      }
+
+      const balance = await exchange.fetchBalance();
+      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
+
+      // Place updated TP resting order — throws on exchange error, backtest-kit retries
+      await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
+    }
+
+    async onBreakevenCommit(payload: BrokerBreakevenPayload): Promise<void> {
+      const { symbol, newStopLossPrice } = payload;
+      const exchange = await getSpotExchange();
+
+      // Cancel existing SL order only — TP stays untouched
+      const orders  = await exchange.fetchOpenOrders(symbol);
+      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      if (slOrder) {
+        await exchange.cancelOrder(slOrder.id, symbol);
+      }
+
+      const balance = await exchange.fetchBalance();
+      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
+      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+
+      // Move SL to entry price (breakeven) — throws on exchange error, backtest-kit retries
+      await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
+    }
+
+    async onAverageBuyCommit(payload: BrokerAverageBuyPayload): Promise<void> {
+      const { symbol, currentPrice, cost } = payload;
+      const exchange = await getSpotExchange();
+
+      const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
+      const entryPrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+
+      // DCA entry: limit buy, waits for fill — throws on timeout, backtest-kit retries
+      await createLimitOrderAndWait(exchange, symbol, "buy", qty, entryPrice);
+    }
+  }
+);
+
+Broker.enable();
+```
+
+**Futures**
+
+```tsx
+import ccxt from "ccxt";
+import { singleshot, sleep } from "functools-kit";
+import {
+  Broker,
+  IBroker,
+  BrokerSignalOpenPayload,
+  BrokerSignalClosePayload,
+  BrokerPartialProfitPayload,
+  BrokerPartialLossPayload,
+  BrokerTrailingStopPayload,
+  BrokerTrailingTakePayload,
+  BrokerBreakevenPayload,
+  BrokerAverageBuyPayload,
+} from "backtest-kit";
+
+const FILL_POLL_INTERVAL_MS = 10_000;
+const FILL_POLL_ATTEMPTS = 10;
+
+const getFuturesExchange = singleshot(async () => {
+  const exchange = new ccxt.binance({
+    apiKey: process.env.BINANCE_API_KEY,
+    secret: process.env.BINANCE_API_SECRET,
+    options: {
+      defaultType: "future",
+      adjustForTimeDifference: true,
+      recvWindow: 60000,
+    },
+    enableRateLimit: true,
+  });
+  await exchange.loadMarkets();
+  return exchange;
+});
+
+/**
+ * Place a limit order and poll until filled.
+ * Cancels and throws on timeout — backtest-kit will retry the commit.
+ */
+async function createLimitOrderAndWait(
+  exchange: ccxt.binance,
+  symbol: string,
+  side: "buy" | "sell",
+  qty: number,
+  price: number
+): Promise<void> {
+  const order = await exchange.createOrder(symbol, "limit", side, qty, price);
+
+  for (let i = 0; i !== FILL_POLL_ATTEMPTS; i++) {
+    await sleep(FILL_POLL_INTERVAL_MS);
+    const status = await exchange.fetchOrder(order.id, symbol);
+    if (status.status === "closed") {
+      return;
+    }
+  }
+
+  await exchange.cancelOrder(order.id, symbol);
+  throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — backtest-kit will retry`);
+}
+
+/**
+ * Resolve open futures position qty for the given symbol.
+ * Returns positive qty for long, negative for short.
+ */
+async function fetchPositionQty(exchange: ccxt.binance, symbol: string): Promise<number> {
+  const positions = await exchange.fetchPositions([symbol]);
+  const pos = positions.find((p) => p.symbol === symbol);
+  return parseFloat(String(pos?.contracts ?? 0));
+}
+
+Broker.useBrokerAdapter(
+  class implements IBroker {
+
+    async waitForInit(): Promise<void> {
+      await getFuturesExchange();
+    }
+
+    async onSignalOpenCommit(payload: BrokerSignalOpenPayload): Promise<void> {
+      const { symbol, cost, priceOpen, priceTakeProfit, priceStopLoss, position } = payload;
+      const exchange = await getFuturesExchange();
+
+      const qty       = parseFloat(exchange.amountToPrecision(symbol, cost / priceOpen));
+      const openPrice = parseFloat(exchange.priceToPrecision(symbol, priceOpen));
+      const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
+      const slPrice   = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
+
+      // long → buy to open, short → sell to open
+      const entrySide = position === "long" ? "buy" : "sell";
+      const exitSide  = position === "long" ? "sell" : "buy";
+
+      // Entry: limit order, waits for fill — throws on timeout, backtest-kit retries
+      await createLimitOrderAndWait(exchange, symbol, entrySide, qty, openPrice);
+
+      // Take-profit: resting limit order on the opposite side
+      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, {
+        reduceOnly: true,
+      });
+
+      // Stop-loss: stop-market order on the opposite side
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
+        stopPrice: slPrice,
+        reduceOnly: true,
+      });
+    }
+
+    async onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void> {
+      const { symbol, position, currentPrice } = payload;
+      const exchange = await getFuturesExchange();
+
+      // Cancel all resting SL/TP orders — throws on exchange error, backtest-kit retries
+      const orders = await exchange.fetchOpenOrders(symbol);
+      for (const order of orders) {
+        await exchange.cancelOrder(order.id, symbol);
+      }
+
+      const qty      = Math.abs(await fetchPositionQty(exchange, symbol));
+      const exitSide = position === "long" ? "sell" : "buy";
+
+      if (qty > 0) {
+        const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+        // Close: limit order on opposite side, waits for fill — throws on timeout, backtest-kit retries
+        await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice);
+      }
+    }
+
+    async onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void> {
+      const { symbol, cost, currentPrice, context } = payload;
+      const exchange = await getFuturesExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
       const orders = await exchange.fetchOpenOrders(symbol);
@@ -471,7 +696,7 @@ Broker.useBrokerAdapter(
 
     async onPartialLossCommit(payload: BrokerPartialLossPayload): Promise<void> {
       const { symbol, cost, currentPrice } = payload;
-      const exchange = await getExchange();
+      const exchange = await getFuturesExchange();
 
       // Cancel all resting orders before partial close — throws on exchange error, backtest-kit retries
       const orders = await exchange.fetchOpenOrders(symbol);
@@ -488,32 +713,29 @@ Broker.useBrokerAdapter(
 
     async onTrailingStopCommit(payload: BrokerTrailingStopPayload): Promise<void> {
       const { symbol, newStopLossPrice, position } = payload;
-      const exchange = await getExchange();
+      const exchange = await getFuturesExchange();
 
       // Cancel existing SL order only — TP stays untouched
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) => ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const qty     = Math.abs(await fetchPositionQty(exchange, symbol));
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Place updated SL resting order — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(
-        symbol, "stop_loss_limit",
-        position === "long" ? "sell" : "buy",
-        qty, slPrice,
-        { stopPrice: slPrice }
-      );
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
+        stopPrice: slPrice,
+        reduceOnly: true,
+      });
     }
 
     async onTrailingTakeCommit(payload: BrokerTrailingTakePayload): Promise<void> {
       const { symbol, newTakeProfitPrice, position } = payload;
-      const exchange = await getExchange();
+      const exchange = await getFuturesExchange();
 
       // Cancel existing TP order only — SL stays untouched
       const orders  = await exchange.fetchOpenOrders(symbol);
@@ -522,57 +744,48 @@ Broker.useBrokerAdapter(
         await exchange.cancelOrder(tpOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const qty     = Math.abs(await fetchPositionQty(exchange, symbol));
       const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Place updated TP resting order — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(
-        symbol, "limit",
-        position === "long" ? "sell" : "buy",
-        qty, tpPrice
-      );
+      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, {
+        reduceOnly: true,
+      });
     }
 
     async onBreakevenCommit(payload: BrokerBreakevenPayload): Promise<void> {
       const { symbol, newStopLossPrice, position } = payload;
-      const exchange = await getExchange();
+      const exchange = await getFuturesExchange();
 
       // Cancel existing SL order only — TP stays untouched
       const orders  = await exchange.fetchOpenOrders(symbol);
-      const slOrder = orders.find((o) => ["stop_loss_limit", "stop", "STOP_LOSS_LIMIT"].includes(o.type ?? "")) ?? null;
+      const slOrder = orders.find((o) => ["stop_market", "stop", "STOP_MARKET"].includes(o.type ?? "")) ?? null;
       if (slOrder) {
         await exchange.cancelOrder(slOrder.id, symbol);
       }
 
-      const balance = await exchange.fetchBalance();
-      const base    = symbol.replace(/USDT|BUSD|BTC|ETH$/, "");
-      const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
+      const qty     = Math.abs(await fetchPositionQty(exchange, symbol));
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
+      const exitSide = position === "long" ? "sell" : "buy";
 
       // Move SL to entry price (breakeven) — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(
-        symbol, "stop_loss_limit",
-        position === "long" ? "sell" : "buy",
-        qty, slPrice,
-        { stopPrice: slPrice }
-      );
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
+        stopPrice: slPrice,
+        reduceOnly: true,
+      });
     }
 
     async onAverageBuyCommit(payload: BrokerAverageBuyPayload): Promise<void> {
       const { symbol, currentPrice, cost, position } = payload;
-      const exchange = await getExchange();
+      const exchange = await getFuturesExchange();
 
       const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
       const entryPrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
+      const entrySide  = position === "long" ? "buy" : "sell";
 
       // DCA entry: limit order, waits for fill — throws on timeout, backtest-kit retries
-      await createLimitOrderAndWait(
-        exchange, symbol,
-        position === "long" ? "buy" : "sell",
-        qty, entryPrice
-      );
+      await createLimitOrderAndWait(exchange, symbol, entrySide, qty, entryPrice);
     }
   }
 );
