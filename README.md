@@ -701,9 +701,12 @@ Broker.useBrokerAdapter(
       await sleep(CANCEL_SETTLE_MS);
 
       // Guard against DCA into a ghost position — checked after cancel so the snapshot is fresh
-      const existing = await fetchFreeQty(exchange, symbol);
+      const existing    = await fetchFreeQty(exchange, symbol);
+      const minNotional = exchange.markets[symbol].limits?.cost?.min ?? 1;
 
-      if (existing === 0) {
+      // Compare notional value rather than raw qty — avoids float === 0 trap
+      // and correctly rejects dust balances left over from previous trades
+      if (existing * currentPrice < minNotional) {
         throw new Error(`AverageBuy skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
       }
 
@@ -806,8 +809,12 @@ function findPosition(positions: ccxt.Position[], symbol: string, side: "long" |
   if (hedged) {
     return hedged;
   }
-  // One-way mode: single position per symbol, side field may be undefined
-  return positions.find((p) => p.symbol === symbol) ?? null;
+  // One-way mode: single position per symbol, side field may be undefined or mismatched
+  const pos = positions.find((p) => p.symbol === symbol) ?? null;
+  if (pos && pos.side && pos.side !== side) {
+    console.warn(`findPosition: expected side="${side}" but exchange returned side="${pos.side}" for ${symbol} — possible one-way/hedge mode mismatch`);
+  }
+  return pos;
 }
 
 /**
@@ -1148,9 +1155,12 @@ Broker.useBrokerAdapter(
       await sleep(CANCEL_SETTLE_MS);
 
       // Guard against DCA into a ghost position — checked after cancel so the snapshot is fresh
-      const existing = await fetchContractsQty(exchange, symbol, position);
+      const existing    = await fetchContractsQty(exchange, symbol, position);
+      const minNotional = exchange.markets[symbol].limits?.cost?.min ?? 1;
 
-      if (existing === 0) {
+      // Compare notional value rather than raw contracts — avoids float === 0 trap
+      // and correctly rejects dust positions left over from previous trades
+      if (existing * currentPrice < minNotional) {
         throw new Error(`AverageBuy skipped: no open position for ${symbol} on exchange — SL/TP may have already been filled`);
       }
 
