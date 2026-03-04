@@ -116,7 +116,7 @@ export async function commitClosePending(symbol: string, closeId?: string): Prom
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
-  await Broker.commitClosePending({ symbol, closeId, context: { exchangeName, frameName, strategyName } });
+
   await backtest.strategyCoreService.closePending(
     isBacktest,
     symbol,

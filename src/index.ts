@@ -392,7 +392,6 @@ export {
   Broker,
   BrokerAverageBuyPayload,
   BrokerBreakevenPayload,
-  BrokerClosePendingPayload,
   BrokerPartialLossPayload,
   BrokerPartialProfitPayload,
   BrokerTrailingStopPayload,

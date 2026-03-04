@@ -8,16 +8,6 @@ import { StrategyName } from "../interfaces/Strategy.interface";
 
 // Should listen syncSubject automatically cause the new signal is triggered by backtest-kit not the user
 
-export type BrokerClosePendingPayload = {
-  symbol: string;
-  closeId?: string;
-  context: {
-    strategyName: StrategyName;
-    exchangeName: ExchangeName;
-    frameName?: FrameName;
-  };
-};
-
 export type BrokerPartialProfitPayload = {
   symbol: string;
   percentToClose: number;
@@ -86,8 +76,6 @@ export type BrokerAverageBuyPayload = {
 };
 
 export class BrokerAdapter {
-  public commitClosePending = async (payload: BrokerClosePendingPayload) => {};
-
   public commitPartialProfit = async (payload: BrokerPartialProfitPayload) => {};
 
   public commitPartialLoss = async (payload: BrokerPartialLossPayload) => {};

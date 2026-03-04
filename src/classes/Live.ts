@@ -1017,7 +1017,6 @@ export class LiveUtils {
       actions && actions.forEach((actionName) => backtest.actionValidationService.validate(actionName, LIVE_METHOD_NAME_CLOSE_PENDING));
     }
 
-    await Broker.commitClosePending({ symbol, closeId, context: { strategyName: context.strategyName, exchangeName: context.exchangeName, frameName: "" } });
     await backtest.strategyCoreService.closePending(false, symbol, {
       strategyName: context.strategyName,
       exchangeName: context.exchangeName,

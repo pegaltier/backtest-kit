@@ -1581,7 +1581,6 @@ export class BacktestUtils {
         );
     }
 
-    await Broker.commitClosePending({ symbol, closeId, context });
     await backtest.strategyCoreService.closePending(
       true,
       symbol,
