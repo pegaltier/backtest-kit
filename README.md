@@ -364,8 +364,9 @@ const getSpotExchange = singleshot(async () => {
 });
 
 /**
- * Place a limit order and poll until filled.
- * Cancels and throws on timeout — backtest-kit will retry the commit.
+ * Place a limit order and poll until filled (status === "closed").
+ * On timeout: cancel the order, sell any partial fill via market to rollback cleanly,
+ * then throw — backtest-kit will retry the commit against a clean exchange state.
  */
 async function createLimitOrderAndWait(
   exchange: ccxt.binance,
@@ -384,8 +385,20 @@ async function createLimitOrderAndWait(
     }
   }
 
+  // Cancel the remaining open portion
   await exchange.cancelOrder(order.id, symbol);
-  throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — backtest-kit will retry`);
+
+  // Check how much was partially filled
+  const final = await exchange.fetchOrder(order.id, symbol);
+  const filledQty = final.filled ?? 0;
+
+  if (filledQty > 0) {
+    // Sell partial fill via market to restore clean exchange state before backtest-kit retries
+    const rollbackSide = side === "buy" ? "sell" : "buy";
+    await exchange.createOrder(symbol, "market", rollbackSide, filledQty);
+  }
+
+  throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — partial fill rolled back, backtest-kit will retry`);
 }
 
 Broker.useBrokerAdapter(
@@ -410,13 +423,13 @@ Broker.useBrokerAdapter(
       const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, priceTakeProfit));
       const slPrice   = parseFloat(exchange.priceToPrecision(symbol, priceStopLoss));
 
-      // Entry: limit buy, waits for fill — throws on timeout, backtest-kit retries
+      // Entry: limit buy, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, "buy", qty, openPrice);
 
-      // Take-profit: resting limit sell
+      // Take-profit: resting limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
 
-      // Stop-loss: stop-limit sell
+      // Stop-loss: resting stop-limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
@@ -436,7 +449,7 @@ Broker.useBrokerAdapter(
 
       if (qty > 0) {
         const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
-        // Close: limit sell, waits for fill — throws on timeout, backtest-kit retries
+        // Close: limit sell, waits for fill — partial fill rolled back on timeout, backtest-kit retries
         await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
       }
     }
@@ -454,7 +467,7 @@ Broker.useBrokerAdapter(
       const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
-      // Spot long only — always sell to close
+      // Partial close: limit sell, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
     }
 
@@ -471,7 +484,7 @@ Broker.useBrokerAdapter(
       const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
-      // Spot long only — always sell to close
+      // Partial close: limit sell, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, "sell", qty, closePrice);
     }
 
@@ -491,7 +504,7 @@ Broker.useBrokerAdapter(
       const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Spot long only — SL is always a stop-limit sell
+      // Updated SL: resting stop-limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
@@ -511,7 +524,7 @@ Broker.useBrokerAdapter(
       const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
       const tpPrice = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
 
-      // Spot long only — TP is always a limit sell
+      // Updated TP: resting limit sell, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "limit", "sell", qty, tpPrice);
     }
 
@@ -531,7 +544,7 @@ Broker.useBrokerAdapter(
       const qty     = parseFloat(String(balance?.free?.[base] ?? 0));
       const slPrice = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
 
-      // Spot long only — move SL to entry price (breakeven), always a stop-limit sell
+      // Breakeven SL: resting stop-limit sell at entry price, accepted synchronously by Binance REST
       await exchange.createOrder(symbol, "stop_loss_limit", "sell", qty, slPrice, { stopPrice: slPrice });
     }
 
@@ -542,7 +555,7 @@ Broker.useBrokerAdapter(
       const qty        = parseFloat(exchange.amountToPrecision(symbol, cost / currentPrice));
       const entryPrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
 
-      // Spot long only — DCA entry is always a limit buy
+      // DCA entry: limit buy, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, "buy", qty, entryPrice);
     }
   }
@@ -588,8 +601,9 @@ const getFuturesExchange = singleshot(async () => {
 });
 
 /**
- * Place a limit order and poll until filled.
- * Cancels and throws on timeout — backtest-kit will retry the commit.
+ * Place a limit order and poll until filled (status === "closed").
+ * On timeout: cancel the order, sell any partial fill via market to rollback cleanly,
+ * then throw — backtest-kit will retry the commit against a clean exchange state.
  */
 async function createLimitOrderAndWait(
   exchange: ccxt.binance,
@@ -608,8 +622,20 @@ async function createLimitOrderAndWait(
     }
   }
 
+  // Cancel the remaining open portion
   await exchange.cancelOrder(order.id, symbol);
-  throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — backtest-kit will retry`);
+
+  // Check how much was partially filled
+  const final = await exchange.fetchOrder(order.id, symbol);
+  const filledQty = final.filled ?? 0;
+
+  if (filledQty > 0) {
+    // Close partial fill via market to restore clean exchange state before backtest-kit retries
+    const rollbackSide = side === "buy" ? "sell" : "buy";
+    await exchange.createOrder(symbol, "market", rollbackSide, filledQty, undefined, { reduceOnly: true });
+  }
+
+  throw new Error(`Limit order ${order.id} [${side} ${qty} ${symbol} @ ${price}] not filled in time — partial fill rolled back, backtest-kit will retry`);
 }
 
 Broker.useBrokerAdapter(
@@ -631,19 +657,14 @@ Broker.useBrokerAdapter(
       const entrySide = position === "long" ? "buy"  : "sell";
       const exitSide  = position === "long" ? "sell" : "buy";
 
-      // Entry: limit order, waits for fill — throws on timeout, backtest-kit retries
+      // Entry: limit order, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, entrySide, qty, openPrice);
 
-      // Take-profit: resting limit order on exit side
-      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, {
-        reduceOnly: true,
-      });
+      // Take-profit: resting limit on exit side, accepted synchronously by Binance REST
+      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
 
-      // Stop-loss: stop-market order on exit side
-      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
-        stopPrice: slPrice,
-        reduceOnly: true,
-      });
+      // Stop-loss: resting stop-market on exit side, accepted synchronously by Binance REST
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
     }
 
     async onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void> {
@@ -663,7 +684,7 @@ Broker.useBrokerAdapter(
 
       if (qty > 0) {
         const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
-        // Close: limit order on exit side, waits for fill — throws on timeout, backtest-kit retries
+        // Close: limit order on exit side, waits for fill — partial fill rolled back on timeout, backtest-kit retries
         await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice);
       }
     }
@@ -682,7 +703,7 @@ Broker.useBrokerAdapter(
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
 
-      // Partial close: limit order on exit side, waits for fill — throws on timeout, backtest-kit retries
+      // Partial close: limit order on exit side, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice);
     }
 
@@ -700,7 +721,7 @@ Broker.useBrokerAdapter(
       const closePrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const exitSide   = position === "long" ? "sell" : "buy";
 
-      // Partial close: limit order on exit side, waits for fill — throws on timeout, backtest-kit retries
+      // Partial close: limit order on exit side, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, exitSide, qty, closePrice);
     }
 
@@ -721,11 +742,8 @@ Broker.useBrokerAdapter(
       const slPrice   = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
       const exitSide  = position === "long" ? "sell" : "buy";
 
-      // Place updated SL resting order — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
-        stopPrice: slPrice,
-        reduceOnly: true,
-      });
+      // Updated SL: resting stop-market on exit side, accepted synchronously by Binance REST
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
     }
 
     async onTrailingTakeCommit(payload: BrokerTrailingTakePayload): Promise<void> {
@@ -745,10 +763,8 @@ Broker.useBrokerAdapter(
       const tpPrice   = parseFloat(exchange.priceToPrecision(symbol, newTakeProfitPrice));
       const exitSide  = position === "long" ? "sell" : "buy";
 
-      // Place updated TP resting order — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, {
-        reduceOnly: true,
-      });
+      // Updated TP: resting limit on exit side, accepted synchronously by Binance REST
+      await exchange.createOrder(symbol, "limit", exitSide, qty, tpPrice, { reduceOnly: true });
     }
 
     async onBreakevenCommit(payload: BrokerBreakevenPayload): Promise<void> {
@@ -768,11 +784,8 @@ Broker.useBrokerAdapter(
       const slPrice   = parseFloat(exchange.priceToPrecision(symbol, newStopLossPrice));
       const exitSide  = position === "long" ? "sell" : "buy";
 
-      // Move SL to entry price (breakeven) — throws on exchange error, backtest-kit retries
-      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, {
-        stopPrice: slPrice,
-        reduceOnly: true,
-      });
+      // Breakeven SL: resting stop-market at entry price on exit side, accepted synchronously by Binance REST
+      await exchange.createOrder(symbol, "stop_market", exitSide, qty, undefined, { stopPrice: slPrice, reduceOnly: true });
     }
 
     async onAverageBuyCommit(payload: BrokerAverageBuyPayload): Promise<void> {
@@ -783,7 +796,7 @@ Broker.useBrokerAdapter(
       const entryPrice = parseFloat(exchange.priceToPrecision(symbol, currentPrice));
       const entrySide  = position === "long" ? "buy" : "sell";
 
-      // DCA entry: limit order, waits for fill — throws on timeout, backtest-kit retries
+      // DCA entry: limit order, waits for fill — partial fill rolled back on timeout, backtest-kit retries
       await createLimitOrderAndWait(exchange, symbol, entrySide, qty, entryPrice);
     }
   }
