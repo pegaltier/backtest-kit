@@ -209,7 +209,7 @@ Customize via `setConfig()`:
 
 Backtest Kit is **not a data-processing library** - it is a **time execution engine**. Think of the engine as an **async stream of time**, where your strategy is evaluated step by step.
 
-### 💰 How PNL Works
+### 🔍 How PNL Works
 
 These three functions work together to manage a position dynamically. To reduce position linearity, the framework treats every DCA entry as a fixed **$100 unit** regardless of price — this flattens the effective entry curve and makes PNL weighting independent of position size.
 
@@ -320,7 +320,7 @@ These three functions work together to manage a position dynamically. To reduce 
 
 ### 🔍 How Broker Transactional Integrity Works
 
-`Broker.useBrokerAdapter` connects a live exchange (e.g. Binance via ccxt) to the framework. Every trade-mutating operation — `onSignalOpenCommit`, `onPartialProfitCommit`, `onTrailingStopCommit`, `onAverageBuyCommit`, etc. — is intercepted **before** the internal position state is modified. If the adapter throws (exchange error, order rejected, fill timeout after `FILL_POLL_ATTEMPTS × FILL_POLL_INTERVAL_MS`), the state mutation is skipped entirely and the position remains unchanged — giving transaction-like semantics over real exchange order placement. backtest-kit will automatically retry the commit on the next tick.
+`Broker.useBrokerAdapter` connects a live exchange (ccxt, Binance, etc.) to the framework with transaction-like safety — every commit method fires **before** the internal position state mutates. If the exchange rejects the order, the fill times out, or the network fails, the adapter throws, the mutation is skipped, and backtest-kit retries automatically on the next tick.
 
 <details>
   <summary>
@@ -582,7 +582,7 @@ Broker.enable();
 
 </details>
 
-Signal open and close events are routed automatically via an internal `syncSubject` event bus once `Broker.enable()` is called — no manual wiring needed. All other operations (`partialProfit`, `trailingStop`, `breakeven`, `averageBuy`, etc.) are intercepted explicitly at the public API layer before the corresponding `strategyCoreService` mutation. In backtest mode all adapter calls are silently skipped — the `backtest: true` flag in each payload is checked upfront in `BrokerAdapter` before the ccxt code is ever reached.
+Signal open/close events are routed automatically via an internal event bus once `Broker.enable()` is called — no manual wiring needed. All other operations (`partialProfit`, `trailingStop`, `breakeven`, `averageBuy`) are intercepted explicitly before the corresponding state mutation. In backtest mode the `backtest: true` flag short-circuits all adapter calls before any exchange code is reached.
 
 ### 🔍 How getCandles Works
 
