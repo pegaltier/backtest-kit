@@ -42,6 +42,10 @@ const dashboardRoutes: IRouteItem[] = [
         path: "/logs",
         element: heavy(() => import("../pages/view/LogPage")),
     },
+    {
+        path: "/status",
+        element: heavy(() => import("../pages/view/StatusPage")),
+    },
 ];
 
 export const routes: IRouteItem[] = [

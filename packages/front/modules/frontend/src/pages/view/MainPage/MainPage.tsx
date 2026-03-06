@@ -29,6 +29,8 @@ import {
     InsertChartTwoTone,
     KeyboardArrowLeft,
     NotificationsActive,
+    PlayCircle,
+    PlayCircleOutline,
     Quickreply,
     Refresh,
     TerminalTwoTone,
@@ -80,6 +82,14 @@ const options: IBreadcrumbs2Option[] = [
 ];
 
 const actions: IBreadcrumbs2Action[] = [
+    {
+        action: "status-action",
+        label: "Status",
+        icon: () => <IconWrapper icon={PlayCircleOutline} color="#4caf50" />,
+    },
+    {
+        divider: true,
+    },
     {
         action: "notification-action",
         label: "Notifications",
@@ -223,6 +233,9 @@ export const MainPage = () => {
     const handleAction = async (action: string) => {
         if (action === "notification-action") {
             ioc.routerService.push("/notifications");
+        }
+        if (action === "status-action") {
+            ioc.routerService.push("/status");
         }
     };
 
