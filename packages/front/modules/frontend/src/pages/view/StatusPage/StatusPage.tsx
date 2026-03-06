@@ -15,18 +15,15 @@ import {
   Breadcrumbs2Type,
   Center,
   FieldType,
-  IBreadcrumbs2Action,
   IBreadcrumbs2Option,
   One,
   TypedField,
   typo,
   openBlank,
-  useSingleshot,
-  useSingleton,
   useAsyncValue,
 } from "react-declarative";
 import { makeStyles } from "../../../styles";
-import { KeyboardArrowLeft, Quickreply } from "@mui/icons-material";
+import { KeyboardArrowLeft } from "@mui/icons-material";
 import ioc from "../../../lib";
 import IconPhoto from "../../../components/common/IconPhoto";
 
@@ -51,11 +48,8 @@ interface IRoute {
 }
 
 function isLightColor(hex: string) {
-  // Compare contrast with black (#000000) and white (#FFFFFF)
   const contrastWithBlack = getContrastRatio(hex, "#000000");
   const contrastWithWhite = getContrastRatio(hex, "#FFFFFF");
-
-  // If contrast with black is higher, the color is likely light
   return contrastWithBlack > contrastWithWhite;
 }
 
@@ -89,7 +83,7 @@ const createButton = (
   phoneColumns: "12",
   fieldRightMargin: "1",
   fieldBottomMargin: "1",
-  element: ({ payload }) => (
+  element: () => (
     <Button
       component={ButtonBase}
       onClick={() => {
@@ -126,88 +120,6 @@ const createButton = (
     </Button>
   ),
 });
-
-const createFields = async (): Promise<TypedField[]> => {
-  const symbolMap = await ioc.symbolGlobalService.getSymbolMap();
-
-  // Статические символы для совместимости
-  const staticSymbols = await ioc.symbolGlobalService.getSymbolList();
-
-  // Группируем символы по priority
-  const priorityGroups: Record<number, IRoute[]> = {};
-
-  staticSymbols.forEach((symbol, idx) => {
-    const symbolData = symbolMap[symbol];
-    const index = idx + 1;
-    const priority = symbolData?.priority || index;
-
-    if (!priorityGroups[priority]) {
-      priorityGroups[priority] = [];
-    }
-
-    priorityGroups[priority].push({
-      symbol,
-      label: symbolData?.displayName || symbol,
-      color: symbolData?.color || "#ccc",
-      to: `/coin/${symbol.toLowerCase()}`,
-    });
-  });
-
-  const sortedPriorities = Object.entries(priorityGroups)
-    .map(([priority, routes]) => ({ priority: parseInt(priority), routes }))
-    .sort(
-      (
-        { priority: a_p, routes: { length: a_l } },
-        { priority: b_p, routes: { length: b_l } }
-      ) => b_l - a_l || b_p - a_p
-    );
-
-  const tabletLeftColumn: TypedField[] = [];
-  const tabletRightColumn: TypedField[] = [];
-  const wideColumn: TypedField[] = [];
-
-  sortedPriorities.forEach(({ routes, priority }, idx) => {
-    const group = createGroup(`Priority ${priority}`, routes);
-
-    if (idx % 2 === 0) {
-      tabletLeftColumn.push(group);
-    }
-
-    if (idx % 2 === 1) {
-      tabletRightColumn.push(group);
-    }
-
-    wideColumn.push(group);
-  });
-
-  const fields: TypedField[] = [
-    {
-      type: FieldType.Group,
-      columns: "6",
-      className: "tabletLeftColumn",
-      phoneHidden: true,
-      desktopHidden: true,
-      fields: tabletLeftColumn,
-    },
-    {
-      type: FieldType.Group,
-      columns: "6",
-      className: "tabletRightColumn",
-      phoneHidden: true,
-      desktopHidden: true,
-      fields: tabletRightColumn,
-    },
-    {
-      type: FieldType.Group,
-      columns: "12",
-      className: "wideColumn",
-      tabletHidden: true,
-      fields: wideColumn,
-    },
-  ];
-
-  return fields;
-};
 
 const createGroup = (label: string, routes: IRoute[]): TypedField => ({
   type: FieldType.Group,
@@ -253,8 +165,80 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
   ],
 });
 
+const createFields = async (): Promise<TypedField[]> => {
+  const [symbolMap, statusList] = await Promise.all([
+    ioc.symbolGlobalService.getSymbolMap(),
+    ioc.statusViewService.getStatusList(),
+  ]);
+
+  // Группируем сигналы по strategyName
+  const strategyGroups: Record<string, IRoute[]> = {};
+
+  statusList.forEach((live) => {
+    const symbolData = symbolMap[live.symbol];
+    const strategy = live.strategyName;
+
+    if (!strategyGroups[strategy]) {
+      strategyGroups[strategy] = [];
+    }
+
+    strategyGroups[strategy].push({
+      symbol: live.symbol,
+      label: symbolData?.displayName || live.symbol,
+      color: symbolData?.color || "#ccc",
+      to: live.id,
+    });
+  });
+
+  const sortedGroups = Object.entries(strategyGroups).sort(
+    ([, a], [, b]) => b.length - a.length
+  );
+
+  const tabletLeftColumn: TypedField[] = [];
+  const tabletRightColumn: TypedField[] = [];
+  const wideColumn: TypedField[] = [];
+
+  sortedGroups.forEach(([strategy, routes], idx) => {
+    const group = createGroup(strategy, routes);
+
+    if (idx % 2 === 0) {
+      tabletLeftColumn.push(group);
+    } else {
+      tabletRightColumn.push(group);
+    }
+
+    wideColumn.push(group);
+  });
+
+  return [
+    {
+      type: FieldType.Group,
+      columns: "6",
+      className: "tabletLeftColumn",
+      phoneHidden: true,
+      desktopHidden: true,
+      fields: tabletLeftColumn,
+    },
+    {
+      type: FieldType.Group,
+      columns: "6",
+      className: "tabletRightColumn",
+      phoneHidden: true,
+      desktopHidden: true,
+      fields: tabletRightColumn,
+    },
+    {
+      type: FieldType.Group,
+      columns: "12",
+      className: "wideColumn",
+      tabletHidden: true,
+      fields: wideColumn,
+    },
+  ];
+};
+
 interface IStatusPageProps {
-    id?: string;
+  id?: string;
 }
 
 export const StatusPage = ({ id }: IStatusPageProps) => {
@@ -283,6 +267,17 @@ export const StatusPage = ({ id }: IStatusPageProps) => {
         <Breadcrumbs2 items={options} onAction={handleAction} />
         <Center>
           <p>Загрузка...</p>
+        </Center>
+      </Container>
+    );
+  }
+
+  if (!fields.length) {
+    return (
+      <Container>
+        <Breadcrumbs2 items={options} onAction={handleAction} />
+        <Center>
+          <p>Нет активных сигналов</p>
         </Center>
       </Container>
     );

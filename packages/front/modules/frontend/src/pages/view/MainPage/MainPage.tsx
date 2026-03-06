@@ -33,6 +33,7 @@ import {
     PlayCircleOutline,
     Quickreply,
     Refresh,
+    ShoppingCartCheckout,
     TerminalTwoTone,
 } from "@mui/icons-material";
 import { useMemo } from "react";
@@ -85,7 +86,7 @@ const actions: IBreadcrumbs2Action[] = [
     {
         action: "status-action",
         label: "Status",
-        icon: () => <IconWrapper icon={PlayCircleOutline} color="#4caf50" />,
+        icon: () => <IconWrapper icon={ShoppingCartCheckout} color="#4caf50" />,
     },
     {
         divider: true,

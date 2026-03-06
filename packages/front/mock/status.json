@@ -75,5 +75,244 @@
         "entryCountAtClose": 2
       }
     ]
+  },
+  {
+    "id": "live-0003-0000-4000-a000-000000000003",
+    "symbol": "SOLUSDT",
+    "strategyName": "main_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "long",
+    "cost": 100,
+    "priceOpen": 98.5,
+    "priceTakeProfit": 112.3,
+    "priceStopLoss": 91.2,
+    "originalPriceOpen": 98.5,
+    "originalPriceTakeProfit": 112.3,
+    "originalPriceStopLoss": 91.2,
+    "totalEntries": 3,
+    "totalPartials": 2,
+    "partialExecuted": 75,
+    "pnl": {
+      "pnlPercentage": 3.10,
+      "priceOpen": 98.5,
+      "priceClose": 101.55,
+      "pnlCost": 9.30,
+      "pnlEntries": 300
+    },
+    "scheduledAt": 1708920000000,
+    "pendingAt": 1708920100000,
+    "timestamp": 1708920100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 98.5, "cost": 100 },
+      { "price": 95.0, "cost": 100 },
+      { "price": 91.5, "cost": 100 }
+    ],
+    "_partial": [
+      {
+        "type": "profit",
+        "percent": 25,
+        "currentPrice": 105.0,
+        "costBasisAtClose": 300,
+        "entryCountAtClose": 3
+      },
+      {
+        "type": "profit",
+        "percent": 50,
+        "currentPrice": 108.0,
+        "costBasisAtClose": 225,
+        "entryCountAtClose": 3
+      }
+    ]
+  },
+  {
+    "id": "live-0004-0000-4000-a000-000000000004",
+    "symbol": "BNBUSDT",
+    "strategyName": "scalp_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "long",
+    "cost": 100,
+    "priceOpen": 385.0,
+    "priceTakeProfit": 404.25,
+    "priceStopLoss": 373.45,
+    "originalPriceOpen": 385.0,
+    "originalPriceTakeProfit": 404.25,
+    "originalPriceStopLoss": 373.45,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "partialExecuted": 0,
+    "pnl": {
+      "pnlPercentage": -1.10,
+      "priceOpen": 385.0,
+      "priceClose": 380.77,
+      "pnlCost": -1.10,
+      "pnlEntries": 100
+    },
+    "scheduledAt": 1708940000000,
+    "pendingAt": 1708940100000,
+    "timestamp": 1708940100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 385.0, "cost": 100 }
+    ],
+    "_partial": []
+  },
+  {
+    "id": "live-0005-0000-4000-a000-000000000005",
+    "symbol": "XRPUSDT",
+    "strategyName": "scalp_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "short",
+    "cost": 100,
+    "priceOpen": 0.545,
+    "priceTakeProfit": 0.5178,
+    "priceStopLoss": 0.5613,
+    "originalPriceOpen": 0.545,
+    "originalPriceTakeProfit": 0.5178,
+    "originalPriceStopLoss": 0.5613,
+    "totalEntries": 2,
+    "totalPartials": 0,
+    "partialExecuted": 0,
+    "pnl": {
+      "pnlPercentage": 2.40,
+      "priceOpen": 0.545,
+      "priceClose": 0.5319,
+      "pnlCost": 4.80,
+      "pnlEntries": 200
+    },
+    "scheduledAt": 1708960000000,
+    "pendingAt": 1708960100000,
+    "timestamp": 1708960100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 0.545, "cost": 100 },
+      { "price": 0.558, "cost": 100 }
+    ],
+    "_partial": []
+  },
+  {
+    "id": "live-0006-0000-4000-a000-000000000006",
+    "symbol": "ADAUSDT",
+    "strategyName": "scalp_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "long",
+    "cost": 100,
+    "priceOpen": 0.612,
+    "priceTakeProfit": 0.6732,
+    "priceStopLoss": 0.5875,
+    "originalPriceOpen": 0.612,
+    "originalPriceTakeProfit": 0.6732,
+    "originalPriceStopLoss": 0.5875,
+    "totalEntries": 1,
+    "totalPartials": 1,
+    "partialExecuted": 30,
+    "pnl": {
+      "pnlPercentage": 5.20,
+      "priceOpen": 0.612,
+      "priceClose": 0.6438,
+      "pnlCost": 5.20,
+      "pnlEntries": 100
+    },
+    "scheduledAt": 1708980000000,
+    "pendingAt": 1708980100000,
+    "timestamp": 1708980100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 0.612, "cost": 100 }
+    ],
+    "_partial": [
+      {
+        "type": "profit",
+        "percent": 30,
+        "currentPrice": 0.645,
+        "costBasisAtClose": 100,
+        "entryCountAtClose": 1
+      }
+    ]
+  },
+  {
+    "id": "live-0007-0000-4000-a000-000000000007",
+    "symbol": "DOGEUSDT",
+    "strategyName": "swing_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "long",
+    "cost": 100,
+    "priceOpen": 0.082,
+    "priceTakeProfit": 0.0968,
+    "priceStopLoss": 0.0754,
+    "originalPriceOpen": 0.082,
+    "originalPriceTakeProfit": 0.0968,
+    "originalPriceStopLoss": 0.0754,
+    "totalEntries": 1,
+    "totalPartials": 0,
+    "partialExecuted": 0,
+    "pnl": {
+      "pnlPercentage": -2.30,
+      "priceOpen": 0.082,
+      "priceClose": 0.0801,
+      "pnlCost": -2.30,
+      "pnlEntries": 100
+    },
+    "scheduledAt": 1709000000000,
+    "pendingAt": 1709000100000,
+    "timestamp": 1709000100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 0.082, "cost": 100 }
+    ],
+    "_partial": []
+  },
+  {
+    "id": "live-0008-0000-4000-a000-000000000008",
+    "symbol": "ADAUSDT",
+    "strategyName": "swing_strategy",
+    "exchangeName": "binance_exchange",
+    "frameName": "feb_2024_frame",
+    "status": "pending",
+    "position": "short",
+    "cost": 100,
+    "priceOpen": 34.5,
+    "priceTakeProfit": 31.05,
+    "priceStopLoss": 36.23,
+    "originalPriceOpen": 34.5,
+    "originalPriceTakeProfit": 31.05,
+    "originalPriceStopLoss": 36.23,
+    "totalEntries": 2,
+    "totalPartials": 1,
+    "partialExecuted": 40,
+    "pnl": {
+      "pnlPercentage": 4.80,
+      "priceOpen": 34.5,
+      "priceClose": 32.85,
+      "pnlCost": 9.60,
+      "pnlEntries": 200
+    },
+    "scheduledAt": 1709020000000,
+    "pendingAt": 1709020100000,
+    "timestamp": 1709020100000,
+    "_isScheduled": false,
+    "_entry": [
+      { "price": 34.5, "cost": 100 },
+      { "price": 35.8, "cost": 100 }
+    ],
+    "_partial": [
+      {
+        "type": "profit",
+        "percent": 40,
+        "currentPrice": 32.0,
+        "costBasisAtClose": 200,
+        "entryCountAtClose": 2
+      }
+    ]
   }
 ]
