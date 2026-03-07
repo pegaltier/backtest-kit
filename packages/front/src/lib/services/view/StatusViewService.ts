@@ -14,7 +14,8 @@ export class StatusViewService {
   public getStatusList = async () => {
     this.loggerService.log("statusViewService getStatusList");
     if (CC_ENABLE_MOCK) {
-      return await this.statusMockService.getStatusList();
+      const liveList = await this.statusMockService.getStatusList();
+      return liveList.filter(({ status }) => status === "pending");
     }
     return await Live.list();
   };
@@ -25,7 +26,9 @@ export class StatusViewService {
       return await this.statusMockService.getStatusMap();
     }
     const liveList = await Live.list();
-    return liveList.reduce((acm, cur) => ({ ...acm, [cur.id]: cur }), {});
+    return liveList
+      .filter(({ status }) => status === "pending")
+      .reduce((acm, cur) => ({ ...acm, [cur.id]: cur }), {});
   };
 
   public getStatusOne = async (id: string) => {
