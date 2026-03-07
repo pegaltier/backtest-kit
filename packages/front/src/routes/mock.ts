@@ -428,6 +428,34 @@ router.post("/api/v1/mock/log_filter", async (req, res) => {
   }
 });
 
+router.post("/api/v1/mock/candles_live", async (req, res) => {
+  try {
+    const request = <SignalCandlesRequest>await micro.json(req);
+    const { signalId, interval, requestId, serviceName } = request;
+    const data = await ioc.exchangeMockService.getLiveCandles(signalId, interval);
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/mock/candles_live ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/mock/candles_live error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
 // StatusMockService endpoints
 router.post("/api/v1/mock/status_list", async (req, res) => {
   try {

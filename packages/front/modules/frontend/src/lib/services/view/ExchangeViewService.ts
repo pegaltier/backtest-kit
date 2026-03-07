@@ -74,6 +74,33 @@ export class ExchangeViewService {
         }
         return data;
     };
+    public getLiveCandles = async (
+        signalId: string,
+        interval: CandleInterval,
+    ): Promise<ICandleData[]> => {
+        this.loggerService.log("exchangeViewService getLiveCandles", {
+            signalId,
+            interval,
+        });
+        if (CC_ENABLE_MOCK) {
+            return await this.exchangeMockService.getLiveCandles(signalId, interval);
+        }
+        const { data, error } = await fetchApi("/api/v1/view/candles_live", {
+            method: "POST",
+            body: JSON.stringify({
+                clientId: CC_CLIENT_ID,
+                serviceName: CC_SERVICE_NAME,
+                userId: CC_USER_ID,
+                requestId: randomString(),
+                signalId,
+                interval,
+            }),
+        });
+        if (error) {
+            throw new Error(error);
+        }
+        return data;
+    };
 }
 
 export default ExchangeViewService;

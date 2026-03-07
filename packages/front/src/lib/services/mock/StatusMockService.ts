@@ -8,7 +8,7 @@ import { singleshot } from "functools-kit";
 const MOCK_PATH = "./mock/status.json";
 
 const READ_STATUS_LIST_FN = singleshot(
-  async (): Promise<IPublicSignalRow[]> => {
+  async () => {
     const data = await fs.readFile(MOCK_PATH, "utf-8");
     return JSON.parse(data);
   },
@@ -45,7 +45,7 @@ export class StatusMockService {
     const positionLevels = (signal._entry ?? []).map((e) => e.price);
     const positionPartials = signal._partial ?? [];
     return {
-      signalId: signal.id,
+      signalId: signal.signalId,
       position: signal.position,
       symbol: signal.symbol,
       exchangeName: signal.exchangeName,

@@ -5,6 +5,8 @@ import { CandleInterval } from "backtest-kit";
 import StorageMockService from "./StorageMockService";
 import ExchangeService from "../base/ExchangeService";
 
+const MS_PER_MINUTE = 60_000;
+
 export class ExchangeMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly storageMockService = inject<StorageMockService>(
@@ -34,6 +36,30 @@ export class ExchangeMockService {
       exchangeName: signal.exchangeName,
       signalStartTime: createdAt,
       signalStopTime: updatedAt,
+      interval,
+    });
+  };
+
+  public getLiveCandles = async (signalId: string, interval: CandleInterval) => {
+    this.loggerService.log("exchangeMockService getLiveCandles", {
+      signalId,
+      interval,
+    });
+    const signal = await this.storageMockService.findSignalById(signalId);
+    if (!signal) {
+      throw new Error(`Signal with ID ${signalId} not found`);
+    }
+    const {
+      pendingAt,
+      scheduledAt,
+      createdAt = pendingAt || scheduledAt,
+      minuteEstimatedTime,
+    } = signal;
+    return await this.exchangeService.getRangeCandles({
+      symbol: signal.symbol,
+      exchangeName: signal.exchangeName,
+      signalStartTime: createdAt,
+      signalStopTime: createdAt + minuteEstimatedTime * MS_PER_MINUTE,
       interval,
     });
   };

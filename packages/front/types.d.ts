@@ -75,6 +75,7 @@ declare class ExchangeMockService {
     private readonly storageMockService;
     private readonly exchangeService;
     getSignalCandles: (signalId: string, interval: CandleInterval) => Promise<backtest_kit.ICandleData[]>;
+    getLiveCandles: (signalId: string, interval: CandleInterval) => Promise<backtest_kit.ICandleData[]>;
 }
 
 declare class LogMockService {
@@ -86,42 +87,29 @@ declare class LogMockService {
 
 declare class StatusMockService {
     private readonly loggerService;
-    getStatusList: () => Promise<{
-        id: string;
-        symbol: string;
-        strategyName: string;
-        exchangeName: string;
-        status: "pending";
-    }[]>;
-    getStatusMap: () => Promise<{}>;
+    getStatusList: () => Promise<any>;
+    getStatusMap: () => Promise<any>;
     getStatusOne: (id: string) => Promise<{
-        signalId: string;
-        position: "long" | "short";
-        symbol: string;
-        exchangeName: string;
-        strategyName: string;
-        totalEntries: number;
-        totalPartials: number;
-        originalPriceStopLoss: number;
-        originalPriceTakeProfit: number;
-        originalPriceOpen: number;
-        priceOpen: number;
-        priceTakeProfit: number;
-        priceStopLoss: number;
-        pnlPercentage: number;
-        pnlCost: number;
-        pnlEntries: number;
-        partialExecuted: number;
-        pendingAt: number;
-        positionLevels: number[];
-        positionPartials: {
-            type: "profit" | "loss";
-            percent: number;
-            currentPrice: number;
-            costBasisAtClose: number;
-            entryCountAtClose: number;
-            debugTimestamp?: number;
-        }[];
+        signalId: any;
+        position: any;
+        symbol: any;
+        exchangeName: any;
+        strategyName: any;
+        totalEntries: any;
+        totalPartials: any;
+        originalPriceStopLoss: any;
+        originalPriceTakeProfit: any;
+        originalPriceOpen: any;
+        priceOpen: any;
+        priceTakeProfit: any;
+        priceStopLoss: any;
+        pnlPercentage: any;
+        pnlCost: any;
+        pnlEntries: any;
+        partialExecuted: any;
+        pendingAt: any;
+        positionLevels: any;
+        positionPartials: any;
     }>;
 }
 
@@ -137,42 +125,29 @@ declare class NotificationViewService {
 declare class StatusViewService {
     private readonly loggerService;
     private readonly statusMockService;
-    getStatusList: () => Promise<{
-        id: string;
-        symbol: string;
-        strategyName: string;
-        exchangeName: string;
-        status: "pending" | "fulfilled" | "rejected" | "ready";
-    }[]>;
-    getStatusMap: () => Promise<{}>;
+    getStatusList: () => Promise<any>;
+    getStatusMap: () => Promise<any>;
     getStatusOne: (id: string) => Promise<{
-        signalId: string;
-        position: "long" | "short";
-        symbol: string;
-        exchangeName: string;
-        strategyName: string;
-        totalEntries: number;
-        totalPartials: number;
-        originalPriceStopLoss: number;
-        originalPriceTakeProfit: number;
-        originalPriceOpen: number;
-        priceOpen: number;
-        priceTakeProfit: number;
-        priceStopLoss: number;
-        pnlPercentage: number;
-        pnlCost: number;
-        pnlEntries: number;
-        partialExecuted: number;
-        pendingAt: number;
-        positionLevels: number[];
-        positionPartials: {
-            type: "profit" | "loss";
-            percent: number;
-            currentPrice: number;
-            costBasisAtClose: number;
-            entryCountAtClose: number;
-            debugTimestamp?: number;
-        }[];
+        signalId: any;
+        position: any;
+        symbol: any;
+        exchangeName: any;
+        strategyName: any;
+        totalEntries: any;
+        totalPartials: any;
+        originalPriceStopLoss: any;
+        originalPriceTakeProfit: any;
+        originalPriceOpen: any;
+        priceOpen: any;
+        priceTakeProfit: any;
+        priceStopLoss: any;
+        pnlPercentage: any;
+        pnlCost: any;
+        pnlEntries: any;
+        partialExecuted: any;
+        pendingAt: any;
+        positionLevels: any;
+        positionPartials: any;
     }>;
 }
 
@@ -191,6 +166,7 @@ declare class ExchangeViewService {
     private readonly exchangeService;
     private readonly exchangeMockService;
     getSignalCandles: (signalId: string, interval: CandleInterval) => Promise<backtest_kit.ICandleData[]>;
+    getLiveCandles: (signalId: string, interval: CandleInterval) => Promise<backtest_kit.ICandleData[]>;
 }
 
 declare class LogViewService {

@@ -169,6 +169,34 @@ router.post("/api/v1/view/candles_point", async (req, res) => {
   }
 });
 
+router.post("/api/v1/view/candles_live", async (req, res) => {
+  try {
+    const request = <SignalCandlesRequest>await micro.json(req);
+    const { signalId, interval, requestId, serviceName } = request;
+    const data = await ioc.exchangeViewService.getLiveCandles(signalId, interval);
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/view/candles_live ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/view/candles_live error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
 // NotificationViewService endpoints
 router.post("/api/v1/view/notification_list", async (req, res) => {
   try {

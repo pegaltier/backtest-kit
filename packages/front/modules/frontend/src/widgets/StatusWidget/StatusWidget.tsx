@@ -81,12 +81,7 @@ export const StatusWidget = ({
 
     const [candles, { loading }] = useAsyncValue(
         async () => {
-            return await ioc.exchangeViewService.getPointCandles({
-                currentTime: new Date(data.pendingAt).getTime(),
-                exchangeName: data.exchangeName,
-                interval: "1m",
-                symbol: data.symbol,
-            });
+            return await ioc.exchangeViewService.getLiveCandles(data.signalId, "1m")
         },
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
