@@ -73,6 +73,7 @@ export class StatusViewService {
       return null;
     }
     return {
+      signalId: pendingSignal.id,
       position: pendingSignal.position,
       totalEntries: pendingSignal.totalEntries,
       totalPartials: pendingSignal.totalPartials,

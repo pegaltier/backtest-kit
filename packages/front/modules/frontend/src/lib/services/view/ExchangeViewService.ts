@@ -19,7 +19,7 @@ export class ExchangeViewService {
     public getSignalCandles = async (
         signalId: string,
         interval: CandleInterval,
-    ): Promise<ICandleData> => {
+    ): Promise<ICandleData[]> => {
         this.loggerService.log("exchangeViewService getSignalCandles", {
             signalId,
             interval,

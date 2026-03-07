@@ -19,6 +19,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import IndicatorValueWidget from "../widgets/IndicatorValueWidget";
+import StatusWidget from "../widgets/StatusWidget";
 
 const CC_CELL_PADDING = "7px";
 
@@ -134,7 +135,6 @@ export const status_fields: TypedField[] = [
         tabletColumns: "12",
         phoneColumns: "12",
         fields: [
-            // Center-left: Price Levels
             {
                 type: FieldType.Hero,
                 height: `min(calc(100vh * 0.5), 700px)`,
@@ -145,7 +145,7 @@ export const status_fields: TypedField[] = [
                 bottom: CC_CELL_PADDING,
                 child: {
                     type: FieldType.Component,
-                    element: () => <Paper sx={{ height: "100%", width: "100%" }} />,
+                    element: (data) => <StatusWidget data={data} sx={{ height: "100%", width: "100%" }} />,
                 },
             },
 

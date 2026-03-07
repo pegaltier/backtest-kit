@@ -7,7 +7,7 @@ import { CC_CLIENT_ID, CC_SERVICE_NAME, CC_USER_ID } from "../../../config/param
 export class ExchangeMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public getSignalCandles = async (signalId: string, interval: CandleInterval): Promise<ICandleData> => {
+  public getSignalCandles = async (signalId: string, interval: CandleInterval): Promise<ICandleData[]> => {
     this.loggerService.log("exchangeMockService getSignalCandles", {
       signalId,
       interval,

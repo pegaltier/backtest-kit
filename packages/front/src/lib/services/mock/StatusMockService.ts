@@ -45,6 +45,7 @@ export class StatusMockService {
     const positionLevels = (signal._entry ?? []).map((e) => e.price);
     const positionPartials = signal._partial ?? [];
     return {
+      signalId: signal.id,
       position: signal.position,
       totalEntries: signal.totalEntries,
       totalPartials: signal.totalPartials,

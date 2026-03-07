@@ -1,6 +1,6 @@
 [
   {
-    "id": "live-0001-0000-4000-a000-000000000001",
+    "id": "1b0cdc9a-438c-4000-ab7a-6e3b71306000",
     "symbol": "BTCUSDT",
     "strategyName": "main_strategy",
     "exchangeName": "binance_exchange",
@@ -34,7 +34,7 @@
     "_partial": []
   },
   {
-    "id": "live-0002-0000-4000-a000-000000000002",
+    "id": "1ded7c80-9180-4000-aafe-5c6882c4f000",
     "symbol": "ETHUSDT",
     "strategyName": "main_strategy",
     "exchangeName": "binance_exchange",
@@ -77,7 +77,7 @@
     ]
   },
   {
-    "id": "live-0003-0000-4000-a000-000000000003",
+    "id": "1fe39548-656a-4000-a9d5-f5b249afb000",
     "symbol": "SOLUSDT",
     "strategyName": "main_strategy",
     "exchangeName": "binance_exchange",
@@ -128,7 +128,7 @@
     ]
   },
   {
-    "id": "live-0004-0000-4000-a000-000000000004",
+    "id": "3f12f184-80ef-4000-a258-5a8bd6cdb000",
     "symbol": "BNBUSDT",
     "strategyName": "scalp_strategy",
     "exchangeName": "binance_exchange",
@@ -162,7 +162,7 @@
     "_partial": []
   },
   {
-    "id": "live-0005-0000-4000-a000-000000000005",
+    "id": "4ed8fdea-659f-4000-ae92-a00faa05e000",
     "symbol": "XRPUSDT",
     "strategyName": "scalp_strategy",
     "exchangeName": "binance_exchange",
@@ -197,7 +197,7 @@
     "_partial": []
   },
   {
-    "id": "live-0006-0000-4000-a000-000000000006",
+    "id": "19bd9e5f-caa8-4000-ac20-6db27ffa9000",
     "symbol": "ADAUSDT",
     "strategyName": "scalp_strategy",
     "exchangeName": "binance_exchange",
@@ -239,7 +239,7 @@
     ]
   },
   {
-    "id": "live-0007-0000-4000-a000-000000000007",
+    "id": "85bd54b6-b914-4000-a1f6-0b0894618000",
     "symbol": "DOGEUSDT",
     "strategyName": "swing_strategy",
     "exchangeName": "binance_exchange",
@@ -273,7 +273,7 @@
     "_partial": []
   },
   {
-    "id": "live-0008-0000-4000-a000-000000000008",
+    "id": "724f8c3c-8b8d-4000-a694-f8c99a049000",
     "symbol": "ADAUSDT",
     "strategyName": "swing_strategy",
     "exchangeName": "binance_exchange",

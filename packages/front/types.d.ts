@@ -95,6 +95,7 @@ declare class StatusMockService {
     }[]>;
     getStatusMap: () => Promise<{}>;
     getStatusOne: (id: string) => Promise<{
+        signalId: string;
         position: "long" | "short";
         totalEntries: number;
         totalPartials: number;
@@ -141,6 +142,7 @@ declare class StatusViewService {
     }[]>;
     getStatusMap: () => Promise<{}>;
     getStatusOne: (id: string) => Promise<{
+        signalId: string;
         position: "long" | "short";
         totalEntries: number;
         totalPartials: number;

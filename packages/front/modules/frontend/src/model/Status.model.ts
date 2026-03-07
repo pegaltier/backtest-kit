@@ -11,7 +11,8 @@ type Partial = {
 type Level = number;
 
 export interface StatusModel {
-    position: IPublicSignalRow["position"];
+    position: "short" | "long";
+    signalId: string;
     totalEntries: number;
     totalPartials: number;
     originalPriceStopLoss: number;
