@@ -16,6 +16,7 @@ import { KeyboardArrowLeft, Refresh } from "@mui/icons-material";
 import IconWrapper from "../../../../components/common/IconWrapper";
 import ioc from "../../../../lib";
 import { Background } from "../../../../components/common/Background";
+import { get } from "lodash";
 
 const options: IBreadcrumbs2Option[] = [
     {
@@ -33,6 +34,11 @@ const options: IBreadcrumbs2Option[] = [
         action: "back-action",
         label: "Status",
     },
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        compute: (payload) => payload ? `${String(payload.symbol).toUpperCase()} (${payload.strategyName})` : "Live",
+    },
 ];
 
 const actions: IBreadcrumbs2Action[] = [
@@ -46,6 +52,19 @@ const actions: IBreadcrumbs2Action[] = [
 const reloadSubject = new Subject<void>();
 
 export const StatusView = ({ params }: IOutletProps) => {
+
+    const [payload] = useAsyncValue(
+        async () => {
+            const statusMap = await ioc.statusViewService.getStatusMap();
+            return get(statusMap, params.id, null);
+        },
+        {
+            onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
+            onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+            deps: [params.id],
+        },
+    )
+
     const [data, { loading, execute }] = useAsyncValue(
         async () => {
             return await ioc.statusViewService.getStatusOne(params.id);
@@ -53,6 +72,7 @@ export const StatusView = ({ params }: IOutletProps) => {
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
             onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+            deps: [params.id],
         },
     );
 
@@ -114,6 +134,7 @@ export const StatusView = ({ params }: IOutletProps) => {
             <Breadcrumbs2
                 items={options}
                 actions={actions}
+                payload={payload}
                 onAction={handleAction}
             />
             {renderInner()}

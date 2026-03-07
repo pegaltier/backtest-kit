@@ -154,6 +154,7 @@ export const status_fields: TypedField[] = [
                         originalPriceOpen,
                         originalPriceTakeProfit,
                         originalPriceStopLoss,
+                        pnlPercentage,
                     }) => (
                         <Paper
                             sx={{
@@ -195,7 +196,7 @@ export const status_fields: TypedField[] = [
                                         label: "Entry",
                                         current: priceOpen,
                                         original: originalPriceOpen,
-                                        color: COLOR_BLUE,
+                                        color: pnlColor(pnlPercentage),
                                     },
                                     {
                                         label: "Take Profit",
@@ -209,13 +210,13 @@ export const status_fields: TypedField[] = [
                                         original: originalPriceStopLoss,
                                         color: COLOR_RED,
                                     },
-                                ].map(({ label, current, original }) => (
+                                ].map(({ label, current, original, color }) => (
                                     <Stack key={label} direction="column" spacing={0.5}>
                                         <Typography variant="caption" sx={{ opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 }}>
                                             {label}
                                         </Typography>
                                         <Stack direction="row" alignItems="baseline" spacing={1.5}>
-                                            <Typography variant="h6" fontWeight={700}>
+                                            <Typography variant="h6" fontWeight={700} color={color}>
                                                 {current.toLocaleString()}
                                             </Typography>
                                             {current !== original && (
@@ -407,10 +408,10 @@ export const status_fields: TypedField[] = [
                         minHeight: "calc(465px / 2)",
                         child: {
                             type: FieldType.Component,
-                            element: ({ totalPartials }) => (
+                            element: ({ totalPartials, pnlPercentage }) => (
                                 <IndicatorValueWidget
-                                    color={COLOR_PURPLE}
-                                    label="Planned Partials"
+                                    color={totalPartials > 0 ? pnlColor(pnlPercentage) : COLOR_PURPLE}
+                                    label="Partials Done"
                                     value={totalPartials}
                                     icon={PieChart}
                                 />
@@ -428,10 +429,10 @@ export const status_fields: TypedField[] = [
                         minHeight: "calc(465px / 2)",
                         child: {
                             type: FieldType.Component,
-                            element: ({ partialExecuted }) => (
+                            element: ({ partialExecuted, pnlPercentage }) => (
                                 <IndicatorValueWidget
-                                    color={COLOR_BLUE}
-                                    label="Executed %"
+                                    color={partialExecuted > 0 ? pnlColor(pnlPercentage) : COLOR_BLUE}
+                                    label="Closed %"
                                     value={`${partialExecuted}%`}
                                     icon={DonutLarge}
                                 />
