@@ -14,6 +14,7 @@ import { breakevenNewTakeProfitPrice } from "../math/breakevenNewTakeProfitPrice
 import { Broker } from "../classes/Broker";
 import { GLOBAL_CONFIG } from "../config/params";
 import { not } from "functools-kit";
+import { IPositionOverlapLadder, POSITION_OVERLAP_LADDER_DEFAULT } from "../config/ladder";
 
 const CANCEL_SCHEDULED_METHOD_NAME = "strategy.commitCancelScheduled";
 const CLOSE_PENDING_METHOD_NAME = "strategy.commitClosePending";
@@ -44,6 +45,7 @@ const GET_POSITION_PNL_COST_METHOD_NAME = "strategy.getPositionPnlCost";
 const GET_POSITION_LEVELS_METHOD_NAME = "strategy.getPositionLevels";
 const GET_POSITION_PARTIALS_METHOD_NAME = "strategy.getPositionPartials";
 const GET_POSITION_ENTRIES_METHOD_NAME = "strategy.getPositionEntries";
+const GET_POSITION_OVERLAP_METHOD_NAME = "strategy.getPositionOverlap";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -1587,4 +1589,63 @@ export async function getPositionEntries(symbol: string) {
     symbol,
     { exchangeName, frameName, strategyName },
   );
+}
+
+/**
+ * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
+ * Use this to prevent duplicate DCA entries at the same price area.
+ *
+ * Returns true if currentPrice is within [level - lowerStep, level + upperStep] for any level,
+ * where step = level * percent / 100.
+ * Returns false if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Price to check against existing DCA levels
+ * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 5% up and down)
+ * @returns Promise<boolean> - true if price overlaps an existing level (DCA not recommended)
+ *
+ * @example
+ * ```typescript
+ * import { getPositionOverlap } from "backtest-kit";
+ *
+ * // LONG with levels [43000, 42000], check if 42100 is too close to 42000
+ * const overlap = await getPositionOverlap("BTCUSDT", 42100, { upperPercent: 5, lowerPercent: 5 });
+ * // overlap = true (42100 is within 5% of 42000 = [39900, 44100])
+ * if (!overlap) {
+ *   await commitAverageBuy("BTCUSDT");
+ * }
+ * ```
+ */
+export async function getPositionOverlap(
+  symbol: string,
+  currentPrice: number,
+  ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
+): Promise<boolean> {
+  backtest.loggerService.info(GET_POSITION_OVERLAP_METHOD_NAME, {
+    symbol,
+    currentPrice,
+    ladder,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionOverlap requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionOverlap requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  const levels = await backtest.strategyCoreService.getPositionLevels(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!levels) {
+    return false;
+  }
+  return levels.some((level) => {
+    const upperStep = level * ladder.upperPercent / 100;
+    const lowerStep = level * ladder.lowerPercent / 100;
+    return currentPrice >= level - lowerStep && currentPrice <= level + upperStep;
+  });
 }

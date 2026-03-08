@@ -20,6 +20,10 @@ import { percentToCloseCost } from "../math/percentToCloseCost";
 import { breakevenNewStopLossPrice } from "../math/breakevenNewStopLossPrice";
 import { breakevenNewTakeProfitPrice } from "../math/breakevenNewTakeProfitPrice";
 import { Broker } from "./Broker";
+import {
+  IPositionOverlapLadder,
+  POSITION_OVERLAP_LADDER_DEFAULT,
+} from "../config/ladder";
 
 const BACKTEST_METHOD_NAME_RUN = "BacktestUtils.run";
 const BACKTEST_METHOD_NAME_BACKGROUND = "BacktestUtils.background";
@@ -53,6 +57,8 @@ const BACKTEST_METHOD_NAME_GET_POSITION_PARTIALS =
   "BacktestUtils.getPositionPartials";
 const BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES =
   "BacktestUtils.getPositionEntries";
+const BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP =
+  "BacktestUtils.getPositionOverlap";
 const BACKTEST_METHOD_NAME_BREAKEVEN = "Backtest.commitBreakeven";
 const BACKTEST_METHOD_NAME_CANCEL_SCHEDULED = "Backtest.commitCancelScheduled";
 const BACKTEST_METHOD_NAME_CLOSE_PENDING = "Backtest.commitClosePending";
@@ -1448,6 +1454,84 @@ export class BacktestUtils {
       symbol,
       context,
     );
+  };
+
+  /**
+   * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
+   * Use this to prevent duplicate DCA entries at the same price area.
+   *
+   * Returns true if currentPrice is within [level - lowerStep, level + upperStep] for any level,
+   * where step = level * percent / 100.
+   * Returns false if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Price to check against existing DCA levels
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+   * @returns true if price overlaps an existing level (DCA not recommended)
+   */
+  public getPositionOverlap = async (
+    symbol: string,
+    currentPrice: number,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+    ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
+  ): Promise<boolean> => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP, {
+      symbol,
+      currentPrice,
+      context,
+      ladder,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_OVERLAP,
+          ),
+        );
+    }
+
+    const levels = await backtest.strategyCoreService.getPositionLevels(
+      true,
+      symbol,
+      context,
+    );
+    if (!levels) {
+      return false;
+    }
+    return levels.some((level) => {
+      const upperStep = (level * ladder.upperPercent) / 100;
+      const lowerStep = (level * ladder.lowerPercent) / 100;
+      return currentPrice >= level - lowerStep && currentPrice <= level + upperStep;
+    });
   };
 
   /**

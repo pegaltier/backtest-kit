@@ -36,6 +36,7 @@ export {
   getPositionPnlCost,
   getPositionLevels,
   getPositionPartials,
+  getPositionOverlap,
 } from "./function/strategy";
 export { stopStrategy } from "./function/control";
 export { shutdown } from "./function/shutdown.function";
