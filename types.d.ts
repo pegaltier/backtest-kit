@@ -2851,6 +2851,23 @@ interface IStrategy {
      */
     getPositionPnlCost: (symbol: string, currentPrice: number) => Promise<number | null>;
     /**
+     * Returns the list of DCA entry prices and costs for the current pending signal.
+     *
+     * Each entry records the price and cost of a single position entry.
+     * The first element is always the original priceOpen (initial entry).
+     * Each subsequent element is an entry added by averageBuy().
+     *
+     * Returns null if no pending signal exists.
+     * Returns a single-element array [{ price: priceOpen, cost }] if no DCA entries were made.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to array of entry records or null
+     */
+    getPositionEntries: (symbol: string) => Promise<Array<{
+        price: number;
+        cost: number;
+    }> | null>;
+    /**
      * Fast backtest using historical candles.
      * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
      *
@@ -4698,7 +4715,7 @@ declare function getTotalCostClosed(symbol: string): Promise<number>;
  * }
  * ```
  */
-declare function getPendingSignal(symbol: string): Promise<ISignalRow>;
+declare function getPendingSignal(symbol: string): Promise<IPublicSignalRow>;
 /**
  * Returns the currently active scheduled signal for the strategy.
  * If no scheduled signal exists, returns null.
@@ -11418,7 +11435,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<ISignalRow>;
+    }) => Promise<IPublicSignalRow>;
     /**
      * Returns the percentage of the position currently held (not closed).
      * 100 = nothing has been closed (full position), 0 = fully closed.
@@ -11630,6 +11647,31 @@ declare class BacktestUtils {
         costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
+    }[]>;
+    /**
+     * Returns the list of DCA entry prices and costs for the current pending signal.
+     *
+     * Each element represents a single position entry — the initial open or a subsequent
+     * DCA entry added via commitAverageBuy.
+     *
+     * Returns null if no pending signal exists.
+     * Returns a single-element array if no DCA entries were made.
+     *
+     * Each entry contains:
+     * - `price` — execution price of this entry
+     * - `cost` — dollar cost allocated to this entry (e.g. 100 for $100)
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Array of entry records, or null if no active position
+     */
+    getPositionEntries: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        cost: number;
     }[]>;
     /**
      * Stops the strategy from generating new signals.
@@ -12488,7 +12530,7 @@ declare class LiveUtils {
     getPendingSignal: (symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }) => Promise<ISignalRow>;
+    }) => Promise<IPublicSignalRow>;
     /**
      * Returns the percentage of the position currently held (not closed).
      * 100 = nothing has been closed (full position), 0 = fully closed.
@@ -12688,6 +12730,30 @@ declare class LiveUtils {
         costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
+    }[]>;
+    /**
+     * Returns the list of DCA entry prices and costs for the current pending signal.
+     *
+     * Each element represents a single position entry — the initial open or a subsequent
+     * DCA entry added via commitAverageBuy.
+     *
+     * Returns null if no pending signal exists.
+     * Returns a single-element array if no DCA entries were made.
+     *
+     * Each entry contains:
+     * - `price` — execution price of this entry
+     * - `cost` — dollar cost allocated to this entry (e.g. 100 for $100)
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Array of entry records, or null if no active position
+     */
+    getPositionEntries: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<{
+        price: number;
+        cost: number;
     }[]>;
     /**
      * Stops the strategy from generating new signals.
@@ -20652,7 +20718,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<ISignalRow | null>;
+    }) => Promise<IPublicSignalRow | null>;
     /**
      * Returns the percentage of the position currently held (not closed).
      * 100 = nothing has been closed (full position), 0 = fully closed.
@@ -20723,6 +20789,14 @@ declare class StrategyConnectionService implements TStrategy$1 {
         costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
+    }[]>;
+    getPositionEntries: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        cost: number;
     }[]>;
     /**
      * Retrieves the currently active scheduled signal for the strategy.
@@ -21897,7 +21971,7 @@ declare class StrategyCoreService implements TStrategy {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }) => Promise<ISignalRow | null>;
+    }) => Promise<IPublicSignalRow | null>;
     /**
      * Returns the percentage of the position currently held (not closed).
      * 100 = nothing has been closed (full position), 0 = fully closed.
@@ -21968,6 +22042,14 @@ declare class StrategyCoreService implements TStrategy {
         costBasisAtClose: number;
         entryCountAtClose: number;
         debugTimestamp?: number;
+    }[]>;
+    getPositionEntries: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        cost: number;
     }[]>;
     /**
      * Retrieves the currently active scheduled signal for the symbol.
