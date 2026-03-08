@@ -1,4 +1,4 @@
-import { IconButton, Paper, SxProps, Typography } from "@mui/material";
+import { Chip, IconButton, Paper, SxProps, Typography } from "@mui/material";
 import StatusModel from "../../model/Status.model";
 import { makeStyles } from "../../styles";
 import { Info } from "@mui/icons-material";
@@ -35,13 +35,19 @@ const useStyles = makeStyles()((theme) => ({
         paddingRight: "4px",
         height: HEADER_HEIGHT,
     },
-    title: {
+    text: {
         opacity: 0.5,
         padding: 0,
         margin: 0,
         height: HEADER_HEIGHT,
         display: "flex",
         alignItems: "center",
+    },
+    title: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "8px",
     },
     icon: {
         opacity: 0.5,
@@ -81,7 +87,10 @@ export const StatusWidget = ({
 
     const [candles, { loading }] = useAsyncValue(
         async () => {
-            return await ioc.exchangeViewService.getLiveCandles(data.signalId, "1m")
+            return await ioc.exchangeViewService.getLiveCandles(
+                data.signalId,
+                "1m",
+            );
         },
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
@@ -117,12 +126,25 @@ export const StatusWidget = ({
         );
     };
 
+    const renderChip = () => {
+        if (data.position === "long") {
+            return <Chip variant="outlined" size="small" color="success" label="LONG" />;
+        }
+        if (data.position === "short") {
+            return <Chip variant="outlined" size="small" color="error" label="SHORT" />;
+        }
+        return null;
+    };
+
     return (
         <Paper className={classes.root}>
             <div className={classes.header}>
-                <Typography className={classes.title} variant="body1">
-                    Current Status
-                </Typography>
+                <div className={classes.title}>
+                    <Typography className={classes.text} variant="body1">
+                        Current Status
+                    </Typography>
+                    {renderChip()}
+                </div>
                 <IconButton
                     className={classes.icon}
                     size="small"
