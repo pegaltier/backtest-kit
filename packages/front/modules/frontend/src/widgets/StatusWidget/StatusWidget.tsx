@@ -83,7 +83,7 @@ export const StatusWidget = ({
     sx,
     data,
 }: IStatusWidgetProps) => {
-    const { classes } = useStyles();
+    const { classes, cx } = useStyles();
 
     const [candles, { loading }] = useAsyncValue(
         async () => {
@@ -128,16 +128,30 @@ export const StatusWidget = ({
 
     const renderChip = () => {
         if (data.position === "long") {
-            return <Chip variant="outlined" size="small" color="success" label="LONG" />;
+            return (
+                <Chip
+                    variant="outlined"
+                    size="small"
+                    color="success"
+                    label="LONG"
+                />
+            );
         }
         if (data.position === "short") {
-            return <Chip variant="outlined" size="small" color="error" label="SHORT" />;
+            return (
+                <Chip
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    label="SHORT"
+                />
+            );
         }
         return null;
     };
 
     return (
-        <Paper className={classes.root}>
+        <Paper className={cx(classes.root, className)} style={style} sx={sx}>
             <div className={classes.header}>
                 <div className={classes.title}>
                     <Typography className={classes.text} variant="body1">

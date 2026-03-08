@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 
 import IndicatorValueWidget from "../widgets/IndicatorValueWidget";
 import StatusWidget from "../widgets/StatusWidget";
+import AveragingWidget from "../widgets/AveragingWidget";
 
 const CC_CELL_PADDING = "7px";
 
@@ -157,7 +158,7 @@ export const status_fields: TypedField[] = [
                 bottom: CC_CELL_PADDING,
                 child: {
                     type: FieldType.Component,
-                    element: () => <Paper sx={{ height: "100%", width: "100%" }} />,
+                    element: (data) => <AveragingWidget data={data} sx={{ height: "100%", width: "100%" }} />,
                 },
             },
         ],
