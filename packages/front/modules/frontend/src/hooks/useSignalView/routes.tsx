@@ -4,12 +4,18 @@ import Candle1mView from "./view/Candle1mView";
 import Candle15mView from "./view/Candle15mView";
 import Candle1hView from "./view/Candle1hView";
 import NotificationView from "./view/NotificationView";
+import StatusView from "./view/StatusView";
 
 const hasMatch = (templates: string[], pathname: string) => {
   return templates.some((template) => template.includes(pathname));
 };
 
 export const routes: IOutletModal[] = [
+  {
+    id: "status",
+    element: StatusView,
+    isActive: (pathname) => hasMatch(["/status"], pathname),
+  },
   {
     id: "signal",
     element: SignalView,

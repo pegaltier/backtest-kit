@@ -15,15 +15,35 @@ import tabs from "./tabs";
 import { Box, Stack } from "@mui/material";
 import ioc from "../../lib";
 import CopyIcon from "./components/CopyIcon";
+import { IStorageSignalRow } from "backtest-kit";
 
-const DEFAULT_PATH = "/signal";
+const DEFAULT_PATH = "/status";
 const CACHE_TTL = 45_000;
 
 const history = createMemoryHistory();
 
 const fetchData = ttl(async (id: string) => {
+
+  const signal = await ioc.storageViewService.findSignalById(id) as IStorageSignalRow;
+
+  const positionEntries = signal._entry ?? [];
+  const positionLevels = positionEntries.map((e) => e.price);
+  const positionPartials = signal._partial ?? [];
+
+  const status = {
+    ...signal,
+    signalId: signal.id,
+    pnlPercentage: signal.pnl.pnlPercentage,
+    pnlCost: signal.pnl.pnlCost,
+    pnlEntries: signal.pnl.pnlEntries,
+    positionEntries,
+    positionLevels,
+    positionPartials,
+  };
+
   return {
-    signal: await ioc.storageViewService.findSignalById(id),
+    signal,
+    status,
     notification: await ioc.notificationViewService.findByFilter({ signalId: id }),
     candle_1m: await ioc.exchangeViewService.getSignalCandles(id, "1m"),
     candle_15m: await ioc.exchangeViewService.getSignalCandles(id, "15m"),
@@ -42,6 +62,13 @@ const handleDownload = async (pathname: string, id: string) => {
     const blob = new Blob([JSON.stringify(signal, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     ioc.layoutService.downloadFile(url, `signal_${signal.id}.json`);
+    return;
+  } 
+
+  if (pathname.includes("/status")) {
+    const blob = new Blob([JSON.stringify(signal, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `status_${signal.id}.json`);
     return;
   } 
 
@@ -75,7 +102,12 @@ const handleDownload = async (pathname: string, id: string) => {
 };
 
 const handleCopy = async (pathname: string, id: string, onCopy: (content: string) => void) => {
- const { candle_15m, candle_1h, candle_1m, signal, notification } = await fetchData(id);
+ const { candle_15m, candle_1h, candle_1m, signal, status, notification } = await fetchData(id);
+
+  if (pathname.includes("/status")) {
+    onCopy(JSON.stringify(status, null, 2));
+    return;
+  } 
 
   if (pathname.includes("/signal")) {
     onCopy(JSON.stringify(signal, null, 2));
@@ -112,6 +144,10 @@ export const useSignalView = () => {
   const [pathname$, setPathname] = useActualRef(history.location.pathname);
 
   const handleTabChange = (id: string) => {
+    if (id === "status") {
+      history.replace(`/status`);
+      setPathname(`/status`);
+    }
     if (id === "signal") {
       history.replace(`/signal`);
       setPathname(`/signal`);

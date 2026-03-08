@@ -2,6 +2,10 @@ import { ITabsStep } from "react-declarative";
 
 export const tabs: ITabsStep[] = [
   {
+    id: "status",
+    label: "Signal Status",
+  },
+  {
     id: "signal",
     label: "Signal State",
   },
