@@ -1,7 +1,8 @@
-import { Chip, IconButton, Paper, SxProps, Typography } from "@mui/material";
+import { Box, Chip, Paper, SxProps, Typography } from "@mui/material";
 import StatusModel from "../../model/Status.model";
 import { makeStyles } from "../../styles";
-import { AutoSizer, LoaderView, useAsyncValue } from "react-declarative";
+import { AutoSizer, formatAmount } from "react-declarative";
+import { Chart } from "react-chartjs-2";
 
 const HEADER_HEIGHT = "35px";
 
@@ -53,7 +54,6 @@ const useStyles = makeStyles()((theme) => ({
         right: 0,
         bottom: 0,
         height: `calc(100% - ${HEADER_HEIGHT})`,
-        padding: 5,
         width: "100%",
         background: "white",
         overflow: "hidden",
@@ -78,11 +78,150 @@ export const PartialWidget = ({
     className,
     style,
     sx,
+    data,
 }: IPartialWidgetProps) => {
     const { classes, cx } = useStyles();
 
     const renderInner = () => {
-        return null;
+        if (!data.positionPartials.length) {
+            return (
+                <Box sx={{ p: 1, color: "text.secondary" }}>
+                    <Typography variant="body2">No partial exits</Typography>
+                </Box>
+            );
+        }
+
+        const partialData = data.positionPartials.map((partial) => {
+            const entriesAtClose = data.positionEntries.slice(0, partial.entryCountAtClose);
+            const totalCost = entriesAtClose.reduce((s, e) => s + e.cost, 0);
+            const totalCoins = entriesAtClose.reduce((s, e) => s + e.cost / e.price, 0);
+            const effectiveEntry = totalCoins === 0 ? data.originalPriceOpen : totalCost / totalCoins;
+            const pnlPct =
+                data.position === "long"
+                    ? ((partial.currentPrice - effectiveEntry) / effectiveEntry) * 100
+                    : ((effectiveEntry - partial.currentPrice) / effectiveEntry) * 100;
+            const closedDollar = (partial.percent / 100) * partial.costBasisAtClose;
+            return { partial, effectiveEntry, pnlPct, closedDollar };
+        });
+
+        const totalClosed = partialData.reduce((s, d) => s + d.closedDollar, 0);
+        const ppCount = data.positionPartials.filter((p) => p.type === "profit").length;
+        const plCount = data.positionPartials.filter((p) => p.type === "loss").length;
+
+        const labels = partialData.map(({ partial }, i) =>
+            `#${i + 1} ${partial.type === "profit" ? "PP" : "PL"}`
+        );
+
+        const pnlColors = partialData.map(({ pnlPct }) =>
+            pnlPct >= 0 ? "rgba(76, 175, 80, 1)" : "rgba(244, 67, 54, 1)"
+        );
+
+        const pnlChartData = {
+            labels,
+            datasets: [
+                {
+                    label: "PNL %",
+                    data: partialData.map(({ pnlPct }) => pnlPct),
+                    backgroundColor: pnlColors.map((c) => c.replace(", 1)", ", 0.5)")),
+                    borderColor: pnlColors,
+                    borderWidth: 1,
+                },
+            ],
+        };
+
+        const pnlChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false as const,
+            layout: { padding: { top: 8, right: 8, bottom: 8, left: 8 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx: { dataIndex: number }) => {
+                            const { pnlPct } = partialData[ctx.dataIndex];
+                            return `PNL: ${pnlPct >= 0 ? "+" : ""}${pnlPct.toFixed(2)}%`;
+                        },
+                        afterBody: (items: { dataIndex: number }[]) => {
+                            const idx = items[0].dataIndex;
+                            const { partial, effectiveEntry, closedDollar } = partialData[idx];
+                            return [
+                                `Type: ${partial.type === "profit" ? "Partial Profit" : "Partial Loss"}`,
+                                `Exit price: ${formatAmount(partial.currentPrice)}$`,
+                                `Entry price: ${formatAmount(effectiveEntry)}$`,
+                                `Closed: ${partial.percent}% (${formatAmount(closedDollar)}$)`,
+                            ];
+                        },
+                    },
+                },
+            },
+            scales: {
+                y: {
+                    type: "linear" as const,
+                    title: { display: true, text: "PNL %" },
+                },
+            },
+        };
+
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "100%",
+                    height: "100%",
+                }}
+            >
+                <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <AutoSizer>
+                        {({ height, width }) => (
+                            <div style={{ height, width }}>
+                                <Chart type="bar" data={pnlChartData} options={pnlChartOptions} />
+                            </div>
+                        )}
+                    </AutoSizer>
+                </Box>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        px: 1,
+                        py: 0.5,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                        flexShrink: 0,
+                    }}
+                >
+                    <Typography variant="caption" color="text.secondary">
+                        Total
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                        {formatAmount(totalClosed)}$
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        PP
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        fontWeight="medium"
+                        sx={{ color: "success.main" }}
+                    >
+                        {ppCount}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        PL
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        fontWeight="medium"
+                        sx={{ color: "error.main" }}
+                    >
+                        {plCount}
+                    </Typography>
+                </Box>
+            </Box>
+        );
     };
 
     return (
