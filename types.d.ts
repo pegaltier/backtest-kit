@@ -4374,6 +4374,17 @@ declare function getRiskSchema(riskName: RiskName): IRiskSchema;
 declare function getActionSchema(actionName: ActionName): IActionSchema;
 
 /**
+ * Tolerance zone configuration for DCA overlap detection.
+ * Percentages are in 0–100 format (e.g. 5 means 5%).
+ */
+interface IPositionOverlapLadder {
+    /** Upper tolerance in percent (0–100): how far above each DCA level to flag as overlap */
+    upperPercent: number;
+    /** Lower tolerance in percent (0–100): how far below each DCA level to flag as overlap */
+    lowerPercent: number;
+}
+
+/**
  * Cancels the scheduled signal without stopping the strategy.
  *
  * Clears the scheduled signal (waiting for priceOpen activation).
@@ -4886,6 +4897,58 @@ declare function getPositionPartials(symbol: string): Promise<{
     entryCountAtClose: number;
     debugTimestamp?: number;
 }[]>;
+/**
+ * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
+ * Use this to prevent duplicate DCA entries at the same price area.
+ *
+ * Returns true if currentPrice is within [level - lowerStep, level + upperStep] for any level,
+ * where step = level * percent / 100.
+ * Returns false if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Price to check against existing DCA levels
+ * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+ * @returns Promise<boolean> - true if price overlaps an existing entry level (DCA not recommended)
+ *
+ * @example
+ * ```typescript
+ * import { getPositionEntryOverlap } from "backtest-kit";
+ *
+ * // LONG with levels [43000, 42000], check if 42100 is too close to 42000
+ * const overlap = await getPositionEntryOverlap("BTCUSDT", 42100, { upperPercent: 5, lowerPercent: 5 });
+ * // overlap = true (42100 is within 5% of 42000 = [39900, 44100])
+ * if (!overlap) {
+ *   await commitAverageBuy("BTCUSDT");
+ * }
+ * ```
+ */
+declare function getPositionEntryOverlap(symbol: string, currentPrice: number, ladder?: IPositionOverlapLadder): Promise<boolean>;
+/**
+ * Checks whether the current price falls within the tolerance zone of any existing partial close price.
+ * Use this to prevent duplicate partial closes at the same price area.
+ *
+ * Returns true if currentPrice is within [partial.currentPrice - lowerStep, partial.currentPrice + upperStep]
+ * for any partial, where step = partial.currentPrice * percent / 100.
+ * Returns false if no pending signal exists or no partials have been executed yet.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Price to check against existing partial close prices
+ * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+ * @returns Promise<boolean> - true if price overlaps an existing partial price (partial not recommended)
+ *
+ * @example
+ * ```typescript
+ * import { getPositionPartialOverlap } from "backtest-kit";
+ *
+ * // Partials at [45000], check if 45100 is too close
+ * const overlap = await getPositionPartialOverlap("BTCUSDT", 45100, { upperPercent: 1.5, lowerPercent: 1.5 });
+ * // overlap = true (45100 is within 1.5% of 45000)
+ * if (!overlap) {
+ *   await commitPartialProfit("BTCUSDT", 50);
+ * }
+ * ```
+ */
+declare function getPositionPartialOverlap(symbol: string, currentPrice: number, ladder?: IPositionOverlapLadder): Promise<boolean>;
 
 /**
  * Stops the strategy from generating new signals.
@@ -11687,6 +11750,44 @@ declare class BacktestUtils {
         cost: number;
     }[]>;
     /**
+     * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
+     * Use this to prevent duplicate DCA entries at the same price area.
+     *
+     * Returns true if currentPrice is within [level - lowerStep, level + upperStep] for any level,
+     * where step = level * percent / 100.
+     * Returns false if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Price to check against existing DCA levels
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+     * @returns true if price overlaps an existing entry level (DCA not recommended)
+     */
+    getPositionEntryOverlap: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, ladder?: IPositionOverlapLadder) => Promise<boolean>;
+    /**
+     * Checks whether the current price falls within the tolerance zone of any existing partial close price.
+     * Use this to prevent duplicate partial closes at the same price area.
+     *
+     * Returns true if currentPrice is within [partial.currentPrice - lowerStep, partial.currentPrice + upperStep]
+     * for any partial, where step = partial.currentPrice * percent / 100.
+     * Returns false if no pending signal exists or no partials have been executed yet.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Price to check against existing partial close prices
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+     * @returns true if price overlaps an existing partial price (partial not recommended)
+     */
+    getPositionPartialOverlap: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }, ladder?: IPositionOverlapLadder) => Promise<boolean>;
+    /**
      * Stops the strategy from generating new signals.
      *
      * Sets internal flag to prevent strategy from opening new signals.
@@ -12768,6 +12869,42 @@ declare class LiveUtils {
         price: number;
         cost: number;
     }[]>;
+    /**
+     * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
+     * Use this to prevent duplicate DCA entries at the same price area.
+     *
+     * Returns true if currentPrice is within [level - lowerStep, level + upperStep] for any level,
+     * where step = level * percent / 100.
+     * Returns false if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Price to check against existing DCA levels
+     * @param context - Execution context with strategyName and exchangeName
+     * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+     * @returns true if price overlaps an existing entry level (DCA not recommended)
+     */
+    getPositionEntryOverlap: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }, ladder?: IPositionOverlapLadder) => Promise<boolean>;
+    /**
+     * Checks whether the current price falls within the tolerance zone of any existing partial close price.
+     * Use this to prevent duplicate partial closes at the same price area.
+     *
+     * Returns true if currentPrice is within [partial.currentPrice - lowerStep, partial.currentPrice + upperStep]
+     * for any partial, where step = partial.currentPrice * percent / 100.
+     * Returns false if no pending signal exists or no partials have been executed yet.
+     *
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Price to check against existing partial close prices
+     * @param context - Execution context with strategyName and exchangeName
+     * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+     * @returns true if price overlaps an existing partial price (partial not recommended)
+     */
+    getPositionPartialOverlap: (symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }, ladder?: IPositionOverlapLadder) => Promise<boolean>;
     /**
      * Stops the strategy from generating new signals.
      *
@@ -25176,4 +25313,4 @@ declare const getTotalClosed: (signal: Signal) => {
     remainingCostBasis: number;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, type AverageBuyCommitNotification, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Broker, type BrokerAverageBuyPayload, BrokerBase, type BrokerBreakevenPayload, type BrokerPartialLossPayload, type BrokerPartialProfitPayload, type BrokerSignalClosePayload, type BrokerSignalOpenPayload, type BrokerTrailingStopPayload, type BrokerTrailingTakePayload, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type IBroker, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalCloseContract, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenContract, type SignalOpenedNotification, type SignalScheduledNotification, type SignalSyncCloseNotification, type SignalSyncContract, type SignalSyncOpenNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, Sync, type SyncEvent, type SyncStatisticsModel, type TBrokerCtor, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialLossCost, commitPartialProfit, commitPartialProfitCost, commitTrailingStop, commitTrailingStopCost, commitTrailingTake, commitTrailingTakeCost, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionAveragePrice, getPositionInvestedCost, getPositionInvestedCount, getPositionLevels, getPositionPartials, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, investedCostToPercent, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenSync, listenSyncOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentToCloseCost, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, slPercentShiftToPrice, slPriceToPercentShift, stopStrategy, toProfitLossDto, tpPercentShiftToPrice, tpPriceToPercentShift, validate, waitForCandle, warmCandles };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, type AverageBuyCommitNotification, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Broker, type BrokerAverageBuyPayload, BrokerBase, type BrokerBreakevenPayload, type BrokerPartialLossPayload, type BrokerPartialProfitPayload, type BrokerSignalClosePayload, type BrokerSignalOpenPayload, type BrokerTrailingStopPayload, type BrokerTrailingTakePayload, Cache, type CancelScheduledCommit, type CandleData, type CandleInterval, type ClosePendingCommit, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type IBroker, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalCloseContract, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenContract, type SignalOpenedNotification, type SignalScheduledNotification, type SignalSyncCloseNotification, type SignalSyncContract, type SignalSyncOpenNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, Sync, type SyncEvent, type SyncStatisticsModel, type TBrokerCtor, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialLossCost, commitPartialProfit, commitPartialProfitCost, commitTrailingStop, commitTrailingStopCost, commitTrailingTake, commitTrailingTakeCost, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionAveragePrice, getPositionEntryOverlap, getPositionInvestedCost, getPositionInvestedCount, getPositionLevels, getPositionPartialOverlap, getPositionPartials, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, investedCostToPercent, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenSync, listenSyncOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentToCloseCost, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, slPercentShiftToPrice, slPriceToPercentShift, stopStrategy, toProfitLossDto, tpPercentShiftToPrice, tpPriceToPercentShift, validate, waitForCandle, warmCandles };

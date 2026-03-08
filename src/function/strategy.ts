@@ -45,7 +45,8 @@ const GET_POSITION_PNL_COST_METHOD_NAME = "strategy.getPositionPnlCost";
 const GET_POSITION_LEVELS_METHOD_NAME = "strategy.getPositionLevels";
 const GET_POSITION_PARTIALS_METHOD_NAME = "strategy.getPositionPartials";
 const GET_POSITION_ENTRIES_METHOD_NAME = "strategy.getPositionEntries";
-const GET_POSITION_OVERLAP_METHOD_NAME = "strategy.getPositionOverlap";
+const GET_POSITION_ENTRY_OVERLAP_METHOD_NAME = "strategy.getPositionEntryOverlap";
+const GET_POSITION_PARTIAL_OVERLAP_METHOD_NAME = "strategy.getPositionPartialOverlap";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -1601,36 +1602,36 @@ export async function getPositionEntries(symbol: string) {
  *
  * @param symbol - Trading pair symbol
  * @param currentPrice - Price to check against existing DCA levels
- * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 5% up and down)
- * @returns Promise<boolean> - true if price overlaps an existing level (DCA not recommended)
+ * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+ * @returns Promise<boolean> - true if price overlaps an existing entry level (DCA not recommended)
  *
  * @example
  * ```typescript
- * import { getPositionOverlap } from "backtest-kit";
+ * import { getPositionEntryOverlap } from "backtest-kit";
  *
  * // LONG with levels [43000, 42000], check if 42100 is too close to 42000
- * const overlap = await getPositionOverlap("BTCUSDT", 42100, { upperPercent: 5, lowerPercent: 5 });
+ * const overlap = await getPositionEntryOverlap("BTCUSDT", 42100, { upperPercent: 5, lowerPercent: 5 });
  * // overlap = true (42100 is within 5% of 42000 = [39900, 44100])
  * if (!overlap) {
  *   await commitAverageBuy("BTCUSDT");
  * }
  * ```
  */
-export async function getPositionOverlap(
+export async function getPositionEntryOverlap(
   symbol: string,
   currentPrice: number,
   ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
 ): Promise<boolean> {
-  backtest.loggerService.info(GET_POSITION_OVERLAP_METHOD_NAME, {
+  backtest.loggerService.info(GET_POSITION_ENTRY_OVERLAP_METHOD_NAME, {
     symbol,
     currentPrice,
     ladder,
   });
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("getPositionOverlap requires an execution context");
+    throw new Error("getPositionEntryOverlap requires an execution context");
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("getPositionOverlap requires a method context");
+    throw new Error("getPositionEntryOverlap requires a method context");
   }
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
@@ -1644,8 +1645,67 @@ export async function getPositionOverlap(
     return false;
   }
   return levels.some((level) => {
-    const upperStep = level * ladder.upperPercent / 100;
-    const lowerStep = level * ladder.lowerPercent / 100;
+    const upperStep = (level * ladder.upperPercent) / 100;
+    const lowerStep = (level * ladder.lowerPercent) / 100;
     return currentPrice >= level - lowerStep && currentPrice <= level + upperStep;
+  });
+}
+
+/**
+ * Checks whether the current price falls within the tolerance zone of any existing partial close price.
+ * Use this to prevent duplicate partial closes at the same price area.
+ *
+ * Returns true if currentPrice is within [partial.currentPrice - lowerStep, partial.currentPrice + upperStep]
+ * for any partial, where step = partial.currentPrice * percent / 100.
+ * Returns false if no pending signal exists or no partials have been executed yet.
+ *
+ * @param symbol - Trading pair symbol
+ * @param currentPrice - Price to check against existing partial close prices
+ * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+ * @returns Promise<boolean> - true if price overlaps an existing partial price (partial not recommended)
+ *
+ * @example
+ * ```typescript
+ * import { getPositionPartialOverlap } from "backtest-kit";
+ *
+ * // Partials at [45000], check if 45100 is too close
+ * const overlap = await getPositionPartialOverlap("BTCUSDT", 45100, { upperPercent: 1.5, lowerPercent: 1.5 });
+ * // overlap = true (45100 is within 1.5% of 45000)
+ * if (!overlap) {
+ *   await commitPartialProfit("BTCUSDT", 50);
+ * }
+ * ```
+ */
+export async function getPositionPartialOverlap(
+  symbol: string,
+  currentPrice: number,
+  ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
+): Promise<boolean> {
+  backtest.loggerService.info(GET_POSITION_PARTIAL_OVERLAP_METHOD_NAME, {
+    symbol,
+    currentPrice,
+    ladder,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionPartialOverlap requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionPartialOverlap requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  const partials = await backtest.strategyCoreService.getPositionPartials(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!partials) {
+    return false;
+  }
+  return partials.some((partial) => {
+    const upperStep = (partial.currentPrice * ladder.upperPercent) / 100;
+    const lowerStep = (partial.currentPrice * ladder.lowerPercent) / 100;
+    return currentPrice >= partial.currentPrice - lowerStep && currentPrice <= partial.currentPrice + upperStep;
   });
 }

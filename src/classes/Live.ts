@@ -54,7 +54,8 @@ const LIVE_METHOD_NAME_GET_POSITION_PNL_COST = "LiveUtils.getPositionPnlCost";
 const LIVE_METHOD_NAME_GET_POSITION_LEVELS = "LiveUtils.getPositionLevels";
 const LIVE_METHOD_NAME_GET_POSITION_PARTIALS = "LiveUtils.getPositionPartials";
 const LIVE_METHOD_NAME_GET_POSITION_ENTRIES = "LiveUtils.getPositionEntries";
-const LIVE_METHOD_NAME_GET_POSITION_OVERLAP = "LiveUtils.getPositionOverlap";
+const LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP = "LiveUtils.getPositionEntryOverlap";
+const LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP = "LiveUtils.getPositionPartialOverlap";
 const LIVE_METHOD_NAME_BREAKEVEN = "Live.commitBreakeven";
 const LIVE_METHOD_NAME_CANCEL_SCHEDULED = "Live.cancelScheduled";
 const LIVE_METHOD_NAME_CLOSE_PENDING = "Live.closePending";
@@ -1438,15 +1439,15 @@ export class LiveUtils {
    * @param currentPrice - Price to check against existing DCA levels
    * @param context - Execution context with strategyName and exchangeName
    * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
-   * @returns true if price overlaps an existing level (DCA not recommended)
+   * @returns true if price overlaps an existing entry level (DCA not recommended)
    */
-  public getPositionOverlap = async (
+  public getPositionEntryOverlap = async (
     symbol: string,
     currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName },
     ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
   ): Promise<boolean> => {
-    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_OVERLAP, {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP, {
       symbol,
       currentPrice,
       context,
@@ -1454,11 +1455,11 @@ export class LiveUtils {
     });
     backtest.strategyValidationService.validate(
       context.strategyName,
-      LIVE_METHOD_NAME_GET_POSITION_OVERLAP,
+      LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP,
     );
     backtest.exchangeValidationService.validate(
       context.exchangeName,
-      LIVE_METHOD_NAME_GET_POSITION_OVERLAP,
+      LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP,
     );
 
     {
@@ -1467,20 +1468,20 @@ export class LiveUtils {
       riskName &&
         backtest.riskValidationService.validate(
           riskName,
-          LIVE_METHOD_NAME_GET_POSITION_OVERLAP,
+          LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP,
         );
       riskList &&
         riskList.forEach((riskName) =>
           backtest.riskValidationService.validate(
             riskName,
-            LIVE_METHOD_NAME_GET_POSITION_OVERLAP,
+            LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP,
           ),
         );
       actions &&
         actions.forEach((actionName) =>
           backtest.actionValidationService.validate(
             actionName,
-            LIVE_METHOD_NAME_GET_POSITION_OVERLAP,
+            LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP,
           ),
         );
     }
@@ -1501,6 +1502,84 @@ export class LiveUtils {
       const upperStep = (level * ladder.upperPercent) / 100;
       const lowerStep = (level * ladder.lowerPercent) / 100;
       return currentPrice >= level - lowerStep && currentPrice <= level + upperStep;
+    });
+  };
+
+  /**
+   * Checks whether the current price falls within the tolerance zone of any existing partial close price.
+   * Use this to prevent duplicate partial closes at the same price area.
+   *
+   * Returns true if currentPrice is within [partial.currentPrice - lowerStep, partial.currentPrice + upperStep]
+   * for any partial, where step = partial.currentPrice * percent / 100.
+   * Returns false if no pending signal exists or no partials have been executed yet.
+   *
+   * @param symbol - Trading pair symbol
+   * @param currentPrice - Price to check against existing partial close prices
+   * @param context - Execution context with strategyName and exchangeName
+   * @param ladder - Tolerance zone config; percentages in 0–100 format (default: 1.5% up and down)
+   * @returns true if price overlaps an existing partial price (partial not recommended)
+   */
+  public getPositionPartialOverlap = async (
+    symbol: string,
+    currentPrice: number,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+    ladder: IPositionOverlapLadder = POSITION_OVERLAP_LADDER_DEFAULT,
+  ): Promise<boolean> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP, {
+      symbol,
+      currentPrice,
+      context,
+      ladder,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_PARTIAL_OVERLAP,
+          ),
+        );
+    }
+
+    const partials = await backtest.strategyCoreService.getPositionPartials(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+    if (!partials) {
+      return false;
+    }
+    return partials.some((partial) => {
+      const upperStep = (partial.currentPrice * ladder.upperPercent) / 100;
+      const lowerStep = (partial.currentPrice * ladder.lowerPercent) / 100;
+      return currentPrice >= partial.currentPrice - lowerStep && currentPrice <= partial.currentPrice + upperStep;
     });
   };
 
