@@ -496,6 +496,9 @@ class ActionProxy implements IPublicAction {
    */
   public async signalSync(event: SignalSyncContract): Promise<void> {
     if (this._target.signalSync) {
+      console.error("Action::signalSync is unwanted cause it should be implemented in Broker.useBrokerAdapter as an infrastructure domain layer");
+      console.error("If you need to implement custom logic on signal open/close, please use signal(), signalBacktest(), signalLive()");
+      console.error("If Action::signalSync throws the exchange will not execute the order!");
       await this._target.signalSync(event);
     }
   }
@@ -994,23 +997,6 @@ class ActionBase implements IPublicAction {
   ): void | Promise<void> {
     backtest.loggerService.info(METHOD_NAME_RISK_REJECTION, {
       event,
-      source,
-    });
-  }
-
-  /**
-   * Gate for position open/close via limit order. Default allows all.
-   * Throw to reject — framework retries next tick.
-   *
-   * NOTE: Exceptions are NOT swallowed — they propagate to CREATE_SYNC_FN.
-   *
-   * @param event - Sync event with action "signal-open" or "signal-close"
-   */
-  public signalSync(
-    _event: SignalSyncContract,
-    source = DEFAULT_SOURCE,
-  ): void | Promise<void> {
-    backtest.loggerService.info(METHOD_NAME_SIGNAL_SYNC, {
       source,
     });
   }

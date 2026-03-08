@@ -546,6 +546,9 @@ export interface IAction {
    *
    * NOTE: Exceptions are NOT swallowed here — they propagate to CREATE_SYNC_FN.
    *
+   * @deprecated This method is not recommended for use. Implement custom logic in signal(), signalLive(), or signalBacktest() instead.
+   * If you need to implement custom logic on signal open/close, please use signal(), signalBacktest(), signalLive() instead.
+   * If Action::signalSync throws the exchange will not execute the order!
    * @param event - Sync event with action "signal-open" or "signal-close"
    */
   signalSync(event: SignalSyncContract): void | Promise<void>;

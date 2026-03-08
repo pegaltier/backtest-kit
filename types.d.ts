@@ -1792,6 +1792,9 @@ interface IAction {
      *
      * NOTE: Exceptions are NOT swallowed here — they propagate to CREATE_SYNC_FN.
      *
+     * @deprecated This method is not recommended for use. Implement custom logic in signal(), signalLive(), or signalBacktest() instead.
+     * If you need to implement custom logic on signal open/close, please use signal(), signalBacktest(), signalLive() instead.
+     * If Action::signalSync throws the exchange will not execute the order!
      * @param event - Sync event with action "signal-open" or "signal-close"
      */
     signalSync(event: SignalSyncContract): void | Promise<void>;
@@ -5165,7 +5168,7 @@ declare const GLOBAL_CONFIG: {
      * Allows to commitAverageBuy if currentPrice is not the lowest price since entry, but still lower than priceOpen.
      * This can help improve average entry price in cases where price has rebounded after entry but is still below priceOpen, without waiting for a new lower price.
      *
-     * Default: true (DCA logic enabled everywhere, not just when antirecord is broken)
+     * Default: false (DCA logic enabled only when antirecord is broken)
      */
     CC_ENABLE_DCA_EVERYWHERE: boolean;
     /**
@@ -18249,15 +18252,6 @@ declare class ActionBase implements IPublicAction {
      * ```
      */
     riskRejection(event: RiskContract, source?: string): void | Promise<void>;
-    /**
-     * Gate for position open/close via limit order. Default allows all.
-     * Throw to reject — framework retries next tick.
-     *
-     * NOTE: Exceptions are NOT swallowed — they propagate to CREATE_SYNC_FN.
-     *
-     * @param event - Sync event with action "signal-open" or "signal-close"
-     */
-    signalSync(_event: SignalSyncContract, source?: string): void | Promise<void>;
     /**
      * Cleans up resources and subscriptions when action handler is disposed.
      *
