@@ -1154,6 +1154,29 @@ export async function getBreakeven(
   );
 }
 
+/**
+ * Returns the effective (DCA-averaged) entry price for the current pending signal.
+ *
+ * This is the harmonic mean of all _entry prices, which is the correct
+ * cost-basis price used in all PNL calculations.
+ * With no DCA entries, equals the original priceOpen.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to effective entry price or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionAveragePrice } from "backtest-kit";
+ *
+ * const avgPrice = await getPositionAveragePrice("BTCUSDT");
+ * // No DCA: avgPrice === priceOpen
+ * // After DCA at lower price: avgPrice < priceOpen
+ * ```
+ */
 export async function getPositionAveragePrice(
   symbol: string,
 ): Promise<number | null> {
@@ -1176,6 +1199,28 @@ export async function getPositionAveragePrice(
   );
 }
 
+/**
+ * Returns the number of DCA entries made for the current pending signal.
+ *
+ * 1 = original entry only (no DCA).
+ * Increases by 1 with each successful commitAverageBuy().
+ *
+ * Returns null if no pending signal exists.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to entry count or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionInvestedCount } from "backtest-kit";
+ *
+ * const count = await getPositionInvestedCount("BTCUSDT");
+ * // No DCA: count === 1
+ * // After one DCA: count === 2
+ * ```
+ */
 export async function getPositionInvestedCount(
   symbol: string,
 ): Promise<number | null> {
@@ -1198,6 +1243,28 @@ export async function getPositionInvestedCount(
   );
 }
 
+/**
+ * Returns the total invested cost basis in dollars for the current pending signal.
+ *
+ * Equal to the sum of all _entry costs.
+ * 1 entry = $100, 2 entries = $200, etc. (assuming default COST_BASIS_PER_ENTRY).
+ *
+ * Returns null if no pending signal exists.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to total invested cost in dollars or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionInvestedCost } from "backtest-kit";
+ *
+ * const cost = await getPositionInvestedCost("BTCUSDT");
+ * // No DCA: cost === 100
+ * // After one DCA: cost === 200
+ * ```
+ */
 export async function getPositionInvestedCost(
   symbol: string,
 ): Promise<number | null> {
@@ -1220,6 +1287,29 @@ export async function getPositionInvestedCost(
   );
 }
 
+/**
+ * Returns the unrealized PNL percentage for the current pending signal at current market price.
+ *
+ * Accounts for partial closes, DCA entries, slippage and fees
+ * (delegates to toProfitLossDto).
+ *
+ * Returns null if no pending signal exists.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to PNL percentage or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionPnlPercent } from "backtest-kit";
+ *
+ * const pnlPct = await getPositionPnlPercent("BTCUSDT");
+ * // LONG at 100, current=105: pnlPct ≈ 5
+ * // LONG at 100, current=95: pnlPct ≈ -5
+ * ```
+ */
 export async function getPositionPnlPercent(
   symbol: string,
 ): Promise<number | null> {
@@ -1440,6 +1530,29 @@ export async function commitPartialLossCost(
   );
 }
 
+/**
+ * Returns the unrealized PNL in dollars for the current pending signal at current market price.
+ *
+ * Calculated as: pnlPercentage / 100 × totalInvestedCost.
+ * Accounts for partial closes, DCA entries, slippage and fees.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ * Automatically fetches current price via getAveragePrice.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to PNL in dollars or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionPnlCost } from "backtest-kit";
+ *
+ * const pnlCost = await getPositionPnlCost("BTCUSDT");
+ * // LONG at 100, invested $100, current=105: pnlCost ≈ 5
+ * // LONG at 100, invested $200 (DCA), current=95: pnlCost ≈ -10
+ * ```
+ */
 export async function getPositionPnlCost(
   symbol: string,
 ): Promise<number | null> {
