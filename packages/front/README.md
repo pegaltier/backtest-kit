@@ -67,25 +67,127 @@ setLogger({
 
 ## 📐 Dashboard Revenue Math
 
-The **Revenue** metrics on the dashboard are calculated in **dollar terms**, assuming a fixed position size of **$100 per DCA entry**.
+The **Revenue** metrics on the dashboard are calculated in **dollar terms** by summing the `pnlCost` field from all closed signals within each time window.
 
 ### Dollar PnL formula
 
 ```
-dollar_pnl = pnlPercentage × totalEntries
+revenue[window] = Σ signal.pnl.pnlCost   (for all closed signals in that window)
 ```
 
-| `totalEntries` | Effective position | Dollar PnL (example: +5%) |
-|:--------------:|-------------------:|-------------------------:|
-| 1 | $100 | +$5.00 |
-| 2 | $200 | +$10.00 |
-| 3 | $300 | +$15.00 |
+`pnlCost` is computed by the backend (`toProfitLossDto`) as:
 
-- **`pnlPercentage`** — percentage PnL as stored in the signal (e.g. `5` = 5 %). It does **not** change with DCA averaging.
-- **`totalEntries`** — number of DCA buy entries that were executed for the signal (`IPublicSignalRow.totalEntries`). A regular (non-DCA) signal has `totalEntries = 1`, so the formula degrades to the plain percentage.
-- **Fallback** — if `totalEntries` is `0` or absent (legacy data), the raw `pnlPercentage` is used as-is.
+```
+pnlCost = (pnlPercentage / 100) × pnlEntries
+```
 
-This scaling is applied to all time-window revenue fields: *today*, *yesterday*, *7 days*, and *31 days*.
+| Field | Source | Description |
+|-------|--------|-------------|
+| `pnl.pnlCost` | `IStorageSignalRow` | Absolute P&L in USD — the only value summed for revenue |
+| `pnl.pnlPercentage` | `IStorageSignalRow` | Percentage P&L (accounts for DCA-weighted entry price, slippage, and fees) |
+| `pnl.pnlEntries` | `IStorageSignalRow` | Total invested capital in USD — sum of all entry costs (`Σ entry.cost`) |
+
+**Example** (1 DCA entry at $100, position closed +5%):
+
+| DCA entries | `pnlEntries` | `pnlPercentage` | `pnlCost` |
+|:-----------:|-------------:|----------------:|----------:|
+| 1 | $100 | 5 % | +$5.00 |
+| 2 | $200 | 5 % | +$10.00 |
+| 3 | $300 | 5 % | +$15.00 |
+
+### Time windows
+
+The anchor point depends on execution mode:
+
+- **Backtest mode** — latest `updatedAt` across all closed signals (time windows are relative to the end of the run)
+- **Live mode** — `Date.now()` (wall-clock time)
+
+| Window | Range |
+|--------|-------|
+| Today | `>= startOf(anchorDay)` |
+| Yesterday | `[anchorDay − 1d, anchorDay)` |
+| 7 days | `>= anchorDay − 7d` |
+| 31 days | `>= anchorDay − 31d` |
+
+Revenue and signal count are tracked separately for each window and aggregated across all symbols on the Dashboard.
+
+## 📐 Position PNL Math
+
+### Effective entry price (DCA-weighted)
+
+When multiple DCA entries exist, the effective open price is a **cost-weighted harmonic mean**:
+
+```
+effectivePrice = Σcost / Σ(cost / price)
+```
+
+This is the correct formula for fixed-dollar entries (not simple average), because buying $100 worth at different prices gives different coin quantities.
+
+### Partial closes (PP/PL)
+
+Each partial stores a `costBasisAtClose` snapshot — the running dollar cost-basis **before** that partial fired. This avoids replaying the full entry history on every call.
+
+**Cost-basis replay:**
+
+```
+for each partial[i]:
+    closedDollar      += (percent[i] / 100) × costBasisAtClose[i]
+    remainingCostBasis = costBasisAtClose[i] × (1 - percent[i] / 100)
+
+# DCA entries added AFTER the last partial are appended:
+remainingCostBasis += Σ entry.cost for entries[lastEntryCount..]
+
+totalClosedPercent = closedDollar / totalInvested × 100
+```
+
+**Effective price through partials** is computed iteratively so that a partial sell does not change the entry price of the remaining coins:
+
+```
+# partial[0]:
+  effPrice = costBasisAtClose[0] / Σ(cost/price for entries[0..cnt[0]])
+
+# partial[j]:
+  remainingCB = prev.costBasisAtClose × (1 - prev.percent / 100)
+  oldCoins    = remainingCB / effPrice        ← coins still held
+  newCoins    = Σ(cost/price for DCA entries between j-1 and j)
+  effPrice    = (remainingCB + newCost) / (oldCoins + newCoins)
+```
+
+### toProfitLossDto — weighted PNL with slippage & fees
+
+**Without partials:**
+
+```
+priceOpenSlip  = effectivePrice × (1 ± slippage)
+priceCloseSlip = priceClose     × (1 ∓ slippage)
+
+pnlPercentage = (priceCloseSlip - priceOpenSlip) / priceOpenSlip × 100
+fee           = CC_PERCENT_FEE × (1 + priceCloseSlip / priceOpenSlip)
+pnlPercentage -= fee
+```
+
+**With partials — dollar-weighted sum:**
+
+```
+weight[i] = (percent[i] / 100 × costBasisAtClose[i]) / totalInvested
+
+totalWeightedPnl = Σ weight[i] × pnl[i]           # each partial at its own effectivePrice
+                 + remainingWeight × pnlRemaining   # rest closed at final priceClose
+
+fee = CC_PERCENT_FEE                                              # open (once)
+    + Σ CC_PERCENT_FEE × weight[i] × (closeSlip[i] / openSlip[i])  # per partial
+    + CC_PERCENT_FEE × remainingWeight × (closeSlip / openSlip)     # final close
+
+pnlPercentage = totalWeightedPnl - fee
+pnlCost       = pnlPercentage / 100 × totalInvested
+```
+
+| Field | Description |
+|-------|-------------|
+| `totalInvested` | `Σ entry.cost` (or `CC_POSITION_ENTRY_COST` if no `_entry`) |
+| `weight[i]` | Real dollar share of each partial relative to `totalInvested` |
+| `effectivePrice` at partial `i` | Computed via iterative `costBasisAtClose` replay up to `partials[i]` |
+| `priceOpen` in result | `getEffectivePriceOpen(signal)` — DCA-weighted harmonic mean across all entries |
 
 ## 🖥️ Dashboard Views
 
