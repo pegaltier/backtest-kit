@@ -201,12 +201,12 @@ export const AveragingWidget = ({
                     height: "100%",
                 }}
             >
-                <Box sx={{ flex: 1, minHeight: 0 }}>
+                <Box sx={{ position: "relative", flex: 1, minHeight: 0 }}>
                     <AutoSizer>
                         {({ height, width }) => (
-                            <div style={{ height, width }}>
+                            <Box sx={{ position: "absolute", top: 0, left: 0 }} style={{ height, width }}>
                                 <Chart type="bar" data={chartData} options={chartOptions} />
-                            </div>
+                            </Box>
                         )}
                     </AutoSizer>
                 </Box>

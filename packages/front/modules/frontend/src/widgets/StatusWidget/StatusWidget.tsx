@@ -72,6 +72,7 @@ const useStyles = makeStyles()((theme) => ({
         justifyContent: "stretch",
     },
     content: {
+        position: "relative",
         display: "flex",
         flex: 1,
     },
@@ -103,7 +104,7 @@ export const StatusWidget = ({
             return <LoaderView sx={{ height: "100%", width: "100%" }} />;
         }
         return (
-            <AutoSizer>
+            <AutoSizer style={{ position: "absolute", top: 0, left: 0 }}>
                 {({ height, width }) => (
                     <StockChart
                         items={candles}
