@@ -8,11 +8,12 @@ import {
     IOutletProps,
     One,
     Subject,
+    useActualCallback,
     useAsyncValue,
     useOnce,
 } from "react-declarative";
 import { status_fields } from "../../../../assets/status_fields";
-import { KeyboardArrowLeft, Refresh } from "@mui/icons-material";
+import { Download, KeyboardArrowLeft, Refresh } from "@mui/icons-material";
 import IconWrapper from "../../../../components/common/IconWrapper";
 import ioc from "../../../../lib";
 import { Background } from "../../../../components/common/Background";
@@ -42,6 +43,14 @@ const options: IBreadcrumbs2Option[] = [
 ];
 
 const actions: IBreadcrumbs2Action[] = [
+    {
+        action: "download-action",
+        label: "Download",
+        icon: () => <IconWrapper icon={Download} color="#4caf50" />,
+    },
+    {
+        divider: true,
+    },
     {
         action: "update-now",
         label: "Refresh",
@@ -76,6 +85,15 @@ export const StatusView = ({ params }: IOutletProps) => {
         },
     );
 
+    const handleDownload = useActualCallback(async () => {
+        if (!data) {
+            return;
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        ioc.layoutService.downloadFile(url, `status_${Date.now()}.json`);
+    })
+
     useOnce(() => reloadSubject.subscribe(execute));
 
     const handleBack = async () => {
@@ -94,6 +112,9 @@ export const StatusView = ({ params }: IOutletProps) => {
         }
         if (action === "update-now") {
             await reloadSubject.next();
+        }
+        if (action === "download-action") {
+            await handleDownload();
         }
     };
 
