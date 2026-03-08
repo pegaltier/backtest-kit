@@ -57,7 +57,7 @@ const INTERVAL_MINUTES: Record<SignalInterval, number> = {
  * Type for partial profit/loss events queued in ClientStrategy._commitQueue.
  * These events are emitted to onCommit callback with proper execution context timestamp.
  */
-type Partials = Array<{ 
+type Partials = Array<{
   type: "profit" | "loss";
   percent: number;
   currentPrice: number;
@@ -65,6 +65,8 @@ type Partials = Array<{
   entryCountAtClose: number;
   debugTimestamp?: number;
 }>;
+
+type Entries = Array<{ price: number; cost: number }>;
 
 /**
  * Mock value for scheduled signal pendingAt timestamp.
@@ -4486,12 +4488,53 @@ export class ClientStrategy implements IStrategy {
     return entries.map((e) => e.price);
   }
 
+  /**
+   * Returns the list of partial closes for the current pending signal.
+   *
+   * Each entry records a partial profit or loss close event with its type,
+   * percent closed, price at close, cost basis snapshot, and entry count at close.
+   *
+   * Returns null if no pending signal exists.
+   * Returns an empty array if no partial closes have been executed.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to array of partial close records or null
+   */
   public async getPositionPartials(symbol: string): Promise<Partials> | null {
     this.params.logger.debug("ClientStrategy getPositionPartials", { symbol });
     if (!this._pendingSignal) {
       return null;
     }
     return this._pendingSignal._partial ?? [];
+  }
+
+  /**
+   * Returns the list of DCA entry prices and costs for the current pending signal.
+   *
+   * Each entry records the price and cost of a single position entry.
+   * The first element is always the original priceOpen (initial entry).
+   * Each subsequent element is an entry added by averageBuy().
+   *
+   * Returns null if no pending signal exists.
+   * Returns a single-element array [{ price: priceOpen, cost }] if no DCA entries were made.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to array of entry records or null
+   *
+   * @example
+   * // No DCA: [{ price: 43000, cost: 100 }]
+   * // One DCA: [{ price: 43000, cost: 100 }, { price: 42000, cost: 100 }]
+   */
+  public async getPositionEntries(symbol: string): Promise<Entries> | null {
+    this.params.logger.debug("ClientStrategy getPositionEntries", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    const entries = this._pendingSignal._entry;
+    if (!entries || entries.length === 0) {
+      return [{ price: this._pendingSignal.priceOpen, cost: GLOBAL_CONFIG.CC_POSITION_ENTRY_COST }];
+    }
+    return entries.map(({ price, cost }) => ({ price, cost }));
   }
 
   /**

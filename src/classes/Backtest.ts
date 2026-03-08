@@ -51,6 +51,8 @@ const BACKTEST_METHOD_NAME_GET_POSITION_LEVELS =
   "BacktestUtils.getPositionLevels";
 const BACKTEST_METHOD_NAME_GET_POSITION_PARTIALS =
   "BacktestUtils.getPositionPartials";
+const BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES =
+  "BacktestUtils.getPositionEntries";
 const BACKTEST_METHOD_NAME_BREAKEVEN = "Backtest.commitBreakeven";
 const BACKTEST_METHOD_NAME_CANCEL_SCHEDULED = "Backtest.commitCancelScheduled";
 const BACKTEST_METHOD_NAME_CLOSE_PENDING = "Backtest.commitClosePending";
@@ -1373,6 +1375,58 @@ export class BacktestUtils {
     }
 
     return await backtest.strategyCoreService.getPositionPartials(
+      true,
+      symbol,
+      context,
+    );
+  };
+
+  public getPositionEntries = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_ENTRIES,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionEntries(
       true,
       symbol,
       context,

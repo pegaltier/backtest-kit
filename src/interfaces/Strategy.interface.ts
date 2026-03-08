@@ -917,6 +917,21 @@ export interface IStrategy {
   getPositionPnlCost: (symbol: string, currentPrice: number) => Promise<number | null>;
 
   /**
+   * Returns the list of DCA entry prices and costs for the current pending signal.
+   *
+   * Each entry records the price and cost of a single position entry.
+   * The first element is always the original priceOpen (initial entry).
+   * Each subsequent element is an entry added by averageBuy().
+   *
+   * Returns null if no pending signal exists.
+   * Returns a single-element array [{ price: priceOpen, cost }] if no DCA entries were made.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to array of entry records or null
+   */
+  getPositionEntries: (symbol: string) => Promise<Array<{ price: number; cost: number }> | null>;
+
+  /**
    * Fast backtest using historical candles.
    * Iterates through candles, calculates VWAP, checks TP/SL on each candle.
    *

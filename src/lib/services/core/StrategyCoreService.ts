@@ -267,6 +267,19 @@ export class StrategyCoreService implements TStrategy {
     return await this.strategyConnectionService.getPositionPartials(backtest, symbol, context);
   };
 
+  public getPositionEntries = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ) => {
+    this.loggerService.log("strategyCoreService getPositionEntries", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionEntries(backtest, symbol, context);
+  };
+
   /**
    * Retrieves the currently active scheduled signal for the symbol.
    * If no scheduled signal exists, returns null.

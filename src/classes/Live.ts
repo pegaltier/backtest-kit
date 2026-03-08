@@ -49,6 +49,7 @@ const LIVE_METHOD_NAME_GET_POSITION_PNL_PERCENT =
 const LIVE_METHOD_NAME_GET_POSITION_PNL_COST = "LiveUtils.getPositionPnlCost";
 const LIVE_METHOD_NAME_GET_POSITION_LEVELS = "LiveUtils.getPositionLevels";
 const LIVE_METHOD_NAME_GET_POSITION_PARTIALS = "LiveUtils.getPositionPartials";
+const LIVE_METHOD_NAME_GET_POSITION_ENTRIES = "LiveUtils.getPositionEntries";
 const LIVE_METHOD_NAME_BREAKEVEN = "Live.commitBreakeven";
 const LIVE_METHOD_NAME_CANCEL_SCHEDULED = "Live.cancelScheduled";
 const LIVE_METHOD_NAME_CLOSE_PENDING = "Live.closePending";
@@ -1341,6 +1342,58 @@ export class LiveUtils {
     }
 
     return await backtest.strategyCoreService.getPositionPartials(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+  };
+
+  public getPositionEntries = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_ENTRIES, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_ENTRIES,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_ENTRIES,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_ENTRIES,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_ENTRIES,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_ENTRIES,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionEntries(
       false,
       symbol,
       {
