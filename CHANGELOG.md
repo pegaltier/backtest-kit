@@ -1,3 +1,59 @@
+# Overlap Detection & Status Dashboard (v5.0, 09/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.0)
+
+## Status Dashboard
+
+<img width="1920" height="1304" alt="image" src="https://github.com/user-attachments/assets/f2a9d293-30da-419f-81a3-910094ebd253" />
+
+A new `/status` route and `StatusPage` have been added to the frontend. The page visualises the current live position in real time:
+
+- **4 indicator widgets** — PNL %, PNL $, Invested $, Total Entries
+- **Price Levels chart** (`StatusWidget` / `StockChart`) — entry levels, TP, SL and trailing lines rendered with Chart.js
+- **Averaging panel** (`AveragingWidget`) — DCA entry ladder with cost basis per level
+- **Partials panel** (`PartialWidget`) — executed partial close history
+
+Chart.js scales (`CategoryScale`, `LinearScale`, `BarElement`, `LineElement`, `PointElement`) are now registered globally in `setup.ts`.
+
+
+## Overlap Detection API
+
+Two new guard functions prevent duplicate DCA entries and partial closes at the same price zone.
+
+### `getPositionEntryOverlap` / `getPositionPartialOverlap`
+
+Returns `true` if `currentPrice` falls inside the tolerance band of any existing DCA level or partial close price. The tolerance band is configured via `IPositionOverlapLadder` (default ±1.5%).
+
+```typescript
+import { getPositionEntryOverlap, getPositionPartialOverlap } from "backtest-kit";
+
+// Skip DCA if price is already too close to an existing entry
+if (!await getPositionEntryOverlap("BTCUSDT", currentPrice)) {
+  await commitAverageBuy("BTCUSDT");
+}
+
+// Skip partial if price is already too close to a previous partial close
+if (!await getPositionPartialOverlap("BTCUSDT", currentPrice)) {
+  await commitPartialProfit("BTCUSDT", 50);
+}
+```
+
+### `getPositionEntries`
+
+Returns the full list of DCA entries (price + cost per entry) for the current pending signal. Returns `null` if no active position exists; returns a single-element array if no DCA has been performed.
+
+```typescript
+import { getPositionEntries } from "backtest-kit";
+
+const entries = await getPositionEntries("BTCUSDT");
+// No DCA:      [{ price: 43000, cost: 100 }]
+// One DCA:     [{ price: 43000, cost: 100 }, { price: 42000, cost: 100 }]
+```
+
+
+
+
+
 # Broker Adapter & Order Integrity (v4.0, 04/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/4.0)
