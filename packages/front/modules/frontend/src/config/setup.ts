@@ -1,12 +1,33 @@
 import { dayjs } from "react-declarative";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
 import isToday from "dayjs/plugin/isToday";
 import localeData from "dayjs/plugin/localeData";
 import ruLocale from "dayjs/locale/ru";
 import utc from "dayjs/plugin/utc";
 
-dayjs.extend(localeData);
-dayjs.extend(utc);
-dayjs.extend(isToday);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+);
 
-dayjs.locale(ruLocale);
+{
+    dayjs.extend(localeData);
+    dayjs.extend(utc);
+    dayjs.extend(isToday);
+
+    dayjs.locale(ruLocale);
+}
