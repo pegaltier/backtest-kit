@@ -3649,16 +3649,16 @@ const CLOSE_USER_PENDING_SIGNAL_IN_BACKTEST_FN = async (
   return result;
 };
 
+type ScheduledProcessResult =
+  | { outcome: "activated"; activationIndex: number }
+  | { outcome: "cancelled"; result: IStrategyTickResultCancelled }
+  | { outcome: "pending" };
+
 const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
   candles: ICandleData[]
-): Promise<{
-  activated: boolean;
-  cancelled: boolean;
-  activationIndex: number;
-  result: IStrategyTickResultCancelled | null;
-}> => {
+): Promise<ScheduledProcessResult> => {
   const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
   const maxTimeToWait = GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000;
   const bufferCandlesCount = candlesCount - 1;
@@ -3685,7 +3685,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         candle.timestamp,
         "user"
       );
-      return { activated: false, cancelled: true, activationIndex: i, result };
+      return { outcome: "cancelled", result };
     }
 
     // КРИТИЧНО: Проверяем был ли сигнал активирован пользователем через activateScheduled()
@@ -3701,7 +3701,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
           signalId: activatedSignal.id,
         });
         await self.setScheduledSignal(null);
-        return { activated: false, cancelled: false, activationIndex: i, result: null };
+        return { outcome: "pending" };
       }
 
       // Риск-проверка по averagePrice (симметрия с LIVE tick())
@@ -3722,7 +3722,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
           signalId: activatedSignal.id,
         });
         await self.setScheduledSignal(null);
-        return { activated: false, cancelled: false, activationIndex: i, result: null };
+        return { outcome: "pending" };
       }
 
       const pendingSignal: ISignalRow = {
@@ -3759,7 +3759,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
           originalPriceOpen: activatedSignal.priceOpen,
           pnl: toProfitLossDto(activatedSignal, averagePrice),
         });
-        return { activated: false, cancelled: true, activationIndex: i, result: null };
+        return { outcome: "pending" };
       }
 
       await self.setScheduledSignal(null);
@@ -3818,12 +3818,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         self.params.execution.context.backtest
       );
 
-      return {
-        activated: true,
-        cancelled: false,
-        activationIndex: i,
-        result: null,
-      };
+      return { outcome: "activated", activationIndex: i };
     }
 
     // КРИТИЧНО: Проверяем timeout ПЕРЕД проверкой цены
@@ -3836,7 +3831,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         candle.timestamp,
         "timeout"
       );
-      return { activated: false, cancelled: true, activationIndex: i, result };
+      return { outcome: "cancelled", result };
     }
 
     let shouldActivate = false;
@@ -3884,17 +3879,12 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         candle.timestamp,
         "price_reject"
       );
-      return { activated: false, cancelled: true, activationIndex: i, result };
+      return { outcome: "cancelled", result };
     }
 
     if (shouldActivate) {
       await ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN(self, scheduled, candle.timestamp);
-      return {
-        activated: true,
-        cancelled: false,
-        activationIndex: i,
-        result: null,
-      };
+      return { outcome: "activated", activationIndex: i };
     }
 
     await CALL_SCHEDULE_PING_CALLBACKS_FN(self, self.params.execution.context.symbol, scheduled, candle.timestamp, true, averagePrice);
@@ -3903,12 +3893,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
     await PROCESS_COMMIT_QUEUE_FN(self, averagePrice, candle.timestamp);
   }
 
-  return {
-    activated: false,
-    cancelled: false,
-    activationIndex: -1,
-    result: null,
-  };
+  return { outcome: "pending" };
 };
 
 const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
@@ -5412,14 +5397,15 @@ export class ClientStrategy implements IStrategy {
         position: scheduled.position,
       });
 
-      const { activated, cancelled, activationIndex, result } =
+      const scheduledResult =
         await PROCESS_SCHEDULED_SIGNAL_CANDLES_FN(this, scheduled, candles);
 
-      if (cancelled && result) {
-        return result;
+      if (scheduledResult.outcome === "cancelled") {
+        return scheduledResult.result;
       }
 
-      if (activated) {
+      if (scheduledResult.outcome === "activated") {
+        const { activationIndex } = scheduledResult;
         // КРИТИЧНО: activationIndex - индекс свечи активации в массиве candles
         // BacktestLogicPrivateService включил буфер в начало массива, поэтому перед activationIndex достаточно свечей
         // PROCESS_PENDING_SIGNAL_CANDLES_FN пропустит первые bufferCandlesCount свечей для VWAP
