@@ -253,6 +253,8 @@ export {
   AverageBuyCommitNotification,
   SignalSyncCloseNotification,
   SignalSyncOpenNotification,
+  CancelScheduledCommitNotification,
+  ClosePendingCommitNotification,
 } from "./model/Notification.model";
 
 export { BacktestStatisticsModel } from "./model/BacktestStatistics.model";

@@ -67,6 +67,10 @@ const getNotificationColor = (item: NotificationModel): string => {
       return "#4CAF50";
     case "signal_sync.close":
       return "#2196F3";
+    case "cancel_scheduled.commit":
+      return "#9E9E9E";
+    case "close_pending.commit":
+      return "#607D8B";
     case "risk.rejection":
       return "#F44336";
     case "error.info":
@@ -109,6 +113,10 @@ const getNotificationIcon = (item: NotificationModel) => {
     case "signal_sync.open":
       return <PlayArrow sx={sx} />;
     case "signal_sync.close":
+      return <Close sx={sx} />;
+    case "cancel_scheduled.commit":
+      return <Cancel sx={sx} />;
+    case "close_pending.commit":
       return <Close sx={sx} />;
     case "risk.rejection":
       return <ReportProblem sx={sx} />;
@@ -156,6 +164,10 @@ const getNotificationTitle = (item: NotificationModel): string => {
       return `${t("Sync Open")} ${item.position.toUpperCase()} ${item.symbol}`;
     case "signal_sync.close":
       return `${t("Sync Close")} ${item.symbol} (${item.pnlPercentage > 0 ? "+" : ""}${item.pnlPercentage.toFixed(2)}%)`;
+    case "cancel_scheduled.commit":
+      return `${t("Cancel Scheduled")} ${item.symbol}`;
+    case "close_pending.commit":
+      return `${t("Close Pending")} ${item.symbol}`;
     case "risk.rejection":
       return `${t("Rejected")} ${item.position.toUpperCase()} ${item.symbol}`;
     case "error.info":
@@ -203,6 +215,10 @@ const getNotificationTypeLabel = (item: NotificationModel): string => {
       return t("Signal Sync Open");
     case "signal_sync.close":
       return t("Signal Sync Close");
+    case "cancel_scheduled.commit":
+      return t("Cancel Scheduled");
+    case "close_pending.commit":
+      return t("Close Pending");
     case "risk.rejection":
       return t("Risk Rejection");
     case "error.info":
@@ -268,6 +284,12 @@ const handleNotificationClick = (item: NotificationModel) => {
       break;
     case "signal_sync.close":
       ioc.layoutService.pickSignalSyncClose(item.id);
+      break;
+    case "cancel_scheduled.commit":
+      ioc.layoutService.pickCancelScheduled(item.id);
+      break;
+    case "close_pending.commit":
+      ioc.layoutService.pickClosePending(item.id);
       break;
   }
 };

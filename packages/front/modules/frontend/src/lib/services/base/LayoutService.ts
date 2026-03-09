@@ -39,6 +39,10 @@ export class LayoutService {
     public readonly pickSignalSyncOpenSubject = new Subject<string>();
     public readonly pickSignalSyncCloseSubject = new Subject<string>();
 
+    // Cancel scheduled / close pending subjects
+    public readonly pickCancelScheduledSubject = new Subject<string>();
+    public readonly pickClosePendingSubject = new Subject<string>();
+
     public readonly reloadOutletSubject = new Subject<void>();
 
     public readonly openDocumentSubject = new Subject<{
@@ -199,6 +203,15 @@ export class LayoutService {
 
     pickSignalSyncClose = async (notificationId: string) => {
         await this.pickSignalSyncCloseSubject.next(notificationId);
+    };
+
+    // Cancel scheduled / close pending methods
+    pickCancelScheduled = async (notificationId: string) => {
+        await this.pickCancelScheduledSubject.next(notificationId);
+    };
+
+    pickClosePending = async (notificationId: string) => {
+        await this.pickClosePendingSubject.next(notificationId);
     };
 }
 

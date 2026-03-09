@@ -41,6 +41,10 @@ import useAverageBuyCommitView from "../hooks/useAverageBuyCommitView";
 import useSignalSyncOpenView from "../hooks/useSignalSyncOpenView";
 import useSignalSyncCloseView from "../hooks/useSignalSyncCloseView";
 
+// Cancel scheduled / close pending hooks
+import useCancelScheduledView from "../hooks/useCancelScheduledView";
+import useClosePendingView from "../hooks/useClosePendingView";
+
 interface ILayoutModalProviderProps {
     children: React.ReactNode;
 }
@@ -115,6 +119,10 @@ export const LayoutModalProvider = ({
     const pickSignalSyncOpen = useSignalSyncOpenView();
     const pickSignalSyncClose = useSignalSyncCloseView();
 
+    // Cancel scheduled / close pending hooks
+    const pickCancelScheduled = useCancelScheduledView();
+    const pickClosePending = useClosePendingView();
+
     useOnce(() =>
         ioc.layoutService.promptOutgoing.subscribe(async ({ title, value }) => {
             const result = await pickPrompt({ title, value }).toPromise();
@@ -171,6 +179,10 @@ export const LayoutModalProvider = ({
     // Signal sync subscriptions (2 types)
     useOnce(() => ioc.layoutService.pickSignalSyncOpenSubject.subscribe(pickSignalSyncOpen));
     useOnce(() => ioc.layoutService.pickSignalSyncCloseSubject.subscribe(pickSignalSyncClose));
+
+    // Cancel scheduled / close pending subscriptions
+    useOnce(() => ioc.layoutService.pickCancelScheduledSubject.subscribe(pickCancelScheduled));
+    useOnce(() => ioc.layoutService.pickClosePendingSubject.subscribe(pickClosePending));
 
     return (
         <>
