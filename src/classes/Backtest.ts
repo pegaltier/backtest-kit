@@ -288,6 +288,20 @@ export class BacktestInstance {
         frameName: context.frameName,
         backtest: true,
       });
+      backtest.timeMetaService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
+      });
+      backtest.priceMetaService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: context.frameName,
+        backtest: true,
+      });
     }
 
     {

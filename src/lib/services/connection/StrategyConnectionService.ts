@@ -40,6 +40,8 @@ import ActionCoreService from "../core/ActionCoreService";
 import backtest from "../../../lib";
 import beginTime from "../../../utils/beginTime";
 import SignalSyncContract from "../../../contract/SignalSync.contract";
+import TimeMetaService from "../meta/TimeMetaService";
+import PriceMetaService from "../meta/PriceMetaService";
 
 /**
  * If syncSubject listener or any registered action throws, it means the signal was not properly synchronized
@@ -451,6 +453,8 @@ export class StrategyConnectionService implements TStrategy {
   public readonly actionCoreService = inject<ActionCoreService>(
     TYPES.actionCoreService
   );
+  public readonly timeMetaService = inject<TimeMetaService>(TYPES.timeMetaService);
+  public readonly priceMetaService = inject<PriceMetaService>(TYPES.priceMetaService);
 
   /**
    * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
@@ -821,6 +825,10 @@ export class StrategyConnectionService implements TStrategy {
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.waitForInit();
     const tick = await strategy.tick(symbol, context.strategyName);
+    {
+      this.priceMetaService.next(symbol, tick.currentPrice, context, backtest);
+      this.timeMetaService.next(symbol, tick.createdAt, context, backtest);
+    }
     {
       await CALL_SIGNAL_EMIT_FN(this, tick, context, backtest, symbol);
     }

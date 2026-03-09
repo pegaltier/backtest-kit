@@ -212,6 +212,20 @@ export class WalkerInstance {
           frameName: walkerSchema.frameName,
           backtest: true,
         });
+        backtest.timeMetaService.clear({
+          symbol,
+          strategyName,
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName,
+          backtest: true,
+        });
+        backtest.priceMetaService.clear({
+          symbol,
+          strategyName,
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName,
+          backtest: true,
+        });
       }
 
       {

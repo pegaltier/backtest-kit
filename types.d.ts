@@ -16417,7 +16417,7 @@ declare class NotificationBacktestAdapter implements INotificationUtils {
      * Proxies call to the underlying notification adapter.
      * @param data - The signal sync contract data
      */
-    handleSync: (data: SignalSyncContract) => Promise<void>;
+    handleSync: (data: SignalSyncContract) => any;
     /**
      * Handles risk rejection event.
      * Proxies call to the underlying notification adapter.
@@ -16523,7 +16523,7 @@ declare class NotificationLiveAdapter implements INotificationUtils {
      * Proxies call to the underlying notification adapter.
      * @param data - The signal sync contract data
      */
-    handleSync: (data: SignalSyncContract) => Promise<void>;
+    handleSync: (data: SignalSyncContract) => any;
     /**
      * Handles risk rejection event.
      * Proxies call to the underlying notification adapter.
@@ -20907,6 +20907,52 @@ declare class BreakevenConnectionService implements IBreakeven {
     clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
+declare class TimeMetaService {
+    private readonly loggerService;
+    private readonly executionContextService;
+    private getSource;
+    getTimestamp: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }, backtest: boolean) => Promise<number>;
+    next: (symbol: string, timestamp: number, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }, backtest: boolean) => Promise<void>;
+    clear: (payload?: {
+        symbol: string;
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+        backtest: boolean;
+    }) => void;
+}
+
+declare class PriceMetaService {
+    private readonly loggerService;
+    private readonly exchangeConnectionService;
+    private getSource;
+    getCurrentPrice: (symbol: string, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }, backtest: boolean) => Promise<number>;
+    next: (symbol: string, currentPrice: number, context: {
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+    }, backtest: boolean) => Promise<void>;
+    clear: (payload?: {
+        symbol: string;
+        strategyName: string;
+        exchangeName: string;
+        frameName: string;
+        backtest: boolean;
+    }) => void;
+}
+
 /**
  * Type definition for strategy methods.
  * Maps all keys of IStrategy to any type.
@@ -20949,6 +20995,8 @@ declare class StrategyConnectionService implements TStrategy$1 {
     readonly partialConnectionService: PartialConnectionService;
     readonly breakevenConnectionService: BreakevenConnectionService;
     readonly actionCoreService: ActionCoreService;
+    readonly timeMetaService: TimeMetaService;
+    readonly priceMetaService: PriceMetaService;
     /**
      * Retrieves memoized ClientStrategy instance for given symbol-strategy pair with exchange and frame isolation.
      *
@@ -25328,6 +25376,8 @@ declare const backtest: {
     riskGlobalService: RiskGlobalService;
     partialGlobalService: PartialGlobalService;
     breakevenGlobalService: BreakevenGlobalService;
+    timeMetaService: TimeMetaService;
+    priceMetaService: PriceMetaService;
     exchangeCoreService: ExchangeCoreService;
     strategyCoreService: StrategyCoreService;
     actionCoreService: ActionCoreService;

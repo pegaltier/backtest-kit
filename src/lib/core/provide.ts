@@ -66,6 +66,8 @@ import StrategyReportService from "../services/report/StrategyReportService";
 import SyncReportService from "../services/report/SyncReportService";
 import StrategyMarkdownService from "../services/markdown/StrategyMarkdownService";
 import SyncMarkdownService from "../services/markdown/SyncMarkdownService";
+import PriceMetaService from "../services/meta/PriceMetaService";
+import TimeMetaService from "../services/meta/TimeMetaService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -102,6 +104,11 @@ import SyncMarkdownService from "../services/markdown/SyncMarkdownService";
     provide(TYPES.strategyCoreService, () => new StrategyCoreService());
     provide(TYPES.actionCoreService, () => new ActionCoreService());
     provide(TYPES.frameCoreService, () => new FrameCoreService());
+}
+
+{
+    provide(TYPES.priceMetaService, () => new PriceMetaService());
+    provide(TYPES.timeMetaService, () => new TimeMetaService());
 }
 
 {

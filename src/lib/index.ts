@@ -71,6 +71,8 @@ import StrategyReportService from "./services/report/StrategyReportService";
 import SyncReportService from "./services/report/SyncReportService";
 import StrategyMarkdownService from "./services/markdown/StrategyMarkdownService";
 import SyncMarkdownService from "./services/markdown/SyncMarkdownService";
+import TimeMetaService from "./services/meta/TimeMetaService";
+import PriceMetaService from "./services/meta/PriceMetaService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -132,6 +134,11 @@ const coreServices = {
   actionCoreService: inject<ActionCoreService>(TYPES.actionCoreService),
   frameCoreService: inject<FrameCoreService>(TYPES.frameCoreService),
 };
+
+const metaServices = {
+  timeMetaService: inject<TimeMetaService>(TYPES.timeMetaService),
+  priceMetaService: inject<PriceMetaService>(TYPES.priceMetaService),
+}
 
 const globalServices = {
   sizingGlobalService: inject<SizingGlobalService>(TYPES.sizingGlobalService),
@@ -266,6 +273,7 @@ export const backtest = {
   ...connectionServices,
   ...schemaServices,
   ...coreServices,
+  ...metaServices,
   ...globalServices,
   ...commandServices,
   ...logicPrivateServices,

@@ -278,6 +278,20 @@ export class LiveInstance {
         frameName: "",
         backtest: false,
       });
+      backtest.timeMetaService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
+      backtest.priceMetaService.clear({
+        symbol,
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+        backtest: false,
+      });
     }
 
     {

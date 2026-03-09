@@ -35,6 +35,11 @@ const coreServices = {
     frameCoreService: Symbol('frameCoreService'),
 }
 
+const metaServices = {
+    priceMetaService: Symbol('priceMetaService'),
+    timeMetaService: Symbol('timeMetaService'),
+}
+
 const globalServices = {
     sizingGlobalService: Symbol('sizingGlobalService'),
     riskGlobalService: Symbol('riskGlobalService'),
@@ -107,6 +112,7 @@ export const TYPES = {
     ...connectionServices,
     ...schemaServices,
     ...coreServices,
+    ...metaServices,
     ...globalServices,
     ...commandServices,
     ...logicPrivateServices,
