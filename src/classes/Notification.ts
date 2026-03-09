@@ -1,4 +1,4 @@
-import { singleshot, randomString, errorData, getErrorMessage, compose } from "functools-kit";
+import { singleshot, randomString, errorData, getErrorMessage, compose, trycatch } from "functools-kit";
 import {
   signalBacktestEmitter,
   signalLiveEmitter,
@@ -896,13 +896,15 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
    * Handles signal sync events (signal-open, signal-close).
    * @param data - The signal sync contract data
    */
-  public handleSync = async (data: SignalSyncContract): Promise<void> => {
+  public handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_SYNC, {
       signalId: data.signalId,
       action: data.action,
     });
     this._addNotification(CREATE_SIGNAL_SYNC_NOTIFICATION_FN(data));
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
@@ -1015,9 +1017,11 @@ export class NotificationDummyBacktestUtils implements INotificationUtils {
   /**
    * No-op handler for signal sync event.
    */
-  public handleSync = async (): Promise<void> => {
+  public handleSync = trycatch(async (): Promise<void> => {
     void 0;
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * No-op handler for risk rejection event.
@@ -1216,7 +1220,7 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
    * Handles signal sync events (signal-open, signal-close).
    * @param data - The signal sync contract data
    */
-  public handleSync = async (data: SignalSyncContract): Promise<void> => {
+  public handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_SYNC, {
       signalId: data.signalId,
       action: data.action,
@@ -1224,7 +1228,9 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
     await this.waitForInit();
     this._addNotification(CREATE_SIGNAL_SYNC_NOTIFICATION_FN(data));
     await this._updateNotifications();
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
@@ -1398,13 +1404,15 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
    * Handles signal sync events (signal-open, signal-close).
    * @param data - The signal sync contract data
    */
-  public handleSync = async (data: SignalSyncContract): Promise<void> => {
+  public handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_SYNC, {
       signalId: data.signalId,
       action: data.action,
     });
     this._addNotification(CREATE_SIGNAL_SYNC_NOTIFICATION_FN(data));
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
@@ -1517,9 +1525,11 @@ export class NotificationDummyLiveUtils implements INotificationUtils {
   /**
    * No-op handler for signal sync event.
    */
-  public handleSync = async (): Promise<void> => {
+  public handleSync = trycatch(async (): Promise<void> => {
     void 0;
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * No-op handler for risk rejection event.
@@ -1721,7 +1731,7 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
    * Handles signal sync events (signal-open, signal-close).
    * @param data - The signal sync contract data
    */
-  public handleSync = async (data: SignalSyncContract): Promise<void> => {
+  public handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_SYNC, {
       signalId: data.signalId,
       action: data.action,
@@ -1729,7 +1739,9 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
     await this.waitForInit();
     this._addNotification(CREATE_SIGNAL_SYNC_NOTIFICATION_FN(data));
     await this._updateNotifications();
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
@@ -1868,9 +1880,11 @@ export class NotificationBacktestAdapter implements INotificationUtils {
    * Proxies call to the underlying notification adapter.
    * @param data - The signal sync contract data
    */
-  handleSync = async (data: SignalSyncContract): Promise<void> => {
+  handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     return await this._notificationBacktestUtils.handleSync(data);
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
@@ -2027,9 +2041,11 @@ export class NotificationLiveAdapter implements INotificationUtils {
    * Proxies call to the underlying notification adapter.
    * @param data - The signal sync contract data
    */
-  handleSync = async (data: SignalSyncContract): Promise<void> => {
+  handleSync = trycatch(async (data: SignalSyncContract): Promise<void> => {
     return await this._notificationLiveUtils.handleSync(data);
-  };
+  }, {
+    defaultValue: null,
+  });
 
   /**
    * Handles risk rejection event.
