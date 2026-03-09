@@ -20907,20 +20907,86 @@ declare class BreakevenConnectionService implements IBreakeven {
     clear: (symbol: string, data: IPublicSignalRow, priceClose: number, backtest: boolean) => Promise<void>;
 }
 
+/**
+ * Service for tracking the latest candle timestamp per symbol-strategy-exchange-frame combination.
+ *
+ * Maintains a memoized BehaviorSubject per unique key that is updated on every strategy tick
+ * by StrategyConnectionService. Consumers can synchronously read the last known timestamp or
+ * await the first value if none has arrived yet.
+ *
+ * Primary use case: providing the current candle time outside of a tick execution context,
+ * e.g., when a command is triggered between ticks.
+ *
+ * Features:
+ * - One BehaviorSubject per (symbol, strategyName, exchangeName, frameName, backtest) key
+ * - Falls back to ExecutionContextService.context.when when called inside an execution context
+ * - Waits up to LISTEN_TIMEOUT ms for the first timestamp if none is cached yet
+ * - clear() disposes the BehaviorSubject for a single key or all keys
+ *
+ * Architecture:
+ * - Registered as singleton in DI container
+ * - Updated by StrategyConnectionService after each tick
+ * - Cleared by Backtest/Live/Walker at strategy start to prevent stale data
+ *
+ * @example
+ * ```typescript
+ * const ts = await backtest.timeMetaService.getTimestamp("BTCUSDT", context, false);
+ * ```
+ */
 declare class TimeMetaService {
     private readonly loggerService;
     private readonly executionContextService;
+    /**
+     * Memoized factory for BehaviorSubject streams keyed by (symbol, strategyName, exchangeName, frameName, backtest).
+     *
+     * Each subject holds the latest createdAt timestamp emitted by the strategy iterator for that key.
+     * Instances are cached until clear() is called.
+     */
     private getSource;
+    /**
+     * Returns the current candle timestamp (in milliseconds) for the given symbol and context.
+     *
+     * When called inside an execution context (i.e., during a signal handler or action),
+     * reads the timestamp directly from ExecutionContextService.context.when.
+     * Otherwise, reads the last value from the cached BehaviorSubject. If no value has
+     * been emitted yet, waits up to LISTEN_TIMEOUT ms for the first tick before throwing.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Strategy, exchange, and frame identifiers
+     * @param backtest - True if backtest mode, false if live mode
+     * @returns Unix timestamp in milliseconds of the latest processed candle
+     * @throws When no timestamp arrives within LISTEN_TIMEOUT ms
+     */
     getTimestamp: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
     }, backtest: boolean) => Promise<number>;
+    /**
+     * Pushes a new timestamp value into the BehaviorSubject for the given key.
+     *
+     * Called by StrategyConnectionService after each strategy tick to keep
+     * the cached timestamp up to date.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param timestamp - The createdAt timestamp from the tick (milliseconds)
+     * @param context - Strategy, exchange, and frame identifiers
+     * @param backtest - True if backtest mode, false if live mode
+     */
     next: (symbol: string, timestamp: number, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
     }, backtest: boolean) => Promise<void>;
+    /**
+     * Disposes cached BehaviorSubject(s) to free memory and prevent stale data.
+     *
+     * When called without arguments, clears all memoized timestamp streams.
+     * When called with a payload, clears only the stream for the specified key.
+     * Should be called at strategy start (Backtest/Live/Walker) to reset state.
+     *
+     * @param payload - Optional key to clear a single stream; omit to clear all
+     */
     clear: (payload?: {
         symbol: string;
         strategyName: string;
@@ -20930,20 +20996,86 @@ declare class TimeMetaService {
     }) => void;
 }
 
+/**
+ * Service for tracking the latest market price per symbol-strategy-exchange-frame combination.
+ *
+ * Maintains a memoized BehaviorSubject per unique key that is updated on every strategy tick
+ * by StrategyConnectionService. Consumers can synchronously read the last known price or
+ * await the first value if none has arrived yet.
+ *
+ * Primary use case: providing the current price outside of a tick execution context,
+ * e.g., when a command is triggered between ticks.
+ *
+ * Features:
+ * - One BehaviorSubject per (symbol, strategyName, exchangeName, frameName, backtest) key
+ * - Falls back to ExchangeConnectionService.getAveragePrice when called inside an execution context
+ * - Waits up to LISTEN_TIMEOUT ms for the first price if none is cached yet
+ * - clear() disposes the BehaviorSubject for a single key or all keys
+ *
+ * Architecture:
+ * - Registered as singleton in DI container
+ * - Updated by StrategyConnectionService after each tick
+ * - Cleared by Backtest/Live/Walker at strategy start to prevent stale data
+ *
+ * @example
+ * ```typescript
+ * const price = await backtest.priceMetaService.getCurrentPrice("BTCUSDT", context, false);
+ * ```
+ */
 declare class PriceMetaService {
     private readonly loggerService;
     private readonly exchangeConnectionService;
+    /**
+     * Memoized factory for BehaviorSubject streams keyed by (symbol, strategyName, exchangeName, frameName, backtest).
+     *
+     * Each subject holds the latest currentPrice emitted by the strategy iterator for that key.
+     * Instances are cached until clear() is called.
+     */
     private getSource;
+    /**
+     * Returns the current market price for the given symbol and context.
+     *
+     * When called inside an execution context (i.e., during a signal handler or action),
+     * delegates to ExchangeConnectionService.getAveragePrice for the live exchange price.
+     * Otherwise, reads the last value from the cached BehaviorSubject. If no value has
+     * been emitted yet, waits up to LISTEN_TIMEOUT ms for the first tick before throwing.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param context - Strategy, exchange, and frame identifiers
+     * @param backtest - True if backtest mode, false if live mode
+     * @returns Current market price in quote currency
+     * @throws When no price arrives within LISTEN_TIMEOUT ms
+     */
     getCurrentPrice: (symbol: string, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
     }, backtest: boolean) => Promise<number>;
+    /**
+     * Pushes a new price value into the BehaviorSubject for the given key.
+     *
+     * Called by StrategyConnectionService after each strategy tick to keep
+     * the cached price up to date.
+     *
+     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
+     * @param currentPrice - The latest price from the tick
+     * @param context - Strategy, exchange, and frame identifiers
+     * @param backtest - True if backtest mode, false if live mode
+     */
     next: (symbol: string, currentPrice: number, context: {
         strategyName: string;
         exchangeName: string;
         frameName: string;
     }, backtest: boolean) => Promise<void>;
+    /**
+     * Disposes cached BehaviorSubject(s) to free memory and prevent stale data.
+     *
+     * When called without arguments, clears all memoized price streams.
+     * When called with a payload, clears only the stream for the specified key.
+     * Should be called at strategy start (Backtest/Live/Walker) to reset state.
+     *
+     * @param payload - Optional key to clear a single stream; omit to clear all
+     */
     clear: (payload?: {
         symbol: string;
         strategyName: string;
