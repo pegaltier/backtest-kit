@@ -1,6 +1,6 @@
 import * as functools_kit from 'functools-kit';
 import * as BacktestKit from 'backtest-kit';
-import { CandleInterval, TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract, AverageBuyCommit, SignalOpenContract, SignalCloseContract } from 'backtest-kit';
+import { CandleInterval, TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract, AverageBuyCommit, SignalOpenContract, SignalCloseContract, CancelScheduledCommit, ClosePendingCommit } from 'backtest-kit';
 import * as BacktestKitUi from '@backtest-kit/ui';
 import * as BacktestKitGraph from '@backtest-kit/graph';
 import * as BacktestKitOllama from '@backtest-kit/ollama';
@@ -201,6 +201,8 @@ declare class TelegramLogicService {
     private notifyAverageBuy;
     private notifySignalOpen;
     private notifySignalClose;
+    private notifyCancelScheduled;
+    private notifyClosePending;
     connect: (() => () => void) & functools_kit.ISingleshotClearable;
 }
 
@@ -220,6 +222,8 @@ declare class TelegramTemplateService {
     getAverageBuyMarkdown: (event: AverageBuyCommit) => Promise<string>;
     getSignalOpenMarkdown: (event: SignalOpenContract) => Promise<string>;
     getSignalCloseMarkdown: (event: SignalCloseContract) => Promise<string>;
+    getCancelScheduledMarkdown: (event: CancelScheduledCommit) => Promise<string>;
+    getClosePendingMarkdown: (event: ClosePendingCommit) => Promise<string>;
 }
 
 declare class ModuleConnectionService {

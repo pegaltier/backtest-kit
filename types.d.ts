@@ -9155,6 +9155,94 @@ interface ValidationErrorNotification {
     backtest: boolean;
 }
 /**
+ * Cancel scheduled commit notification.
+ * Emitted when a scheduled signal is cancelled before activation.
+ */
+interface CancelScheduledCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "cancel_scheduled.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when cancellation was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
+    signalId: string;
+    /** Optional identifier for the cancellation reason (user-provided) */
+    cancelId?: string;
+    /** Total number of DCA entries (_entry.length). 1 = no averaging. */
+    totalEntries: number;
+    /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+    totalPartials: number;
+    /** Original entry price at signal creation (unchanged by DCA averaging) */
+    originalPriceOpen: number;
+    /** PNL at the moment of cancellation (from data.pnl) */
+    pnl: IStrategyPnL;
+    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+    pnlPercentage: number;
+    /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+    pnlPriceOpen: number;
+    /** Exit price from PNL calculation (adjusted with slippage and fees) */
+    pnlPriceClose: number;
+    /** Absolute profit/loss in USD */
+    pnlCost: number;
+    /** Total invested capital in USD */
+    pnlEntries: number;
+    /** Unix timestamp in milliseconds when the notification was created */
+    createdAt: number;
+}
+/**
+ * Close pending commit notification.
+ * Emitted when a pending signal is closed before position activation.
+ */
+interface ClosePendingCommitNotification {
+    /** Discriminator for type-safe union */
+    type: "close_pending.commit";
+    /** Unique notification identifier */
+    id: string;
+    /** Unix timestamp in milliseconds when close was committed */
+    timestamp: number;
+    /** Whether this notification is from backtest mode (true) or live mode (false) */
+    backtest: boolean;
+    /** Trading pair symbol (e.g., "BTCUSDT") */
+    symbol: string;
+    /** Strategy name that generated this signal */
+    strategyName: StrategyName;
+    /** Exchange name where signal was executed */
+    exchangeName: ExchangeName;
+    /** Unique signal identifier (UUID v4) */
+    signalId: string;
+    /** Optional identifier for the close reason (user-provided) */
+    closeId?: string;
+    /** Total number of DCA entries (_entry.length). 1 = no averaging. */
+    totalEntries: number;
+    /** Total number of partial closes executed (_partial.length). 0 = no partial closes done. */
+    totalPartials: number;
+    /** Original entry price at signal creation (unchanged by DCA averaging) */
+    originalPriceOpen: number;
+    /** PNL at the moment of close (from data.pnl) */
+    pnl: IStrategyPnL;
+    /** Profit/loss as percentage (e.g., 1.5 for +1.5%, -2.3 for -2.3%) */
+    pnlPercentage: number;
+    /** Entry price from PNL calculation (effective price adjusted with slippage and fees) */
+    pnlPriceOpen: number;
+    /** Exit price from PNL calculation (adjusted with slippage and fees) */
+    pnlPriceClose: number;
+    /** Absolute profit/loss in USD */
+    pnlCost: number;
+    /** Total invested capital in USD */
+    pnlEntries: number;
+    /** Unix timestamp in milliseconds when the notification was created */
+    createdAt: number;
+}
+/**
  * Root discriminated union of all notification types.
  * Type discrimination is done via the `type` field.
  *
@@ -9180,7 +9268,7 @@ interface ValidationErrorNotification {
  * }
  * ```
  */
-type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitAvailableNotification | PartialLossAvailableNotification | BreakevenAvailableNotification | PartialProfitCommitNotification | PartialLossCommitNotification | BreakevenCommitNotification | AverageBuyCommitNotification | ActivateScheduledCommitNotification | TrailingStopCommitNotification | TrailingTakeCommitNotification | SignalSyncOpenNotification | SignalSyncCloseNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification;
+type NotificationModel = SignalOpenedNotification | SignalClosedNotification | PartialProfitAvailableNotification | PartialLossAvailableNotification | BreakevenAvailableNotification | PartialProfitCommitNotification | PartialLossCommitNotification | BreakevenCommitNotification | AverageBuyCommitNotification | ActivateScheduledCommitNotification | TrailingStopCommitNotification | TrailingTakeCommitNotification | CancelScheduledCommitNotification | ClosePendingCommitNotification | SignalSyncOpenNotification | SignalSyncCloseNotification | RiskRejectionNotification | SignalScheduledNotification | SignalCancelledNotification | InfoErrorNotification | CriticalErrorNotification | ValidationErrorNotification;
 
 /**
  * Unified tick event data for report generation.
