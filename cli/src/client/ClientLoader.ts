@@ -12,6 +12,8 @@ import * as BacktestKitOllama from "@backtest-kit/ollama";
 import * as BacktestKitPinets from "@backtest-kit/pinets";
 import * as BacktestKitSignals from "@backtest-kit/signals";
 
+declare const __IS_ESM__: boolean;
+
 const TRANSPILE_FN = (code: string, self: ClientLoader) => {
   const require = self.getBaseRequire();
   const __filename = self.__filename;
@@ -29,6 +31,9 @@ const TRANSPILE_FN = (code: string, self: ClientLoader) => {
 };
 
 const REQUIRE_ENTRY_FACTORY = (filePath: string, self: ClientLoader) => {
+  if (__IS_ESM__) {
+    return null;
+  }
   const baseRequire = self.getBaseRequire();
   try {
     return baseRequire(filePath);
