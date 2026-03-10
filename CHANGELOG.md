@@ -1,3 +1,43 @@
+# TypeScript Module Loader for Strategy Files (v5.5, 10/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.5)
+
+## CLI: Custom Module Loader with Babel Transpilation
+
+Previously the CLI could only load strategy files written as plain CJS modules. Any `.ts` or ESM file required a separate build step before the CLI could consume it. This change implements a runtime module loader — conceptually similar to a webpack loader pipeline — that allows a single strategy to freely mix `.ts`, `.mjs`, and `.cjs` source files without any pre-compilation.
+
+### How it works
+
+`ClientLoader` (new class in `cli/src/client/ClientLoader.ts`) operates as a self-contained runtime module system:
+
+1. **CJS fast-path** — in CJS mode the file is loaded via a proxied `require`. The proxy intercepts known package IDs (`backtest-kit`, `@backtest-kit/ui`, `@backtest-kit/graph`, `@backtest-kit/ollama`, `@backtest-kit/pinets`, `@backtest-kit/signals`, `@backtest-kit/cli`) and redirects them to pre-registered `globalThis` singletons, so the strategy shares the exact same object instances as the CLI runtime.
+
+2. **Babel transpile + eval fallback** — if `require` fails (ESM mode or `.ts` source), the file is read from disk, passed through `BabelService.transpile` (Babel with `plugin-transform-modules-umd`), and executed via `eval` inside a sandboxed scope that injects `require`, `__filename`, `__dirname`, `module`, and `exports`. The result is extracted from `module.exports`.
+
+3. **Recursive forking for relative imports** — when a loaded file itself calls `require('./something')`, the proxied `require` detects the relative path and calls `loader.fork(newBasePath).import(resolved)`, spawning a child `ClientLoader` rooted at the new directory. This means an entire tree of relative imports is resolved transparently, just as webpack would traverse the dependency graph.
+
+The net effect: a strategy entry point can `require('./indicators/rsi')` where `rsi.ts` is TypeScript, which in turn requires `./utils.mjs` — all resolved at runtime without any build tooling on the user side.
+
+### `LoaderService`
+
+New DI service (`cli/src/lib/services/base/LoaderService.ts`) wraps `ClientLoader` with per-`basePath` memoization via `functools-kit/memoize`, so repeated `import` calls to the same base directory reuse the same loader instance. Injected into both `ResolveService` (strategy entry point) and `ModuleConnectionService` (module hot-loading).
+
+### `BabelService` — responsibility narrowed
+
+`transpileAndRun` removed: execution context is now fully owned by `ClientLoader`. `BabelService` is reduced to a pure transpiler implementing the new `IBabel` interface (`transpile(code: string): string`). The `globalThis` population and `Window` type augmentation moved to `ClientLoader.ts` where they belong.
+
+### `ModuleConnectionService` — load chain simplified
+
+The previous triple-strategy chain (`REQUIRE_MODULE_FACTORY` → `IMPORT_MODULE_FACTORY` → `BABEL_MODULE_FACTORY`) is replaced by a single `LOADER_FACTORY` that delegates to `LoaderService.import`. File-existence is checked via `fs.access` before attempting to load. Errors are now only printed when `--verbose` is passed.
+
+### New interfaces
+
+- `IBabel` (`cli/src/interfaces/Babel.interface.ts`) — contract for the transpiler, decouples `ClientLoader` from the concrete `BabelService`
+- `ILoaderParams` (`cli/src/interfaces/Loader.interface.ts`) — constructor params for `ClientLoader` (`path`, `babel`, `logger`)
+
+
+
+
 # Overlap Detection & Status Dashboard (v5.0, 09/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.0)
