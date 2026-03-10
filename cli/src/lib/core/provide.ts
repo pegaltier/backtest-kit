@@ -19,6 +19,7 @@ import TelegramLogicService from "../services/logic/TelegramLogicService";
 import TelegramTemplateService from "../services/template/TelegramTemplateService";
 import ModuleConnectionService from "../services/connection/ModuleConnectionService";
 import BabelService from "../services/base/BabelService";
+import LoaderService from "../services/base/LoaderService";
 
 {
     provide(TYPES.quickchartApiService, () => new QuickchartApiService());
@@ -29,6 +30,7 @@ import BabelService from "../services/base/BabelService";
     provide(TYPES.errorService, () => new ErrorService());
     provide(TYPES.loggerService, () => new LoggerService());
     provide(TYPES.resolveService, () => new ResolveService());
+    provide(TYPES.loaderService, () => new LoaderService());
     provide(TYPES.babelService, () => new BabelService());
 }
 

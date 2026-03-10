@@ -1,11 +1,5 @@
 import * as functools_kit from 'functools-kit';
-import * as BacktestKit from 'backtest-kit';
 import { CandleInterval, TrailingTakeCommit, TrailingStopCommit, BreakevenCommit, PartialProfitCommit, PartialLossCommit, IStrategyTickResultScheduled, IStrategyTickResultCancelled, IStrategyTickResultOpened, IStrategyTickResultClosed, RiskContract, AverageBuyCommit, SignalOpenContract, SignalCloseContract, CancelScheduledCommit, ClosePendingCommit } from 'backtest-kit';
-import * as BacktestKitUi from '@backtest-kit/ui';
-import * as BacktestKitGraph from '@backtest-kit/graph';
-import * as BacktestKitOllama from '@backtest-kit/ollama';
-import * as BacktestKitPinets from '@backtest-kit/pinets';
-import * as BacktestKitSignals from '@backtest-kit/signals';
 import { Input } from 'telegraf';
 
 interface ILogger {
@@ -93,35 +87,16 @@ declare class FrameSchemaService {
     addSchema: (() => Promise<void>) & functools_kit.ISingleshotClearable;
 }
 
-declare const BacktestKitCli: {};
-declare global {
-    interface Window {
-        BacktestKit: typeof BacktestKit;
-        BacktestKitCli: typeof BacktestKitCli;
-        BacktestKitUi: typeof BacktestKitUi;
-        BacktestKitGraph: typeof BacktestKitGraph;
-        BacktestKitOllama: typeof BacktestKitOllama;
-        BacktestKitPinets: typeof BacktestKitPinets;
-        BacktestKitSignals: typeof BacktestKitSignals;
-    }
-}
-declare class BabelService {
-    readonly loggerService: LoggerService;
-    transpile: (code: string) => any;
-    transpileAndRun: (code: string) => {
-        require: NodeRequire;
-        __filename: string;
-        __dirname: string;
-        exports: Record<string, unknown>;
-        module: {
-            exports: Record<string, unknown>;
-        };
-    };
+declare class LoaderService {
+    private readonly babelService;
+    private readonly loggerService;
+    private getInstance;
+    import: (filePath: string, basePath?: string) => Promise<any>;
 }
 
 declare class ResolveService {
     readonly loggerService: LoggerService;
-    readonly babelService: BabelService;
+    readonly loaderService: LoaderService;
     readonly DEFAULT_TEMPLATE_DIR: string;
     readonly OVERRIDE_TEMPLATE_DIR: string;
     readonly OVERRIDE_MODULES_DIR: string;
@@ -229,8 +204,17 @@ declare class TelegramTemplateService {
 declare class ModuleConnectionService {
     readonly loggerService: LoggerService;
     readonly resolveService: ResolveService;
-    readonly babelService: BabelService;
+    readonly loaderService: LoaderService;
     loadModule: (fileName: string) => Promise<boolean>;
+}
+
+interface IBabel {
+    transpile(code: string): string;
+}
+
+declare class BabelService implements IBabel {
+    readonly loggerService: LoggerService;
+    transpile: (code: string) => any;
 }
 
 declare const cli: {
@@ -250,6 +234,7 @@ declare const cli: {
     errorService: ErrorService;
     loggerService: LoggerService;
     resolveService: ResolveService;
+    loaderService: LoaderService;
     babelService: BabelService;
     telegramApiService: TelegramApiService;
     quickchartApiService: QuickchartApiService;
