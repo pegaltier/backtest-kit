@@ -12,7 +12,7 @@ declare function getPositionPartials(symbol: string): Promise<{
     currentPrice: number;
     costBasisAtClose: number;
     entryCountAtClose: number;
-    debugTimestamp?: number;
+    timestamp: number;
 }[]>;
 ```
 

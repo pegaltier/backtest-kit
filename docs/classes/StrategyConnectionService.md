@@ -81,6 +81,18 @@ breakevenConnectionService: BreakevenConnectionService
 actionCoreService: ActionCoreService
 ```
 
+### timeMetaService
+
+```ts
+timeMetaService: TimeMetaService
+```
+
+### priceMetaService
+
+```ts
+priceMetaService: PriceMetaService
+```
+
 ### getStrategy
 
 ```ts
@@ -128,6 +140,11 @@ getPositionAveragePrice: (backtest: boolean, symbol: string, context: { strategy
 ```
 
 Returns the effective (DCA-averaged) entry price for the current pending signal.
+
+This is the harmonic mean of all _entry prices, which is the correct
+cost-basis price used in all PNL calculations.
+With no DCA entries, equals the original priceOpen.
+
 Returns null if no pending signal exists.
 
 ### getPositionInvestedCount
@@ -136,8 +153,12 @@ Returns null if no pending signal exists.
 getPositionInvestedCount: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
-Returns the number of DCA entries for the current pending signal.
-1 = original entry only. Returns null if no pending signal exists.
+Returns the number of DCA entries made for the current pending signal.
+
+1 = original entry only (no DCA).
+Increases by 1 with each successful commitAverageBuy().
+
+Returns null if no pending signal exists.
 
 ### getPositionInvestedCost
 
@@ -145,7 +166,11 @@ Returns the number of DCA entries for the current pending signal.
 getPositionInvestedCost: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
-Returns the total invested cost basis in dollars (entryCount × $100).
+Returns the total invested cost basis in dollars for the current pending signal.
+
+Equal to entryCount × $100 (COST_BASIS_PER_ENTRY).
+1 entry = $100, 2 entries = $200, etc.
+
 Returns null if no pending signal exists.
 
 ### getPositionPnlPercent
@@ -154,8 +179,11 @@ Returns null if no pending signal exists.
 getPositionPnlPercent: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
-Returns the unrealized PNL percentage at currentPrice.
-Accounts for partial closes, DCA entries, slippage and fees.
+Returns the unrealized PNL percentage for the current pending signal at currentPrice.
+
+Accounts for partial closes, DCA entries, slippage and fees
+(delegates to toProfitLossDto).
+
 Returns null if no pending signal exists.
 
 ### getPositionPnlCost
@@ -164,8 +192,11 @@ Returns null if no pending signal exists.
 getPositionPnlCost: (backtest: boolean, symbol: string, currentPrice: number, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
-Returns the unrealized PNL in dollars at currentPrice.
-Calculated as: pnlPercentage / 100 × totalInvestedCost.
+Returns the unrealized PNL in dollars for the current pending signal at currentPrice.
+
+Calculated as: pnlPercentage / 100 × totalInvestedCost
+Accounts for partial closes, DCA entries, slippage and fees.
+
 Returns null if no pending signal exists.
 
 ### getPositionLevels
@@ -174,16 +205,32 @@ Returns null if no pending signal exists.
 getPositionLevels: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number[]>
 ```
 
+Returns the list of DCA entry prices for the current pending signal.
+
+The first element is always the original priceOpen (initial entry).
+Each subsequent element is a price added by commitAverageBuy().
+
+Returns null if no pending signal exists.
+Returns a single-element array [priceOpen] if no DCA entries were made.
+
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; timestamp: number; }[]>
 ```
+
+Returns the list of partial closes for the current pending signal.
+
+Each entry records a partial profit or loss close event with its type,
+percent closed, price at close, cost basis snapshot, and entry count at close.
+
+Returns null if no pending signal exists.
+Returns an empty array if no partial closes have been executed.
 
 ### getPositionEntries
 
 ```ts
-getPositionEntries: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ price: number; cost: number; }[]>
+getPositionEntries: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ price: number; cost: number; timestamp: number; }[]>
 ```
 
 Returns the list of DCA entry prices and costs for the current pending signal.

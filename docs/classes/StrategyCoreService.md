@@ -160,13 +160,20 @@ getPositionLevels: (backtest: boolean, symbol: string, context: { strategyName: 
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; timestamp: number; }[]>
 ```
+
+Returns the history of partial closes for the current pending signal.
+
+Each record includes the type (profit or loss), percentage closed, price, cost basis at close, and timestamp.
+Used for tracking how the position was partially closed over time.
+
+Returns null if no pending signal exists or no partial closes were executed.
 
 ### getPositionEntries
 
 ```ts
-getPositionEntries: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ price: number; cost: number; }[]>
+getPositionEntries: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<{ price: number; cost: number; timestamp: number; }[]>
 ```
 
 Returns the list of DCA entry prices and costs for the current pending signal.

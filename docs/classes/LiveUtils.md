@@ -172,7 +172,7 @@ Returns a single-element array [priceOpen] if no DCA entries were made.
 ### getPositionPartials
 
 ```ts
-getPositionPartials: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]>
+getPositionPartials: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; timestamp: number; }[]>
 ```
 
 Returns the list of partial close events for the current pending signal.
@@ -192,7 +192,7 @@ Each entry contains:
 ### getPositionEntries
 
 ```ts
-getPositionEntries: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ price: number; cost: number; }[]>
+getPositionEntries: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<{ price: number; cost: number; timestamp: number; }[]>
 ```
 
 Returns the list of DCA entry prices and costs for the current pending signal.

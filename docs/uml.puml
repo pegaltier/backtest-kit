@@ -339,6 +339,33 @@ liveCommandService:
 								• loggerService: ""
 								methodContextService: ""
 								executionContextService: ""
+					timeMetaService:
+						• timeMetaService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						executionContextService: ""
+					priceMetaService:
+						• priceMetaService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						exchangeConnectionService:
+							• exchangeConnectionService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							executionContextService: ""
+							exchangeSchemaService:
+								• exchangeSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							methodContextService: ""
 				strategySchemaService:
 					• strategySchemaService: ""
 					loggerService:
@@ -782,6 +809,33 @@ backtestCommandService:
 								• loggerService: ""
 								methodContextService: ""
 								executionContextService: ""
+					timeMetaService:
+						• timeMetaService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						executionContextService: ""
+					priceMetaService:
+						• priceMetaService: ""
+						loggerService:
+							• loggerService: ""
+							methodContextService: ""
+							executionContextService: ""
+						exchangeConnectionService:
+							• exchangeConnectionService: ""
+							loggerService:
+								• loggerService: ""
+								methodContextService: ""
+								executionContextService: ""
+							executionContextService: ""
+							exchangeSchemaService:
+								• exchangeSchemaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+							methodContextService: ""
 				strategySchemaService:
 					• strategySchemaService: ""
 					loggerService:
@@ -1325,6 +1379,33 @@ walkerCommandService:
 										• loggerService: ""
 										methodContextService: ""
 										executionContextService: ""
+							timeMetaService:
+								• timeMetaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								executionContextService: ""
+							priceMetaService:
+								• priceMetaService: ""
+								loggerService:
+									• loggerService: ""
+									methodContextService: ""
+									executionContextService: ""
+								exchangeConnectionService:
+									• exchangeConnectionService: ""
+									loggerService:
+										• loggerService: ""
+										methodContextService: ""
+										executionContextService: ""
+									executionContextService: ""
+									exchangeSchemaService:
+										• exchangeSchemaService: ""
+										loggerService:
+											• loggerService: ""
+											methodContextService: ""
+											executionContextService: ""
+									methodContextService: ""
 						strategySchemaService:
 							• strategySchemaService: ""
 							loggerService:

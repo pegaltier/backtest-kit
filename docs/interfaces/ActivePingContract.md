@@ -54,6 +54,17 @@ data: ISignalRow
 Complete pending signal row data.
 Contains all signal information: id, position, priceOpen, priceTakeProfit, priceStopLoss, etc.
 
+### currentPrice
+
+```ts
+currentPrice: number
+```
+
+Current market price of the symbol at the time of the ping.
+Useful for users to implement custom management logic based on price conditions.
+For example, users can choose to close the pending signal if the price moves too far from priceOpen.
+Note: This is the current price at the time of the ping, not necessarily the priceOpen of the signal.
+
 ### backtest
 
 ```ts

@@ -18,11 +18,11 @@ Entry price for the position
 ### _entry
 
 ```ts
-_entry: { price: number; cost: number; debugTimestamp?: number; }[]
+_entry: { price: number; cost: number; timestamp: number; }[]
 ```
 
 ### _partial
 
 ```ts
-_partial: { type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; debugTimestamp?: number; }[]
+_partial: { type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; timestamp: number; }[]
 ```

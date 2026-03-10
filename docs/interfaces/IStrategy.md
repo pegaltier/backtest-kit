@@ -151,7 +151,7 @@ Returns null if no pending signal exists.
 ### getPositionEntries
 
 ```ts
-getPositionEntries: (symbol: string) => Promise<{ price: number; cost: number; }[]>
+getPositionEntries: (symbol: string, timestamp: number) => Promise<{ price: number; cost: number; timestamp: number; }[]>
 ```
 
 Returns the list of DCA entry prices and costs for the current pending signal.
@@ -162,6 +162,19 @@ Each subsequent element is an entry added by averageBuy().
 
 Returns null if no pending signal exists.
 Returns a single-element array [{ price: priceOpen, cost }] if no DCA entries were made.
+
+### getPositionPartials
+
+```ts
+getPositionPartials: (symbol: string) => Promise<{ type: "profit" | "loss"; percent: number; currentPrice: number; costBasisAtClose: number; entryCountAtClose: number; timestamp: number; }[]>
+```
+
+Returns the history of partial closes for the current pending signal.
+
+Each record includes the type (profit or loss), percentage closed, price, cost basis at close, and timestamp.
+Used for tracking how the position was partially closed over time.
+
+Returns null if no pending signal exists or no partial closes were executed.
 
 ### backtest
 
@@ -233,7 +246,7 @@ Use case: Close an active position that is no longer desired without stopping th
 ### partialProfit
 
 ```ts
-partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>
+partialProfit: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean, timestamp: number) => Promise<boolean>
 ```
 
 Executes partial close at profit level (moving toward TP).
@@ -271,7 +284,7 @@ Never throws. Safe to call at any time as a pre-flight check.
 ### partialLoss
 
 ```ts
-partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean) => Promise<boolean>
+partialLoss: (symbol: string, percentToClose: number, currentPrice: number, backtest: boolean, timestamp: number) => Promise<boolean>
 ```
 
 Executes partial close at loss level (moving toward SL).
@@ -466,7 +479,7 @@ Never throws. Safe to call at any time as a pre-flight check.
 ### averageBuy
 
 ```ts
-averageBuy: (symbol: string, currentPrice: number, backtest: boolean) => Promise<boolean>
+averageBuy: (symbol: string, currentPrice: number, backtest: boolean, timestamp: number, cost?: number) => Promise<boolean>
 ```
 
 Adds a new averaging entry to an open position (DCA — Dollar Cost Averaging).
