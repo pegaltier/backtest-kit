@@ -10,6 +10,8 @@ import "./main/frontend";
 import "./main/telegram";
 
 export type { ILogger } from "./interfaces/Logger.interface";
+export type { ILoader } from "./interfaces/Loader.interface";
+export type { IBabel } from "./interfaces/Babel.interface";
 
 export { type ExchangeName } from "./enum/ExchangeName";
 export { type FrameName } from "./enum/FrameName";

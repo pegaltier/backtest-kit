@@ -3,7 +3,7 @@ import { createRequire } from "module";
 import { singleshot } from "functools-kit";
 import fs from "fs";
 
-import { ILoaderParams } from "../interfaces/Loader.interface";
+import { ILoader, ILoaderParams } from "../interfaces/Loader.interface";
 
 import * as BacktestKit from "backtest-kit";
 import * as BacktestKitUi from "@backtest-kit/ui";
@@ -112,7 +112,7 @@ declare global {
   }
 }
 
-export class ClientLoader {
+export class ClientLoader implements ILoader {
   __filename: string;
   __dirname: string;
 

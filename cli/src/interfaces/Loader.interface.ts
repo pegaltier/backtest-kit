@@ -6,3 +6,7 @@ export interface ILoaderParams {
     logger: ILogger;
     babel: IBabel;
 }
+
+export interface ILoader {
+    import(filePath: string): any;
+}

@@ -240,6 +240,10 @@ declare const cli: {
     quickchartApiService: QuickchartApiService;
 };
 
+interface ILoader {
+    import(filePath: string): any;
+}
+
 declare enum ExchangeName {
     DefaultExchange = "default_exchange"
 }
@@ -257,4 +261,4 @@ type Mode = "backtest" | "live" | "paper";
 type Args = Partial<PayloadBacktest> | Partial<PayloadPaper> | Partial<PayloadLive>;
 declare function run(mode: Mode, args: Args): Promise<void>;
 
-export { ExchangeName, FrameName, type ILogger, cli, run, setLogger };
+export { ExchangeName, FrameName, type IBabel, type ILoader, type ILogger, cli, run, setLogger };
