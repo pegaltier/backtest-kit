@@ -41,4 +41,8 @@ setConfig({
   CC_ENABLE_PPPL_EVERYWHERE: true,
 })
 
+setConfig({
+  CC_MAX_SIGNAL_GENERATION_SECONDS: 15 * 60,
+})
+
 Log.useJsonl();
