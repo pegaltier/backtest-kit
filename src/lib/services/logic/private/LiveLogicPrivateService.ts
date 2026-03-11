@@ -12,6 +12,7 @@ import {
   IStrategyTickResultOpened,
   IStrategyTickResultCancelled,
 } from "../../../../interfaces/Strategy.interface";
+import { alignToInterval } from "../../../../utils/alignToInterval";
 
 /**
  * Private service for live trading orchestration using async generators.
@@ -69,7 +70,7 @@ export class LiveLogicPrivateService {
 
     while (true) {
       const tickStartTime = performance.now();
-      const when = new Date();
+      const when = alignToInterval(new Date(), "1m");
 
       let result: IStrategyTickResult;
       try {
