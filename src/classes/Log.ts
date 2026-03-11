@@ -8,6 +8,7 @@ import backtest, { ExecutionContextService, MethodContextService } from "../lib"
 import { GLOBAL_CONFIG } from "../config/params";
 import { exitEmitter, shutdownEmitter } from "../config/emitters";
 import { getContextTimestamp } from "../helpers/getContextTimestamp";
+import { alignToInterval } from "../utils/alignToInterval";
 
 const LOG_PERSIST_METHOD_NAME_WAIT_FOR_INIT = "LogPersistUtils.waitForInit";
 const LOG_PERSIST_METHOD_NAME_LOG = "LogPersistUtils.log";
@@ -46,7 +47,7 @@ const GET_DATE_FN = () => {
   if (ExecutionContextService.hasContext()) {
     return new Date(backtest.executionContextService.context.when);
   }
-  return new Date();
+  return alignToInterval(new Date(), "1m");
 };
 
 /**

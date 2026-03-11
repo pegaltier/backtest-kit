@@ -5,6 +5,7 @@ import { GLOBAL_CONFIG } from "../config/params";
 import { PersistCandleAdapter } from "./Persist";
 import { Candle } from "./Candle";
 import { errorEmitter } from "../config/emitters";
+import { alignToInterval } from "../utils/alignToInterval";
 
 const EXCHANGE_METHOD_NAME_GET_CANDLES = "ExchangeUtils.getCandles";
 const EXCHANGE_METHOD_NAME_GET_AVERAGE_PRICE = "ExchangeUtils.getAveragePrice";
@@ -24,7 +25,7 @@ const GET_TIMESTAMP_FN = async () => {
   if (ExecutionContextService.hasContext()) {
     return new Date(backtest.executionContextService.context.when);
   }
-  return new Date();
+  return alignToInterval(new Date(), "1m");
 }
 
 /**
