@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "./LoggerService";
 import { TYPES } from "../../../lib/core/types";
-import { CandleInterval, Exchange } from "backtest-kit";
+import { CandleInterval, Exchange, alignToInterval } from "backtest-kit";
 
 type ExchangeName = string;
 
@@ -55,7 +55,7 @@ export class ExchangeService {
     const offsetMs = tick * step * 60 * 1000;
 
     const sDate = dto.signalStartTime - offsetMs;
-    const eDate = Math.min(dto.signalStopTime + offsetMs, Date.now() - 1);
+    const eDate = Math.min(dto.signalStopTime + offsetMs, alignToInterval(new Date(), "1m").getTime());
 
     return await Exchange.getRawCandles(
       dto.symbol,
@@ -89,7 +89,7 @@ export class ExchangeService {
     const offsetMs = tick * step * 60 * 1000;
 
     const sDate = dto.currentTime - offsetMs;
-    const eDate = Math.min(dto.currentTime + offsetMs, Date.now() - 1);
+    const eDate = Math.min(dto.currentTime + offsetMs, alignToInterval(new Date(), "1m").getTime());
 
     return await Exchange.getRawCandles(
       dto.symbol,
