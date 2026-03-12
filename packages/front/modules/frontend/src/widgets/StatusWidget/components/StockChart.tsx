@@ -44,7 +44,9 @@ interface IChartProps {
     width: number;
     items: ICandleData[];
     position: "long" | "short";
+    status?: string;
     pendingAt: number;
+    updatedAt: number;
     priceOpen: number;
     priceStopLoss: number;
     priceTakeProfit: number;
@@ -119,7 +121,9 @@ export const StockChart = ({
     width,
     items,
     position,
+    status,
     pendingAt,
+    updatedAt,
     priceOpen,
     priceStopLoss,
     priceTakeProfit,
@@ -137,7 +141,7 @@ export const StockChart = ({
     useLayoutEffect(() => {
         const { current: chartElement } = elementRef;
 
-        const exitAt = pendingAt + minuteEstimatedTime * MS_PER_MINUTE;
+        const exitAt = status === "closed" ? updatedAt : pendingAt + minuteEstimatedTime * MS_PER_MINUTE;
         const visibleItems = items.filter(
             (c) => c.timestamp >= pendingAt && c.timestamp <= exitAt,
         );
@@ -338,7 +342,9 @@ export const StockChart = ({
         width,
         items,
         position,
+        status,
         pendingAt,
+        updatedAt,
         priceOpen,
         priceStopLoss,
         priceTakeProfit,
