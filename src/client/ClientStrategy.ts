@@ -4770,14 +4770,30 @@ export class ClientStrategy implements IStrategy {
    * Never returns null when a signal is active — always contains at least the entry price.
    *
    * @param symbol - Trading pair symbol
-   * @returns Promise resolving to `{ price, timestamp }` record or null
+   * @returns Promise resolving to price or null
    */
-  public async getPositionHighestProfitPrice(symbol: string): Promise<{ price: number; timestamp: number } | null> {
+  public async getPositionHighestProfitPrice(symbol: string): Promise<number | null> {
     this.params.logger.debug("ClientStrategy getPositionHighestProfitPrice", { symbol });
     if (!this._pendingSignal) {
       return null;
     }
-    return this._pendingSignal._highestProfitPrice;
+    return this._pendingSignal._highestProfitPrice.price;
+  }
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to timestamp in milliseconds or null
+   */
+  public async getPositionHighestProfitTimestamp(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionHighestProfitTimestamp", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return this._pendingSignal._highestProfitPrice.timestamp;
   }
 
   /**
@@ -4810,6 +4826,18 @@ export class ClientStrategy implements IStrategy {
     }
   }
 
+  /**
+   * Returns the number of minutes elapsed since the highest profit price was recorded.
+   *
+   * Measures how long the position has been pulling back from its peak.
+   * Zero when called at the exact moment the peak was set.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param timestamp - Current Unix timestamp in milliseconds
+   * @returns Promise resolving to drawdown duration in minutes or null
+   */
   public async getPositionDrawdownMinutes(symbol: string, timestamp: number): Promise<number | null> {
     this.params.logger.debug("ClientStrategy getPositionDrawdownMinutes", { symbol });
     if (!this._pendingSignal) {

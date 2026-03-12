@@ -48,6 +48,7 @@ const GET_POSITION_ENTRIES_METHOD_NAME = "strategy.getPositionEntries";
 const GET_POSITION_ESTIMATE_MINUTES_METHOD_NAME = "strategy.getPositionEstimateMinutes";
 const GET_POSITION_COUNTDOWN_MINUTES_METHOD_NAME = "strategy.getPositionCountdownMinutes";
 const GET_POSITION_HIGHEST_PROFIT_PRICE_METHOD_NAME = "strategy.getPositionHighestProfitPrice";
+const GET_POSITION_HIGHEST_PROFIT_TIMESTAMP_METHOD_NAME = "strategy.getPositionHighestProfitTimestamp";
 const GET_POSITION_HIGHEST_PROFIT_BREAKEVEN_METHOD_NAME = "strategy.getPositionHighestProfitBreakeven";
 const GET_POSITION_DRAWDOWN_MINUTES_METHOD_NAME = "strategy.getPositionDrawdownMinutes";
 const GET_POSITION_ENTRY_OVERLAP_METHOD_NAME = "strategy.getPositionEntryOverlap";
@@ -1822,6 +1823,39 @@ export async function getPositionHighestProfitPrice(symbol: string) {
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
   return await backtest.strategyCoreService.getPositionHighestProfitPrice(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+}
+
+/**
+ * Returns the timestamp when the best profit price was recorded during this position's life.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to timestamp in milliseconds or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionHighestProfitTimestamp } from "backtest-kit";
+ *
+ * const ts = await getPositionHighestProfitTimestamp("BTCUSDT");
+ * // e.g. 1700000000000
+ * ```
+ */
+export async function getPositionHighestProfitTimestamp(symbol: string) {
+  backtest.loggerService.info(GET_POSITION_HIGHEST_PROFIT_TIMESTAMP_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionHighestProfitTimestamp requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionHighestProfitTimestamp requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName },

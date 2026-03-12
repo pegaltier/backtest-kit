@@ -40,6 +40,7 @@ export {
   getPositionEstimateMinutes,
   getPositionCountdownMinutes,
   getPositionHighestProfitPrice,
+  getPositionHighestProfitTimestamp,
   getPositionDrawdownMinutes,
   getPositionEntryOverlap,
   getPositionPartialOverlap,

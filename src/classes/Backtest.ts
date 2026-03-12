@@ -63,6 +63,8 @@ const BACKTEST_METHOD_NAME_GET_POSITION_COUNTDOWN_MINUTES =
   "BacktestUtils.getPositionCountdownMinutes";
 const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_PRICE =
   "BacktestUtils.getPositionHighestProfitPrice";
+const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP =
+  "BacktestUtils.getPositionHighestProfitTimestamp";
 const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN =
   "BacktestUtils.getPositionHighestProfitBreakeven";
 const BACKTEST_METHOD_NAME_GET_POSITION_DRAWDOWN_MINUTES =
@@ -1613,17 +1615,11 @@ export class BacktestUtils {
   /**
    * Returns the best price reached in the profit direction during this position's life.
    *
-   * Initialized at position open with the entry price and timestamp.
-   * Updated on every candle when VWAP moves beyond the previous record toward TP:
-   * - LONG: tracks the highest price seen above effective entry
-   * - SHORT: tracks the lowest price seen below effective entry
-   *
    * Returns null if no pending signal exists.
-   * Never returns null when a signal is active — always contains at least the entry price.
    *
    * @param symbol - Trading pair symbol
    * @param context - Execution context with strategyName, exchangeName, and frameName
-   * @returns `{ price, timestamp }` record, or null if no active position
+   * @returns price or null if no active position
    */
   public getPositionHighestProfitPrice = async (
     symbol: string,
@@ -1671,6 +1667,67 @@ export class BacktestUtils {
     }
 
     return await backtest.strategyCoreService.getPositionHighestProfitPrice(
+      true,
+      symbol,
+      context,
+    );
+  };
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns timestamp in milliseconds or null if no active position
+   */
+  public getPositionHighestProfitTimestamp = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
       true,
       symbol,
       context,

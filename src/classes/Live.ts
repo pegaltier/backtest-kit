@@ -57,6 +57,7 @@ const LIVE_METHOD_NAME_GET_POSITION_ENTRIES = "LiveUtils.getPositionEntries";
 const LIVE_METHOD_NAME_GET_POSITION_ESTIMATE_MINUTES = "LiveUtils.getPositionEstimateMinutes";
 const LIVE_METHOD_NAME_GET_POSITION_COUNTDOWN_MINUTES = "LiveUtils.getPositionCountdownMinutes";
 const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_PRICE = "LiveUtils.getPositionHighestProfitPrice";
+const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP = "LiveUtils.getPositionHighestProfitTimestamp";
 const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN = "LiveUtils.getPositionHighestProfitBreakeven";
 const LIVE_METHOD_NAME_GET_POSITION_DRAWDOWN_MINUTES = "LiveUtils.getPositionDrawdownMinutes";
 const LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP = "LiveUtils.getPositionEntryOverlap";
@@ -1577,17 +1578,11 @@ export class LiveUtils {
   /**
    * Returns the best price reached in the profit direction during this position's life.
    *
-   * Initialized at position open with the entry price and timestamp.
-   * Updated on every tick when VWAP moves beyond the previous record toward TP:
-   * - LONG: tracks the highest price seen above effective entry
-   * - SHORT: tracks the lowest price seen below effective entry
-   *
    * Returns null if no pending signal exists.
-   * Never returns null when a signal is active — always contains at least the entry price.
    *
    * @param symbol - Trading pair symbol
    * @param context - Execution context with strategyName and exchangeName
-   * @returns `{ price, timestamp }` record, or null if no active position
+   * @returns price or null if no active position
    */
   public getPositionHighestProfitPrice = async (
     symbol: string,
@@ -1631,6 +1626,67 @@ export class LiveUtils {
     }
 
     return await backtest.strategyCoreService.getPositionHighestProfitPrice(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+  };
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns timestamp in milliseconds or null if no active position
+   */
+  public getPositionHighestProfitTimestamp = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
       false,
       symbol,
       {

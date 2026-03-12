@@ -1097,24 +1097,47 @@ export class StrategyConnectionService implements TStrategy {
    *
    * Delegates to ClientStrategy.getPositionHighestProfitPrice().
    * Returns null if no pending signal exists.
-   * Never returns null when a signal is active.
    *
    * @param backtest - Whether running in backtest mode
    * @param symbol - Trading pair symbol
    * @param context - Execution context with strategyName, exchangeName, frameName
-   * @returns Promise resolving to `{ price, timestamp }` record or null
+   * @returns Promise resolving to price or null
    */
   public getPositionHighestProfitPrice = async (
     backtest: boolean,
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
-  ): Promise<{ price: number; timestamp: number } | null> => {
+  ): Promise<number | null> => {
     this.loggerService.log("strategyConnectionService getPositionHighestProfitPrice", {
       symbol,
       context,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     return await strategy.getPositionHighestProfitPrice(symbol);
+  };
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * Delegates to ClientStrategy.getPositionHighestProfitTimestamp().
+   * Returns null if no pending signal exists.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to timestamp in milliseconds or null
+   */
+  public getPositionHighestProfitTimestamp = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionHighestProfitTimestamp", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionHighestProfitTimestamp(symbol);
   };
 
   /**

@@ -1101,25 +1101,43 @@ export class StrategyCoreService implements TStrategy {
   /**
    * Returns the best price reached in the profit direction during this position's life.
    *
-   * Validates strategy existence and delegates to connection service.
-   * Returns null if no pending signal exists. Never returns null when signal is active.
-   *
    * @param backtest - Whether running in backtest mode
    * @param symbol - Trading pair symbol
    * @param context - Execution context with strategyName, exchangeName, frameName
-   * @returns Promise resolving to `{ price, timestamp }` record or null
+   * @returns Promise resolving to price or null
    */
   public getPositionHighestProfitPrice = async (
     backtest: boolean,
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
-  ): Promise<{ price: number; timestamp: number } | null> => {
+  ): Promise<number | null> => {
     this.loggerService.log("strategyCoreService getPositionHighestProfitPrice", {
       symbol,
       context,
     });
     await this.validate(context);
     return await this.strategyConnectionService.getPositionHighestProfitPrice(backtest, symbol, context);
+  };
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to timestamp in milliseconds or null
+   */
+  public getPositionHighestProfitTimestamp = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionHighestProfitTimestamp", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionHighestProfitTimestamp(backtest, symbol, context);
   };
 
   /**

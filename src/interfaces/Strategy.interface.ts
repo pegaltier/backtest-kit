@@ -1481,18 +1481,22 @@ export interface IStrategy {
   /**
    * Returns the best price reached in the profit direction during this position's life.
    *
-   * Initialized at position open with the entry price and timestamp.
-   * Updated on every tick/candle when VWAP moves beyond the previous record toward TP:
-   * - LONG: tracks the highest price seen above effective entry
-   * - SHORT: tracks the lowest price seen below effective entry
-   *
    * Returns null if no pending signal exists.
-   * Never returns null when a signal is active — always contains at least the entry price.
    *
    * @param symbol - Trading pair symbol
-   * @returns Promise resolving to `{ price, timestamp }` record or null
+   * @returns Promise resolving to price or null
    */
-  getPositionHighestProfitPrice: (symbol: string) => Promise<{ price: number; timestamp: number } | null>;
+  getPositionHighestProfitPrice: (symbol: string) => Promise<number | null>;
+
+  /**
+   * Returns the timestamp when the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to timestamp in milliseconds or null
+   */
+  getPositionHighestProfitTimestamp: (symbol: string) => Promise<number | null>;
 
   /**
    * Returns whether breakeven was mathematically reachable at the highest profit price.
