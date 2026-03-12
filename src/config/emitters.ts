@@ -15,6 +15,7 @@ import { SchedulePingContract } from "../contract/SchedulePing.contract";
 import { ActivePingContract } from "../contract/ActivePing.contract";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 import SignalSyncContract from "../contract/SignalSync.contract";
+import { HighestProfitContract } from "src/contract/HighestProfit.contract";
 
 /**
  * Exchange signal synchronization emitter.
@@ -187,3 +188,10 @@ export const strategyCommitSubject = new Subject<StrategyCommitContract>();
  * BacktestLogicPrivateService::*run
  */
 export const backtestScheduleOpenSubject = new Subject<IStrategyTickResultOpened>();
+
+/**
+ * Highest profit emitter for real-time profit tracking.
+ * Emits updates on the highest profit achieved for an open position.
+ * Allows users to track profit milestones and implement custom management logic based on profit levels.
+ */
+export const highestProfitSubject = new Subject<HighestProfitContract>();

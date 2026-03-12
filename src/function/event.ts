@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, exitEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject, partialProfitSubject, partialLossSubject, breakevenSubject, riskSubject, schedulePingSubject, activePingSubject, strategyCommitSubject, syncSubject } from "../config/emitters";
+import { signalEmitter, signalLiveEmitter, signalBacktestEmitter, errorEmitter, exitEmitter, doneLiveSubject, doneBacktestSubject, doneWalkerSubject, progressBacktestEmitter, progressWalkerEmitter, performanceEmitter, walkerEmitter, walkerCompleteSubject, validationSubject, partialProfitSubject, partialLossSubject, breakevenSubject, riskSubject, schedulePingSubject, activePingSubject, strategyCommitSubject, syncSubject, highestProfitSubject } from "../config/emitters";
 import { IStrategyTickResult } from "../interfaces/Strategy.interface";
 import { DoneContract } from "../contract/Done.contract";
 import { ProgressBacktestContract } from "../contract/ProgressBacktest.contract";
@@ -16,6 +16,7 @@ import { ActivePingContract } from "../contract/ActivePing.contract";
 import { StrategyCommitContract } from "../contract/StrategyCommit.contract";
 import { queued } from "functools-kit";
 import SignalSyncContract from "../contract/SignalSync.contract";
+import { HighestProfitContract } from "src/contract/HighestProfit.contract";
 
 const LISTEN_SIGNAL_METHOD_NAME = "event.listenSignal";
 const LISTEN_SIGNAL_ONCE_METHOD_NAME = "event.listenSignalOnce";
@@ -54,6 +55,8 @@ const LISTEN_STRATEGY_COMMIT_METHOD_NAME = "event.listenStrategyCommit";
 const LISTEN_STRATEGY_COMMIT_ONCE_METHOD_NAME = "event.listenStrategyCommitOnce";
 const LISTEN_SYNC_METHOD_NAME = "event.listenSync";
 const LISTEN_SYNC_ONCE_METHOD_NAME = "event.listenSyncOnce";
+const LISTEN_HIGHEST_PROFIT_METHOD_NAME = "event.listenHighestProfit";
+const LISTEN_HIGHEST_PROFIT_ONCE_METHOD_NAME = "event.listenHighestProfitOnce";
 
 /**
  * Subscribes to all signal events with queued async processing.
@@ -1262,3 +1265,36 @@ export function listenSyncOnce(
   backtest.loggerService.log(LISTEN_SYNC_ONCE_METHOD_NAME);
   return syncSubject.filter(filterFn).once(fn);
 }
+
+/**
+ * Subscribes to highest profit events with queued async processing.
+ * Emits when a signal reaches a new highest profit level during its lifecycle.
+ * Events are processed sequentially in order received, even if callback is async.
+ * Uses queued wrapper to prevent concurrent execution of the callback.
+ * Useful for tracking profit milestones and implementing dynamic management logic.
+ *
+ * @param fn - Callback function to handle highest profit events
+ * @return Unsubscribe function to stop listening to events
+ */
+export function listenHighestProfit(fn: (event: HighestProfitContract) => void) {
+  backtest.loggerService.log(LISTEN_HIGHEST_PROFIT_METHOD_NAME);
+  return highestProfitSubject.subscribe(queued(async (event) => fn(event)));
+}
+
+/**
+ * Subscribes to filtered highest profit events with one-time execution.
+ * Listens for events matching the filter predicate, then executes callback once
+ * and automatically unsubscribes. Useful for waiting for specific profit conditions.
+ *
+ * @param filterFn - Predicate to filter which events trigger the callback
+ * @param fn - Callback function to handle the filtered event (called only once)
+ * @returns Unsubscribe function to cancel the listener before it fires
+ */
+export function listenHighestProfitOnce(
+  filterFn: (event: HighestProfitContract) => boolean,
+  fn: (event: HighestProfitContract) => void
+) {
+  backtest.loggerService.log(LISTEN_HIGHEST_PROFIT_ONCE_METHOD_NAME);
+  return highestProfitSubject.filter(filterFn).once(fn);
+}
+

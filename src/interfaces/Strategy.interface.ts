@@ -468,6 +468,8 @@ export interface IStrategyParams extends IStrategySchema {
   onCommit: (event: StrategyCommitContract) => Promise<void>;
   /** System callback for signal synchronization events (emits to syncSubject) */
   onSignalSync: (event: SignalSyncContract) => Promise<boolean> | boolean;
+  /** System callback for highest profit updates (emits to highestProfitSubject) */
+  onHighestProfit: (signal: IPublicSignalRow, currentPrice: number, timestamp: number) => Promise<void> | void;
 }
 
 /**

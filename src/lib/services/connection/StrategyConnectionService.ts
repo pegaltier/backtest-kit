@@ -27,6 +27,7 @@ import {
   errorEmitter,
   strategyCommitSubject,
   syncSubject,
+  highestProfitSubject,
 } from "../../../config/emitters";
 import { StrategyCommitContract } from "../../../contract/StrategyCommit.contract";
 import { IRisk, RiskName } from "../../../interfaces/Risk.interface";
@@ -371,6 +372,47 @@ const CREATE_COMMIT_FN = (self: StrategyConnectionService) => trycatch(
 );
 
 /**
+ * Creates a callback function for emitting highest profit updates to highestProfitSubject.
+ * Called by ClientStrategy when the highest profit for an open position is updated.
+ * Emits HighestProfitContract event to all subscribers with the current price and timestamp.
+ * Used for real-time profit tracking and management logic based on profit levels.
+ * 
+ * @param self - Reference to StrategyConnectionService instance
+ * @param strategyName - Name of the strategy
+ * @param exchangeName - Name of the exchange
+ * @param frameName - Name of the frame
+ * @param isBacktest - Flag indicating if the operation is for backtesting
+ * @returns Callback function for highest profit updates
+ */
+const CREATE_HIGHEST_PROFIT_FN = (self: StrategyConnectionService, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, isBacktest: boolean) => trycatch(
+  async (signal: IPublicSignalRow, currentPrice: number, timestamp: number) => {
+    await highestProfitSubject.next({
+      symbol: signal.symbol,
+      signal,
+      currentPrice,
+      timestamp,
+      strategyName,
+      exchangeName,
+      frameName,
+      backtest: isBacktest,
+    });
+  },
+  {
+    fallback: (error) => {
+      const message = "StrategyConnectionService CREATE_HIGHEST_PROFIT_FN thrown";
+      const payload = {
+        error: errorData(error),
+        message: getErrorMessage(error),
+      };
+      backtest.loggerService.warn(message, payload);
+      console.warn(message, payload);
+      errorEmitter.next(error);
+    },
+    defaultValue: null,
+  }
+);
+
+/**
  * Creates a callback function for emitting dispose events.
  *
  * Called by ClientStrategy when it is being disposed.
@@ -516,6 +558,7 @@ export class StrategyConnectionService implements TStrategy {
         onDispose: CREATE_COMMIT_DISPOSE_FN(this),
         onCommit: CREATE_COMMIT_FN(this),
         onSignalSync: CREATE_SYNC_FN(this, strategyName, exchangeName, frameName, backtest),
+        onHighestProfit: CREATE_HIGHEST_PROFIT_FN(this, strategyName, exchangeName, frameName, backtest),
       });
     }
   );
