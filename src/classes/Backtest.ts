@@ -42,7 +42,7 @@ const BACKTEST_METHOD_NAME_GET_SCHEDULED_SIGNAL =
   "BacktestUtils.getScheduledSignal";
 const BACKTEST_METHOD_NAME_GET_BREAKEVEN = "BacktestUtils.getBreakeven";
 const BACKTEST_METHOD_NAME_GET_POSITION_AVERAGE_PRICE =
-  "BacktestUtils.getPositionAveragePrice";
+  "BacktestUtils.getPositionEffectivePrice";
 const BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COUNT =
   "BacktestUtils.getPositionInvestedCount";
 const BACKTEST_METHOD_NAME_GET_POSITION_INVESTED_COST =
@@ -953,7 +953,7 @@ export class BacktestUtils {
    * @param context - Execution context with strategyName, exchangeName, and frameName
    * @returns Effective entry price, or null if no active position
    */
-  public getPositionAveragePrice = async (
+  public getPositionEffectivePrice = async (
     symbol: string,
     context: {
       strategyName: StrategyName;
@@ -1001,7 +1001,7 @@ export class BacktestUtils {
         );
     }
 
-    return await backtest.strategyCoreService.getPositionAveragePrice(
+    return await backtest.strategyCoreService.getPositionEffectivePrice(
       true,
       symbol,
       context,
@@ -2476,7 +2476,7 @@ export class BacktestUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         true,
         symbol,
         context,
@@ -2624,7 +2624,7 @@ export class BacktestUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         true,
         symbol,
         context,
@@ -2740,7 +2740,7 @@ export class BacktestUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         true,
         symbol,
         context,
@@ -2856,7 +2856,7 @@ export class BacktestUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         true,
         symbol,
         context,
@@ -2979,7 +2979,7 @@ export class BacktestUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         true,
         symbol,
         context,

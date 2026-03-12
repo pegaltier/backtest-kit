@@ -35,7 +35,7 @@ const GET_PENDING_SIGNAL_METHOD_NAME = "strategy.getPendingSignal";
 const GET_SCHEDULED_SIGNAL_METHOD_NAME = "strategy.getScheduledSignal";
 const GET_BREAKEVEN_METHOD_NAME = "strategy.getBreakeven";
 const GET_POSITION_AVERAGE_PRICE_METHOD_NAME =
-  "strategy.getPositionAveragePrice";
+  "strategy.getPositionEffectivePrice";
 const GET_POSITION_INVESTED_COUNT_METHOD_NAME =
   "strategy.getPositionInvestedCount";
 const GET_POSITION_INVESTED_COST_METHOD_NAME =
@@ -406,7 +406,7 @@ export async function commitTrailingStop(
     return false;
   }
   const effectivePriceOpen =
-    await backtest.strategyCoreService.getPositionAveragePrice(
+    await backtest.strategyCoreService.getPositionEffectivePrice(
       isBacktest,
       symbol,
       { exchangeName, frameName, strategyName },
@@ -523,7 +523,7 @@ export async function commitTrailingTake(
     return false;
   }
   const effectivePriceOpen =
-    await backtest.strategyCoreService.getPositionAveragePrice(
+    await backtest.strategyCoreService.getPositionEffectivePrice(
       isBacktest,
       symbol,
       { exchangeName, frameName, strategyName },
@@ -609,7 +609,7 @@ export async function commitTrailingStopCost(
     return false;
   }
   const effectivePriceOpen =
-    await backtest.strategyCoreService.getPositionAveragePrice(
+    await backtest.strategyCoreService.getPositionEffectivePrice(
       isBacktest,
       symbol,
       { exchangeName, frameName, strategyName },
@@ -695,7 +695,7 @@ export async function commitTrailingTakeCost(
     return false;
   }
   const effectivePriceOpen =
-    await backtest.strategyCoreService.getPositionAveragePrice(
+    await backtest.strategyCoreService.getPositionEffectivePrice(
       isBacktest,
       symbol,
       { exchangeName, frameName, strategyName },
@@ -788,7 +788,7 @@ export async function commitBreakeven(symbol: string): Promise<boolean> {
   if (!signal) {
     return false;
   }
-  const effectivePriceOpen = await backtest.strategyCoreService.getPositionAveragePrice(
+  const effectivePriceOpen = await backtest.strategyCoreService.getPositionEffectivePrice(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName },
@@ -1176,29 +1176,29 @@ export async function getBreakeven(
  *
  * @example
  * ```typescript
- * import { getPositionAveragePrice } from "backtest-kit";
+ * import { getPositionEffectivePrice } from "backtest-kit";
  *
- * const avgPrice = await getPositionAveragePrice("BTCUSDT");
+ * const avgPrice = await getPositionEffectivePrice("BTCUSDT");
  * // No DCA: avgPrice === priceOpen
  * // After DCA at lower price: avgPrice < priceOpen
  * ```
  */
-export async function getPositionAveragePrice(
+export async function getPositionEffectivePrice(
   symbol: string,
 ): Promise<number | null> {
   backtest.loggerService.info(GET_POSITION_AVERAGE_PRICE_METHOD_NAME, {
     symbol,
   });
   if (!ExecutionContextService.hasContext()) {
-    throw new Error("getPositionAveragePrice requires an execution context");
+    throw new Error("getPositionEffectivePrice requires an execution context");
   }
   if (!MethodContextService.hasContext()) {
-    throw new Error("getPositionAveragePrice requires a method context");
+    throw new Error("getPositionEffectivePrice requires a method context");
   }
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } =
     backtest.methodContextService.context;
-  return await backtest.strategyCoreService.getPositionAveragePrice(
+  return await backtest.strategyCoreService.getPositionEffectivePrice(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName },

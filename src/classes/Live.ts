@@ -43,7 +43,7 @@ const LIVE_METHOD_NAME_GET_TOTAL_COST_CLOSED = "LiveUtils.getTotalCostClosed";
 const LIVE_METHOD_NAME_GET_SCHEDULED_SIGNAL = "LiveUtils.getScheduledSignal";
 const LIVE_METHOD_NAME_GET_BREAKEVEN = "LiveUtils.getBreakeven";
 const LIVE_METHOD_NAME_GET_POSITION_AVERAGE_PRICE =
-  "LiveUtils.getPositionAveragePrice";
+  "LiveUtils.getPositionEffectivePrice";
 const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COUNT =
   "LiveUtils.getPositionInvestedCount";
 const LIVE_METHOD_NAME_GET_POSITION_INVESTED_COST =
@@ -935,7 +935,7 @@ export class LiveUtils {
    * @param context - Execution context with strategyName and exchangeName
    * @returns Effective entry price, or null if no active position
    */
-  public getPositionAveragePrice = async (
+  public getPositionEffectivePrice = async (
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName },
   ): Promise<number | null> => {
@@ -976,7 +976,7 @@ export class LiveUtils {
         );
     }
 
-    return await backtest.strategyCoreService.getPositionAveragePrice(
+    return await backtest.strategyCoreService.getPositionEffectivePrice(
       false,
       symbol,
       {
@@ -2516,7 +2516,7 @@ export class LiveUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         false,
         symbol,
         {
@@ -2678,7 +2678,7 @@ export class LiveUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         false,
         symbol,
         {
@@ -2809,7 +2809,7 @@ export class LiveUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         false,
         symbol,
         {
@@ -2940,7 +2940,7 @@ export class LiveUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         false,
         symbol,
         {
@@ -3078,7 +3078,7 @@ export class LiveUtils {
       return false;
     }
     const effectivePriceOpen =
-      await backtest.strategyCoreService.getPositionAveragePrice(
+      await backtest.strategyCoreService.getPositionEffectivePrice(
         false,
         symbol,
         {

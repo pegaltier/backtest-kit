@@ -888,7 +888,7 @@ export interface IStrategy {
    * Returns the effective (DCA-averaged) entry price for the current pending signal.
    * Returns null if no pending signal exists.
    */
-  getPositionAveragePrice: (symbol: string) => Promise<number | null>;
+  getPositionEffectivePrice: (symbol: string) => Promise<number | null>;
 
   /**
    * Returns the number of DCA entries for the current pending signal.

@@ -29,7 +29,7 @@ export {
   getBreakeven,
   getTotalPercentClosed,
   getTotalCostClosed,
-  getPositionAveragePrice,
+  getPositionEffectivePrice,
   getPositionInvestedCount,
   getPositionInvestedCost,
   getPositionPnlPercent,

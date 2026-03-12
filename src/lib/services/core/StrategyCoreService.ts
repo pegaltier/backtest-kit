@@ -172,17 +172,17 @@ export class StrategyCoreService implements TStrategy {
     return await this.strategyConnectionService.getTotalCostClosed(backtest, symbol, context);
   };
 
-  public getPositionAveragePrice = async (
+  public getPositionEffectivePrice = async (
     backtest: boolean,
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<number | null> => {
-    this.loggerService.log("strategyCoreService getPositionAveragePrice", {
+    this.loggerService.log("strategyCoreService getPositionEffectivePrice", {
       symbol,
       context,
     });
     await this.validate(context);
-    return await this.strategyConnectionService.getPositionAveragePrice(backtest, symbol, context);
+    return await this.strategyConnectionService.getPositionEffectivePrice(backtest, symbol, context);
   };
 
   public getPositionInvestedCount = async (

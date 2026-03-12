@@ -4515,8 +4515,8 @@ export class ClientStrategy implements IStrategy {
    * @param symbol - Trading pair symbol
    * @returns Promise resolving to effective entry price or null
    */
-  public async getPositionAveragePrice(symbol: string): Promise<number | null> {
-    this.params.logger.debug("ClientStrategy getPositionAveragePrice", { symbol });
+  public async getPositionEffectivePrice(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionEffectivePrice", { symbol });
     if (!this._pendingSignal) {
       return null;
     }

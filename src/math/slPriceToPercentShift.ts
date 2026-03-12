@@ -6,7 +6,7 @@
  *
  * @param newStopLossPrice - Desired absolute stop-loss price
  * @param originalStopLossPrice - Original stop-loss price from the pending signal
- * @param effectivePriceOpen - Effective entry price (from `getPositionAveragePrice`)
+ * @param effectivePriceOpen - Effective entry price (from `getPositionEffectivePrice`)
  * @returns percentShift to pass to `commitTrailingStop`
  *
  * @example

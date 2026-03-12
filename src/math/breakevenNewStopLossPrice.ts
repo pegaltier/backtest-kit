@@ -4,7 +4,7 @@
  * Breakeven moves the SL to the effective entry price (effectivePriceOpen).
  * The value is the same regardless of position direction.
  *
- * @param effectivePriceOpen - Effective entry price (from `getPositionAveragePrice`)
+ * @param effectivePriceOpen - Effective entry price (from `getPositionEffectivePrice`)
  * @returns New stop-loss price equal to the effective entry price
  *
  * @example

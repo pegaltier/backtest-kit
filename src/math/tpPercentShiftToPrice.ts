@@ -9,7 +9,7 @@
  *
  * @param percentShift - Value returned by `tpPriceToPercentShift` (or passed to `commitTrailingTake`)
  * @param originalTakeProfitPrice - Original take-profit price from the pending signal
- * @param effectivePriceOpen - Effective entry price (from `getPositionAveragePrice`)
+ * @param effectivePriceOpen - Effective entry price (from `getPositionEffectivePrice`)
  * @param position - Position direction: "long" or "short"
  * @returns Absolute take-profit price corresponding to the given percentShift
  *

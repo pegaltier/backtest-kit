@@ -9,7 +9,7 @@
  *
  * @param percentShift - Value returned by `slPriceToPercentShift` (or passed to `commitTrailingStop`)
  * @param originalStopLossPrice - Original stop-loss price from the pending signal
- * @param effectivePriceOpen - Effective entry price (from `getPositionAveragePrice`)
+ * @param effectivePriceOpen - Effective entry price (from `getPositionEffectivePrice`)
  * @param position - Position direction: "long" or "short"
  * @returns Absolute stop-loss price corresponding to the given percentShift
  *

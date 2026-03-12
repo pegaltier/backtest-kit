@@ -6,7 +6,7 @@
  *
  * @param newTakeProfitPrice - Desired absolute take-profit price
  * @param originalTakeProfitPrice - Original take-profit price from the pending signal
- * @param effectivePriceOpen - Effective entry price (from `getPositionAveragePrice`)
+ * @param effectivePriceOpen - Effective entry price (from `getPositionEffectivePrice`)
  * @returns percentShift to pass to `commitTrailingTake`
  *
  * @example

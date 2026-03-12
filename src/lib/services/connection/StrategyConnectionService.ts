@@ -607,18 +607,18 @@ export class StrategyConnectionService implements TStrategy {
    * @param context - Execution context with strategyName, exchangeName, frameName
    * @returns Promise resolving to effective entry price or null
    */
-  public getPositionAveragePrice = async (
+  public getPositionEffectivePrice = async (
     backtest: boolean,
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
   ): Promise<number | null> => {
-    this.loggerService.log("strategyConnectionService getPositionAveragePrice", {
+    this.loggerService.log("strategyConnectionService getPositionEffectivePrice", {
       symbol,
       context,
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
-    return await strategy.getPositionAveragePrice(symbol);
+    return await strategy.getPositionEffectivePrice(symbol);
   };
 
   /**
