@@ -1123,6 +1123,27 @@ export class StrategyCoreService implements TStrategy {
   };
 
   /**
+   * Returns whether breakeven was mathematically reachable at the highest profit price.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+   */
+  public getPositionHighestProfitBreakeven = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<boolean | null> => {
+    this.loggerService.log("strategyCoreService getPositionHighestProfitBreakeven", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionHighestProfitBreakeven(backtest, symbol, context);
+  };
+
+  /**
    * Returns the number of minutes elapsed since the highest profit price was recorded.
    *
    * Validates strategy existence and delegates to connection service.

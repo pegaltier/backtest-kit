@@ -1118,6 +1118,30 @@ export class StrategyConnectionService implements TStrategy {
   };
 
   /**
+   * Returns whether breakeven was mathematically reachable at the highest profit price.
+   *
+   * Delegates to ClientStrategy.getPositionHighestProfitBreakeven().
+   * Returns null if no pending signal exists.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+   */
+  public getPositionHighestProfitBreakeven = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<boolean | null> => {
+    this.loggerService.log("strategyConnectionService getPositionHighestProfitBreakeven", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionHighestProfitBreakeven(symbol);
+  };
+
+  /**
    * Returns the number of minutes elapsed since the highest profit price was recorded.
    *
    * Resolves current timestamp via timeMetaService and delegates to

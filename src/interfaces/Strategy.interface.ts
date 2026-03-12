@@ -1495,6 +1495,17 @@ export interface IStrategy {
   getPositionHighestProfitPrice: (symbol: string) => Promise<{ price: number; timestamp: number } | null>;
 
   /**
+   * Returns whether breakeven was mathematically reachable at the highest profit price.
+   *
+   * Uses the same threshold formula as getBreakeven with the recorded peak price.
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+   */
+  getPositionHighestProfitBreakeven: (symbol: string) => Promise<boolean | null>;
+
+  /**
    * Returns the number of minutes elapsed since the highest profit price was recorded.
    *
    * Measures how long the position has been pulling back from its peak profit level.

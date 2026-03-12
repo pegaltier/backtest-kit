@@ -4780,6 +4780,23 @@ export class ClientStrategy implements IStrategy {
    * @param timestamp - Current Unix timestamp in milliseconds
    * @returns Promise resolving to drawdown duration in minutes or null
    */
+  public async getPositionHighestProfitBreakeven(symbol: string): Promise<boolean | null> {
+    this.params.logger.debug("ClientStrategy getPositionHighestProfitBreakeven", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    const signal = this._pendingSignal;
+    const effectivePriceOpen = GET_EFFECTIVE_PRICE_OPEN(signal);
+    const peakPrice = signal._highestProfitPrice.price;
+    const breakevenThresholdPercent =
+      (GLOBAL_CONFIG.CC_PERCENT_SLIPPAGE + GLOBAL_CONFIG.CC_PERCENT_FEE) * 2 + GLOBAL_CONFIG.CC_BREAKEVEN_THRESHOLD;
+    if (signal.position === "long") {
+      return peakPrice >= effectivePriceOpen * (1 + breakevenThresholdPercent / 100);
+    } else {
+      return peakPrice <= effectivePriceOpen * (1 - breakevenThresholdPercent / 100);
+    }
+  }
+
   public async getPositionDrawdownMinutes(symbol: string, timestamp: number): Promise<number | null> {
     this.params.logger.debug("ClientStrategy getPositionDrawdownMinutes", { symbol });
     if (!this._pendingSignal) {

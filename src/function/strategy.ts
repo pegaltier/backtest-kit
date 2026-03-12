@@ -48,6 +48,7 @@ const GET_POSITION_ENTRIES_METHOD_NAME = "strategy.getPositionEntries";
 const GET_POSITION_ESTIMATE_MINUTES_METHOD_NAME = "strategy.getPositionEstimateMinutes";
 const GET_POSITION_COUNTDOWN_MINUTES_METHOD_NAME = "strategy.getPositionCountdownMinutes";
 const GET_POSITION_HIGHEST_PROFIT_PRICE_METHOD_NAME = "strategy.getPositionHighestProfitPrice";
+const GET_POSITION_HIGHEST_PROFIT_BREAKEVEN_METHOD_NAME = "strategy.getPositionHighestProfitBreakeven";
 const GET_POSITION_DRAWDOWN_MINUTES_METHOD_NAME = "strategy.getPositionDrawdownMinutes";
 const GET_POSITION_ENTRY_OVERLAP_METHOD_NAME = "strategy.getPositionEntryOverlap";
 const GET_POSITION_PARTIAL_OVERLAP_METHOD_NAME = "strategy.getPositionPartialOverlap";
@@ -1821,6 +1822,39 @@ export async function getPositionHighestProfitPrice(symbol: string) {
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
   return await backtest.strategyCoreService.getPositionHighestProfitPrice(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+}
+
+/**
+ * Returns whether breakeven was mathematically reachable at the highest profit price.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionHighestProfitBreakeven } from "backtest-kit";
+ *
+ * const couldBreakeven = await getPositionHighestProfitBreakeven("BTCUSDT");
+ * // e.g. true (price reached the breakeven threshold at its peak)
+ * ```
+ */
+export async function getPositionHighestProfitBreakeven(symbol: string) {
+  backtest.loggerService.info(GET_POSITION_HIGHEST_PROFIT_BREAKEVEN_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionHighestProfitBreakeven requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionHighestProfitBreakeven requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionHighestProfitBreakeven(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName },

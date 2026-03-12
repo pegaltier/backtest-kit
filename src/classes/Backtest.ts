@@ -63,6 +63,8 @@ const BACKTEST_METHOD_NAME_GET_POSITION_COUNTDOWN_MINUTES =
   "BacktestUtils.getPositionCountdownMinutes";
 const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_PRICE =
   "BacktestUtils.getPositionHighestProfitPrice";
+const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN =
+  "BacktestUtils.getPositionHighestProfitBreakeven";
 const BACKTEST_METHOD_NAME_GET_POSITION_DRAWDOWN_MINUTES =
   "BacktestUtils.getPositionDrawdownMinutes";
 const BACKTEST_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP =
@@ -1669,6 +1671,65 @@ export class BacktestUtils {
     }
 
     return await backtest.strategyCoreService.getPositionHighestProfitPrice(
+      true,
+      symbol,
+      context,
+    );
+  };
+
+  /**
+   * Returns whether breakeven was mathematically reachable at the highest profit price.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns true if breakeven was reachable at peak, false otherwise, or null if no active position
+   */
+  public getPositionHighestProfitBreakeven = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestProfitBreakeven(
       true,
       symbol,
       context,

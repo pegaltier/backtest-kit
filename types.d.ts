@@ -2216,6 +2216,17 @@ interface ISignalRow extends ISignalDto {
      * Original priceTakeProfit is preserved in persistence but ignored during execution.
      */
     _trailingPriceTakeProfit?: number;
+    /**
+     * Best price seen in profit direction during the life of this position.
+     * Initialized at position open with priceOpen/pendingAt.
+     * Updated on every tick/candle when price moves toward TP (currentDistance > 0).
+     * - For LONG: maximum VWAP price seen above effective entry
+     * - For SHORT: minimum VWAP price seen below effective entry
+     */
+    _highestProfitPrice: {
+        price: number;
+        timestamp: number;
+    };
     /** Unix timestamp in milliseconds when this signal was created/scheduled in backtest context or when getSignal was called in live context (before validation) */
     timestamp: number;
 }
@@ -3386,6 +3397,73 @@ interface IStrategy {
      * @returns Promise resolving to true if pending signal exists, false otherwise
      */
     hasPendingSignal: (symbol: string) => Promise<boolean>;
+    /**
+     * Returns the original estimated duration for the current pending signal.
+     *
+     * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+     * number of minutes the position is expected to be active before `time_expired`.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to estimated duration in minutes or null
+     */
+    getPositionEstimateMinutes: (symbol: string) => Promise<number | null>;
+    /**
+     * Returns the remaining time before the position expires, clamped to zero.
+     *
+     * Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+     * Returns 0 once the estimate is exceeded (never negative).
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param timestamp - Current Unix timestamp in milliseconds
+     * @returns Promise resolving to remaining minutes (≥ 0) or null
+     */
+    getPositionCountdownMinutes: (symbol: string, timestamp: number) => Promise<number | null>;
+    /**
+     * Returns the best price reached in the profit direction during this position's life.
+     *
+     * Initialized at position open with the entry price and timestamp.
+     * Updated on every tick/candle when VWAP moves beyond the previous record toward TP:
+     * - LONG: tracks the highest price seen above effective entry
+     * - SHORT: tracks the lowest price seen below effective entry
+     *
+     * Returns null if no pending signal exists.
+     * Never returns null when a signal is active — always contains at least the entry price.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to `{ price, timestamp }` record or null
+     */
+    getPositionHighestProfitPrice: (symbol: string) => Promise<{
+        price: number;
+        timestamp: number;
+    } | null>;
+    /**
+     * Returns whether breakeven was mathematically reachable at the highest profit price.
+     *
+     * Uses the same threshold formula as getBreakeven with the recorded peak price.
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+     */
+    getPositionHighestProfitBreakeven: (symbol: string) => Promise<boolean | null>;
+    /**
+     * Returns the number of minutes elapsed since the highest profit price was recorded.
+     *
+     * Measures how long the position has been pulling back from its peak profit level.
+     * Zero when called at the exact moment the peak was set.
+     * Grows continuously as price moves away from the peak without setting a new record.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param timestamp - Current Unix timestamp in milliseconds
+     * @returns Promise resolving to drawdown duration in minutes or null
+     */
+    getPositionDrawdownMinutes: (symbol: string, timestamp: number) => Promise<number | null>;
     /**
      * Disposes the strategy instance and cleans up resources.
      *
@@ -5050,6 +5128,124 @@ declare function getPositionPartials(symbol: string): Promise<{
     entryCountAtClose: number;
     timestamp: number;
 }[]>;
+/**
+ * Returns the list of DCA entry prices and costs for the current pending signal.
+ *
+ * Each element represents a single position entry — the initial open or a subsequent
+ * DCA entry added via commitAverageBuy.
+ *
+ * Returns null if no pending signal exists.
+ * Returns a single-element array if no DCA entries were made.
+ *
+ * Each entry contains:
+ * - `price` — execution price of this entry
+ * - `cost` — dollar cost allocated to this entry (e.g. 100 for $100)
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to array of entry records or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionEntries } from "backtest-kit";
+ *
+ * const entries = await getPositionEntries("BTCUSDT");
+ * // No DCA: [{ price: 43000, cost: 100 }]
+ * // One DCA: [{ price: 43000, cost: 100 }, { price: 42000, cost: 100 }]
+ * ```
+ */
+declare function getPositionEntries(symbol: string): Promise<{
+    price: number;
+    cost: number;
+    timestamp: number;
+}[]>;
+/**
+ * Returns the original estimated duration for the current pending signal.
+ *
+ * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+ * number of minutes the position is expected to be active before `time_expired`.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to estimated duration in minutes or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionEstimateMinutes } from "backtest-kit";
+ *
+ * const estimate = await getPositionEstimateMinutes("BTCUSDT");
+ * // e.g. 120 (2 hours)
+ * ```
+ */
+declare function getPositionEstimateMinutes(symbol: string): Promise<number>;
+/**
+ * Returns the remaining time before the position expires, clamped to zero.
+ *
+ * Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+ * Returns 0 once the estimate is exceeded (never negative).
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to remaining minutes (≥ 0) or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionCountdownMinutes } from "backtest-kit";
+ *
+ * const remaining = await getPositionCountdownMinutes("BTCUSDT");
+ * // e.g. 45 (45 minutes left)
+ * // 0 when expired
+ * ```
+ */
+declare function getPositionCountdownMinutes(symbol: string): Promise<number>;
+/**
+ * Returns the best price reached in the profit direction during this position's life.
+ *
+ * Initialized at position open with the entry price and timestamp.
+ * Updated on every tick/candle when VWAP moves beyond the previous record toward TP:
+ * - LONG: tracks the highest price seen above effective entry
+ * - SHORT: tracks the lowest price seen below effective entry
+ *
+ * Returns null if no pending signal exists.
+ * Never returns null when a signal is active — always contains at least the entry price.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to `{ price, timestamp }` record or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionHighestProfitPrice } from "backtest-kit";
+ *
+ * const peak = await getPositionHighestProfitPrice("BTCUSDT");
+ * // e.g. { price: 44500, timestamp: 1700000000000 }
+ * ```
+ */
+declare function getPositionHighestProfitPrice(symbol: string): Promise<{
+    price: number;
+    timestamp: number;
+}>;
+/**
+ * Returns the number of minutes elapsed since the highest profit price was recorded.
+ *
+ * Measures how long the position has been pulling back from its peak profit level.
+ * Zero when called at the exact moment the peak was set.
+ * Grows continuously as price moves away from the peak without setting a new record.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to drawdown duration in minutes or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionDrawdownMinutes } from "backtest-kit";
+ *
+ * const drawdown = await getPositionDrawdownMinutes("BTCUSDT");
+ * // e.g. 30 (30 minutes since the highest profit price)
+ * ```
+ */
+declare function getPositionDrawdownMinutes(symbol: string): Promise<number>;
 /**
  * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
  * Use this to prevent duplicate DCA entries at the same price area.
@@ -11992,6 +12188,93 @@ declare class BacktestUtils {
         timestamp: number;
     }[]>;
     /**
+     * Returns the original estimated duration for the current pending signal.
+     *
+     * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+     * number of minutes the position is expected to be active before `time_expired`.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Estimated duration in minutes, or null if no active position
+     */
+    getPositionEstimateMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number>;
+    /**
+     * Returns the remaining time before the position expires, clamped to zero.
+     *
+     * Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+     * Returns 0 once the estimate is exceeded (never negative).
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Remaining minutes (≥ 0), or null if no active position
+     */
+    getPositionCountdownMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number>;
+    /**
+     * Returns the best price reached in the profit direction during this position's life.
+     *
+     * Initialized at position open with the entry price and timestamp.
+     * Updated on every candle when VWAP moves beyond the previous record toward TP:
+     * - LONG: tracks the highest price seen above effective entry
+     * - SHORT: tracks the lowest price seen below effective entry
+     *
+     * Returns null if no pending signal exists.
+     * Never returns null when a signal is active — always contains at least the entry price.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns `{ price, timestamp }` record, or null if no active position
+     */
+    getPositionHighestProfitPrice: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        timestamp: number;
+    }>;
+    /**
+     * Returns whether breakeven was mathematically reachable at the highest profit price.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns true if breakeven was reachable at peak, false otherwise, or null if no active position
+     */
+    getPositionHighestProfitBreakeven: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Returns the number of minutes elapsed since the highest profit price was recorded.
+     *
+     * Measures how long the position has been pulling back from its peak profit level.
+     * Zero when called at the exact moment the peak was set.
+     * Grows continuously as price moves away from the peak without setting a new record.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, and frameName
+     * @returns Drawdown duration in minutes, or null if no active position
+     */
+    getPositionDrawdownMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number>;
+    /**
      * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
      * Use this to prevent duplicate DCA entries at the same price area.
      *
@@ -13112,6 +13395,88 @@ declare class LiveUtils {
         cost: number;
         timestamp: number;
     }[]>;
+    /**
+     * Returns the original estimated duration for the current pending signal.
+     *
+     * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+     * number of minutes the position is expected to be active before `time_expired`.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Estimated duration in minutes, or null if no active position
+     */
+    getPositionEstimateMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<number>;
+    /**
+     * Returns the remaining time before the position expires, clamped to zero.
+     *
+     * Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+     * Returns 0 once the estimate is exceeded (never negative).
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Remaining minutes (≥ 0), or null if no active position
+     */
+    getPositionCountdownMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<number>;
+    /**
+     * Returns the best price reached in the profit direction during this position's life.
+     *
+     * Initialized at position open with the entry price and timestamp.
+     * Updated on every tick when VWAP moves beyond the previous record toward TP:
+     * - LONG: tracks the highest price seen above effective entry
+     * - SHORT: tracks the lowest price seen below effective entry
+     *
+     * Returns null if no pending signal exists.
+     * Never returns null when a signal is active — always contains at least the entry price.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns `{ price, timestamp }` record, or null if no active position
+     */
+    getPositionHighestProfitPrice: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<{
+        price: number;
+        timestamp: number;
+    }>;
+    /**
+     * Returns whether breakeven was mathematically reachable at the highest profit price.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns true if breakeven was reachable at peak, false otherwise, or null if no active position
+     */
+    getPositionHighestProfitBreakeven: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
+    /**
+     * Returns the number of minutes elapsed since the highest profit price was recorded.
+     *
+     * Measures how long the position has been pulling back from its peak profit level.
+     * Zero when called at the exact moment the peak was set.
+     * Grows continuously as price moves away from the peak without setting a new record.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Drawdown duration in minutes, or null if no active position
+     */
+    getPositionDrawdownMinutes: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<number>;
     /**
      * Checks whether the current price falls within the tolerance zone of any existing DCA entry level.
      * Use this to prevent duplicate DCA entries at the same price area.
@@ -21620,6 +21985,92 @@ declare class StrategyConnectionService implements TStrategy$1 {
         frameName: FrameName;
     }) => Promise<boolean>;
     /**
+     * Returns the original estimated duration for the current pending signal.
+     *
+     * Delegates to ClientStrategy.getPositionEstimateMinutes().
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to estimated duration in minutes or null
+     */
+    getPositionEstimateMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the remaining time before the position expires, clamped to zero.
+     *
+     * Resolves current timestamp via timeMetaService and delegates to
+     * ClientStrategy.getPositionCountdownMinutes().
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to remaining minutes (≥ 0) or null
+     */
+    getPositionCountdownMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the best price reached in the profit direction during this position's life.
+     *
+     * Delegates to ClientStrategy.getPositionHighestProfitPrice().
+     * Returns null if no pending signal exists.
+     * Never returns null when a signal is active.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to `{ price, timestamp }` record or null
+     */
+    getPositionHighestProfitPrice: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        timestamp: number;
+    } | null>;
+    /**
+     * Returns whether breakeven was mathematically reachable at the highest profit price.
+     *
+     * Delegates to ClientStrategy.getPositionHighestProfitBreakeven().
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+     */
+    getPositionHighestProfitBreakeven: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean | null>;
+    /**
+     * Returns the number of minutes elapsed since the highest profit price was recorded.
+     *
+     * Resolves current timestamp via timeMetaService and delegates to
+     * ClientStrategy.getPositionDrawdownMinutes().
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to drawdown duration in minutes or null
+     */
+    getPositionDrawdownMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
      * Disposes the ClientStrategy instance for the given context.
      *
      * Calls dispose callback, then removes strategy from cache.
@@ -23243,6 +23694,86 @@ declare class StrategyCoreService implements TStrategy {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<boolean>;
+    /**
+     * Returns the original estimated duration for the current pending signal.
+     *
+     * Validates strategy existence and delegates to connection service.
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to estimated duration in minutes or null
+     */
+    getPositionEstimateMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the remaining time before the position expires, clamped to zero.
+     *
+     * Validates strategy existence and delegates to connection service.
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to remaining minutes (≥ 0) or null
+     */
+    getPositionCountdownMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
+    /**
+     * Returns the best price reached in the profit direction during this position's life.
+     *
+     * Validates strategy existence and delegates to connection service.
+     * Returns null if no pending signal exists. Never returns null when signal is active.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to `{ price, timestamp }` record or null
+     */
+    getPositionHighestProfitPrice: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<{
+        price: number;
+        timestamp: number;
+    } | null>;
+    /**
+     * Returns whether breakeven was mathematically reachable at the highest profit price.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to true if breakeven was reachable at peak, false otherwise, or null
+     */
+    getPositionHighestProfitBreakeven: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean | null>;
+    /**
+     * Returns the number of minutes elapsed since the highest profit price was recorded.
+     *
+     * Validates strategy existence and delegates to connection service.
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to drawdown duration in minutes or null
+     */
+    getPositionDrawdownMinutes: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<number | null>;
 }
 
 /**
@@ -25868,4 +26399,4 @@ declare const getTotalClosed: (signal: Signal) => {
     remainingCostBasis: number;
 };
 
-export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, type AverageBuyCommitNotification, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Broker, type BrokerAverageBuyPayload, BrokerBase, type BrokerBreakevenPayload, type BrokerPartialLossPayload, type BrokerPartialProfitPayload, type BrokerSignalClosePayload, type BrokerSignalOpenPayload, type BrokerTrailingStopPayload, type BrokerTrailingTakePayload, Cache, type CancelScheduledCommit, type CancelScheduledCommitNotification, type CandleData, type CandleInterval, type ClosePendingCommit, type ClosePendingCommitNotification, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type IBroker, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalCloseContract, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenContract, type SignalOpenedNotification, type SignalScheduledNotification, type SignalSyncCloseNotification, type SignalSyncContract, type SignalSyncOpenNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, Sync, type SyncEvent, type SyncStatisticsModel, type TBrokerCtor, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialLossCost, commitPartialProfit, commitPartialProfitCost, commitTrailingStop, commitTrailingStopCost, commitTrailingTake, commitTrailingTakeCost, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionEffectivePrice, getPositionEntryOverlap, getPositionInvestedCost, getPositionInvestedCount, getPositionLevels, getPositionPartialOverlap, getPositionPartials, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, investedCostToPercent, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenSync, listenSyncOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentToCloseCost, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, slPercentShiftToPrice, slPriceToPercentShift, stopStrategy, toProfitLossDto, tpPercentShiftToPrice, tpPriceToPercentShift, validate, waitForCandle, warmCandles };
+export { ActionBase, type ActivateScheduledCommit, type ActivateScheduledCommitNotification, type ActivePingContract, type AverageBuyCommit, type AverageBuyCommitNotification, Backtest, type BacktestStatisticsModel, Breakeven, type BreakevenAvailableNotification, type BreakevenCommit, type BreakevenCommitNotification, type BreakevenContract, type BreakevenData, Broker, type BrokerAverageBuyPayload, BrokerBase, type BrokerBreakevenPayload, type BrokerPartialLossPayload, type BrokerPartialProfitPayload, type BrokerSignalClosePayload, type BrokerSignalOpenPayload, type BrokerTrailingStopPayload, type BrokerTrailingTakePayload, Cache, type CancelScheduledCommit, type CancelScheduledCommitNotification, type CandleData, type CandleInterval, type ClosePendingCommit, type ClosePendingCommitNotification, type ColumnConfig, type ColumnModel, Constant, type CriticalErrorNotification, type DoneContract, type EntityId, Exchange, ExecutionContextService, type FrameInterval, type GlobalConfig, Heat, type HeatmapStatisticsModel, type IActionSchema, type IActivateScheduledCommitRow, type IAggregatedTradeData, type IBidData, type IBreakevenCommitRow, type IBroker, type ICandleData, type ICommitRow, type IExchangeSchema, type IFrameSchema, type IHeatmapRow, type ILog, type ILogEntry, type ILogger, type IMarkdownDumpOptions, type INotificationUtils, type IOrderBookData, type IPartialLossCommitRow, type IPartialProfitCommitRow, type IPersistBase, type IPositionSizeATRParams, type IPositionSizeFixedPercentageParams, type IPositionSizeKellyParams, type IPublicAction, type IPublicCandleData, type IPublicSignalRow, type IReportDumpOptions, type IRiskActivePosition, type IRiskCheckArgs, type IRiskSchema, type IRiskSignalRow, type IRiskValidation, type IRiskValidationFn, type IRiskValidationPayload, type IScheduledSignalCancelRow, type IScheduledSignalRow, type ISignalDto, type ISignalRow, type ISizingCalculateParams, type ISizingCalculateParamsATR, type ISizingCalculateParamsFixedPercentage, type ISizingCalculateParamsKelly, type ISizingParams, type ISizingParamsATR, type ISizingParamsFixedPercentage, type ISizingParamsKelly, type ISizingSchema, type ISizingSchemaATR, type ISizingSchemaFixedPercentage, type ISizingSchemaKelly, type IStorageSignalRow, type IStorageUtils, type IStrategyPnL, type IStrategyResult, type IStrategySchema, type IStrategyTickResult, type IStrategyTickResultActive, type IStrategyTickResultCancelled, type IStrategyTickResultClosed, type IStrategyTickResultIdle, type IStrategyTickResultOpened, type IStrategyTickResultScheduled, type IStrategyTickResultWaiting, type ITrailingStopCommitRow, type ITrailingTakeCommitRow, type IWalkerResults, type IWalkerSchema, type IWalkerStrategyResult, type InfoErrorNotification, Live, type LiveStatisticsModel, Log, type LogData, Markdown, MarkdownFileBase, MarkdownFolderBase, type MarkdownName, type MeasureData, MethodContextService, type MetricStats, Notification, NotificationBacktest, type NotificationData, NotificationLive, type NotificationModel, Partial$1 as Partial, type PartialData, type PartialEvent, type PartialLossAvailableNotification, type PartialLossCommit, type PartialLossCommitNotification, type PartialLossContract, type PartialProfitAvailableNotification, type PartialProfitCommit, type PartialProfitCommitNotification, type PartialProfitContract, type PartialStatisticsModel, Performance, type PerformanceContract, type PerformanceMetricType, type PerformanceStatisticsModel, PersistBase, PersistBreakevenAdapter, PersistCandleAdapter, PersistLogAdapter, PersistMeasureAdapter, PersistNotificationAdapter, PersistPartialAdapter, PersistRiskAdapter, PersistScheduleAdapter, PersistSignalAdapter, PersistStorageAdapter, PositionSize, type ProgressBacktestContract, type ProgressWalkerContract, Report, ReportBase, type ReportName, Risk, type RiskContract, type RiskData, type RiskEvent, type RiskRejectionNotification, type RiskStatisticsModel, Schedule, type ScheduleData, type SchedulePingContract, type ScheduleStatisticsModel, type ScheduledEvent, type SignalCancelledNotification, type SignalCloseContract, type SignalClosedNotification, type SignalData, type SignalInterval, type SignalOpenContract, type SignalOpenedNotification, type SignalScheduledNotification, type SignalSyncCloseNotification, type SignalSyncContract, type SignalSyncOpenNotification, Storage, StorageBacktest, type StorageData, StorageLive, Strategy, type StrategyActionType, type StrategyCancelReason, type StrategyCloseReason, type StrategyCommitContract, type StrategyEvent, type StrategyStatisticsModel, Sync, type SyncEvent, type SyncStatisticsModel, type TBrokerCtor, type TLogCtor, type TMarkdownBase, type TNotificationUtilsCtor, type TPersistBase, type TPersistBaseCtor, type TReportBase, type TStorageUtilsCtor, type TickEvent, type TrailingStopCommit, type TrailingStopCommitNotification, type TrailingTakeCommit, type TrailingTakeCommitNotification, type ValidationErrorNotification, Walker, type WalkerCompleteContract, type WalkerContract, type WalkerMetric, type SignalData$1 as WalkerSignalData, type WalkerStatisticsModel, addActionSchema, addExchangeSchema, addFrameSchema, addRiskSchema, addSizingSchema, addStrategySchema, addWalkerSchema, alignToInterval, checkCandles, commitActivateScheduled, commitAverageBuy, commitBreakeven, commitCancelScheduled, commitClosePending, commitPartialLoss, commitPartialLossCost, commitPartialProfit, commitPartialProfitCost, commitTrailingStop, commitTrailingStopCost, commitTrailingTake, commitTrailingTakeCost, dumpMessages, emitters, formatPrice, formatQuantity, get, getActionSchema, getAggregatedTrades, getAveragePrice, getBacktestTimeframe, getBreakeven, getCandles, getColumns, getConfig, getContext, getDate, getDefaultColumns, getDefaultConfig, getEffectivePriceOpen, getExchangeSchema, getFrameSchema, getMode, getNextCandles, getOrderBook, getPendingSignal, getPositionCountdownMinutes, getPositionDrawdownMinutes, getPositionEffectivePrice, getPositionEntries, getPositionEntryOverlap, getPositionEstimateMinutes, getPositionHighestProfitPrice, getPositionInvestedCost, getPositionInvestedCount, getPositionLevels, getPositionPartialOverlap, getPositionPartials, getPositionPnlCost, getPositionPnlPercent, getRawCandles, getRiskSchema, getScheduledSignal, getSizingSchema, getStrategySchema, getSymbol, getTimestamp, getTotalClosed, getTotalCostClosed, getTotalPercentClosed, getWalkerSchema, hasTradeContext, investedCostToPercent, backtest as lib, listExchangeSchema, listFrameSchema, listRiskSchema, listSizingSchema, listStrategySchema, listWalkerSchema, listenActivePing, listenActivePingOnce, listenBacktestProgress, listenBreakevenAvailable, listenBreakevenAvailableOnce, listenDoneBacktest, listenDoneBacktestOnce, listenDoneLive, listenDoneLiveOnce, listenDoneWalker, listenDoneWalkerOnce, listenError, listenExit, listenPartialLossAvailable, listenPartialLossAvailableOnce, listenPartialProfitAvailable, listenPartialProfitAvailableOnce, listenPerformance, listenRisk, listenRiskOnce, listenSchedulePing, listenSchedulePingOnce, listenSignal, listenSignalBacktest, listenSignalBacktestOnce, listenSignalLive, listenSignalLiveOnce, listenSignalOnce, listenStrategyCommit, listenStrategyCommitOnce, listenSync, listenSyncOnce, listenValidation, listenWalker, listenWalkerComplete, listenWalkerOnce, listenWalkerProgress, overrideActionSchema, overrideExchangeSchema, overrideFrameSchema, overrideRiskSchema, overrideSizingSchema, overrideStrategySchema, overrideWalkerSchema, parseArgs, percentDiff, percentToCloseCost, percentValue, roundTicks, set, setColumns, setConfig, setLogger, shutdown, slPercentShiftToPrice, slPriceToPercentShift, stopStrategy, toProfitLossDto, tpPercentShiftToPrice, tpPriceToPercentShift, validate, waitForCandle, warmCandles };
