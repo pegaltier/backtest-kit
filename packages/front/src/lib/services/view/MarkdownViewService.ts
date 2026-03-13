@@ -7,7 +7,7 @@ import {
   Breakeven,
   Risk,
   Partial,
-  // HighestProfit,
+  HighestProfit,
   Schedule,
   Performance,
   Sync,
@@ -118,8 +118,7 @@ export class MarkdownViewService {
     if (CC_ENABLE_MOCK) {
       return await this.markdownMockService.getHighestProfitData(symbol, strategyName, exchangeName, frameName);
     }
-    return {};
-    // return await HighestProfit.getData(symbol, { strategyName, exchangeName, frameName }, backtest);
+    return await HighestProfit.getData(symbol, { strategyName, exchangeName, frameName }, backtest);
   };
 
   public getHighestProfitReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false): Promise<string> => {
@@ -127,8 +126,7 @@ export class MarkdownViewService {
     if (CC_ENABLE_MOCK) {
       return await this.markdownMockService.getHighestProfitReport(symbol, strategyName, exchangeName, frameName);
     }
-    return ""
-    //return await HighestProfit.getReport(symbol, { strategyName, exchangeName, frameName }, backtest);
+    return await HighestProfit.getReport(symbol, { strategyName, exchangeName, frameName }, backtest);
   };
 
   // Schedule
