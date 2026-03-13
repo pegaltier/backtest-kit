@@ -10,6 +10,8 @@ const connectionServices = {
 
 const metaServices = {
     symbolMetaService: Symbol("symbolMetaService"),
+    backtestMetaService: Symbol("backtestMetaService"),
+    liveMetaService: Symbol("liveMetaService"),
 }
 
 const mockServices = {

@@ -19,6 +19,8 @@ import MarkdownViewService from "./services/view/MarkdownViewService";
 import SymbolConnectionService from "./services/connection/SymbolConnectionService";
 import SymbolMetaService from "./services/meta/SymbolMetaService";
 import PriceConnectionService from "./services/connection/PriceConnectionService";
+import LiveMetaService from "./services/meta/LiveMetaService";
+import BacktestMetaService from "./services/meta/BacktestMetaService";
 
 const baseServices = {
   loggerService: inject<LoggerService>(TYPES.loggerService),
@@ -31,7 +33,9 @@ const connectionServices = {
 }
 
 const metaServices = {
+  liveMetaService: inject<LiveMetaService>(TYPES.liveMetaService),
   symbolMetaService: inject<SymbolMetaService>(TYPES.symbolMetaService),
+  backtestMetaService: inject<BacktestMetaService>(TYPES.backtestMetaService),
 }
 
 const mockServices = {

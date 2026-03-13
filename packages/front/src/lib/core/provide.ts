@@ -17,6 +17,8 @@ import { TYPES } from "./types";
 import SymbolConnectionService from "../services/connection/SymbolConnectionService";
 import SymbolMetaService from "../services/meta/SymbolMetaService";
 import PriceConnectionService from "../services/connection/PriceConnectionService";
+import BacktestMetaService from "../services/meta/BacktestMetaService";
+import LiveMetaService from "../services/meta/LiveMetaService";
 
 {
   provide(TYPES.loggerService, () => new LoggerService());
@@ -29,7 +31,9 @@ import PriceConnectionService from "../services/connection/PriceConnectionServic
 }
 
 {
+  provide(TYPES.liveMetaService, () => new LiveMetaService());
   provide(TYPES.symbolMetaService, () => new SymbolMetaService());
+  provide(TYPES.backtestMetaService, () => new BacktestMetaService());
 }
 
 {
