@@ -1141,6 +1141,48 @@ export class StrategyCoreService implements TStrategy {
   };
 
   /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to PnL percentage or null
+   */
+  public getPositionHighestPnlPercentage = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionHighestPnlPercentage", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionHighestPnlPercentage(backtest, symbol, context);
+  };
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to PnL cost or null
+   */
+  public getPositionHighestPnlCost = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyCoreService getPositionHighestPnlCost", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.getPositionHighestPnlCost(backtest, symbol, context);
+  };
+
+  /**
    * Returns whether breakeven was mathematically reachable at the highest profit price.
    *
    * @param backtest - Whether running in backtest mode

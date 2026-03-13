@@ -49,6 +49,8 @@ const GET_POSITION_ESTIMATE_MINUTES_METHOD_NAME = "strategy.getPositionEstimateM
 const GET_POSITION_COUNTDOWN_MINUTES_METHOD_NAME = "strategy.getPositionCountdownMinutes";
 const GET_POSITION_HIGHEST_PROFIT_PRICE_METHOD_NAME = "strategy.getPositionHighestProfitPrice";
 const GET_POSITION_HIGHEST_PROFIT_TIMESTAMP_METHOD_NAME = "strategy.getPositionHighestProfitTimestamp";
+const GET_POSITION_HIGHEST_PNL_PERCENTAGE_METHOD_NAME = "strategy.getPositionHighestPnlPercentage";
+const GET_POSITION_HIGHEST_PNL_COST_METHOD_NAME = "strategy.getPositionHighestPnlCost";
 const GET_POSITION_HIGHEST_PROFIT_BREAKEVEN_METHOD_NAME = "strategy.getPositionHighestProfitBreakeven";
 const GET_POSITION_DRAWDOWN_MINUTES_METHOD_NAME = "strategy.getPositionDrawdownMinutes";
 const GET_POSITION_ENTRY_OVERLAP_METHOD_NAME = "strategy.getPositionEntryOverlap";
@@ -1856,6 +1858,72 @@ export async function getPositionHighestProfitTimestamp(symbol: string) {
   const { backtest: isBacktest } = backtest.executionContextService.context;
   const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
   return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+}
+
+/**
+ * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to PnL percentage or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionHighestPnlPercentage } from "backtest-kit";
+ *
+ * const pnl = await getPositionHighestPnlPercentage("BTCUSDT");
+ * // e.g. 3.5
+ * ```
+ */
+export async function getPositionHighestPnlPercentage(symbol: string) {
+  backtest.loggerService.info(GET_POSITION_HIGHEST_PNL_PERCENTAGE_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionHighestPnlPercentage requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionHighestPnlPercentage requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionHighestPnlPercentage(
+    isBacktest,
+    symbol,
+    { exchangeName, frameName, strategyName },
+  );
+}
+
+/**
+ * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+ *
+ * Returns null if no pending signal exists.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise resolving to PnL cost or null
+ *
+ * @example
+ * ```typescript
+ * import { getPositionHighestPnlCost } from "backtest-kit";
+ *
+ * const pnlCost = await getPositionHighestPnlCost("BTCUSDT");
+ * // e.g. 35.5
+ * ```
+ */
+export async function getPositionHighestPnlCost(symbol: string) {
+  backtest.loggerService.info(GET_POSITION_HIGHEST_PNL_COST_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("getPositionHighestPnlCost requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("getPositionHighestPnlCost requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await backtest.strategyCoreService.getPositionHighestPnlCost(
     isBacktest,
     symbol,
     { exchangeName, frameName, strategyName },

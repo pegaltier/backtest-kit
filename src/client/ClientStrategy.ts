@@ -4871,6 +4871,50 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * Initialized at position open with 0.
+   * Updated on every tick/candle when VWAP moves beyond the previous record toward TP:
+   * - LONG: tracks the PnL percentage at the highest price seen above effective entry
+   * - SHORT: tracks the PnL percentage at the lowest price seen below effective entry
+   *
+   * Returns null if no pending signal exists.
+   * Never returns null when a signal is active — always contains at least 0.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to PnL percentage or null
+   */
+  public async getPositionHighestPnlPercentage(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionHighestPnlPercentage", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return this._pendingSignal._peak.pnlPercentage;
+  }
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * Initialized at position open with 0.
+   * Updated on every tick/candle when VWAP moves beyond the previous record toward TP:
+   * - LONG: tracks the PnL cost at the highest price seen above effective entry
+   * - SHORT: tracks the PnL cost at the lowest price seen below effective entry
+   *
+   * Returns null if no pending signal exists.
+   * Never returns null when a signal is active — always contains at least 0.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to PnL cost or null
+   */
+  public async getPositionHighestPnlCost(symbol: string): Promise<number | null> {
+    this.params.logger.debug("ClientStrategy getPositionHighestPnlCost", { symbol });
+    if (!this._pendingSignal) {
+      return null;
+    }
+    return this._pendingSignal._peak.pnlCost;
+  }
+
+  /**
    * Returns the number of minutes elapsed since the highest profit price was recorded.
    *
    * Measures how long the position has been pulling back from its peak profit level.

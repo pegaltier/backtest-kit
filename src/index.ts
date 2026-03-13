@@ -44,6 +44,9 @@ export {
   getPositionDrawdownMinutes,
   getPositionEntryOverlap,
   getPositionPartialOverlap,
+  getPositionHighestPnlCost,
+  getPositionHighestPnlPercentage,
+  getPositionHighestProfitBreakeven,
 } from "./function/strategy";
 export { stopStrategy } from "./function/control";
 export { shutdown } from "./function/shutdown";

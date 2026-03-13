@@ -65,6 +65,10 @@ const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_PRICE =
   "BacktestUtils.getPositionHighestProfitPrice";
 const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP =
   "BacktestUtils.getPositionHighestProfitTimestamp";
+const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE =
+  "BacktestUtils.getPositionHighestPnlPercentage";
+const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST =
+  "BacktestUtils.getPositionHighestPnlCost";
 const BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN =
   "BacktestUtils.getPositionHighestProfitBreakeven";
 const BACKTEST_METHOD_NAME_GET_POSITION_DRAWDOWN_MINUTES =
@@ -1728,6 +1732,128 @@ export class BacktestUtils {
     }
 
     return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
+      true,
+      symbol,
+      context,
+    );
+  };
+
+  /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns PnL percentage or null if no active position
+   */
+  public getPositionHighestPnlPercentage = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestPnlPercentage(
+      true,
+      symbol,
+      context,
+    );
+  };
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, and frameName
+   * @returns PnL cost or null if no active position
+   */
+  public getPositionHighestPnlCost = async (
+    symbol: string,
+    context: {
+      strategyName: StrategyName;
+      exchangeName: ExchangeName;
+      frameName: FrameName;
+    },
+  ) => {
+    backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            BACKTEST_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestPnlCost(
       true,
       symbol,
       context,

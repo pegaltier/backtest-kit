@@ -1491,6 +1491,26 @@ export interface IStrategy {
   getPositionHighestProfitPrice: (symbol: string) => Promise<number | null>;
 
   /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to PnL percentage or null
+   */
+  getPositionHighestPnlPercentage: (symbol: string) => Promise<number | null>;
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to PnL cost or null
+   */
+  getPositionHighestPnlCost: (symbol: string) => Promise<number | null>;
+
+  /**
    * Returns the timestamp when the best profit price was recorded during this position's life.
    *
    * Returns null if no pending signal exists.

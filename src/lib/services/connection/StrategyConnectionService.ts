@@ -1184,6 +1184,54 @@ export class StrategyConnectionService implements TStrategy {
   };
 
   /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * Delegates to ClientStrategy.getPositionHighestPnlPercentage().
+   * Returns null if no pending signal exists.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to PnL percentage or null
+   */
+  public getPositionHighestPnlPercentage = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionHighestPnlPercentage", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionHighestPnlPercentage(symbol);
+  };
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * Delegates to ClientStrategy.getPositionHighestPnlCost().
+   * Returns null if no pending signal exists.
+   *
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to PnL cost or null
+   */
+  public getPositionHighestPnlCost = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<number | null> => {
+    this.loggerService.log("strategyConnectionService getPositionHighestPnlCost", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.getPositionHighestPnlCost(symbol);
+  };
+
+  /**
    * Returns whether breakeven was mathematically reachable at the highest profit price.
    *
    * Delegates to ClientStrategy.getPositionHighestProfitBreakeven().

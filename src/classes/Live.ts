@@ -58,6 +58,8 @@ const LIVE_METHOD_NAME_GET_POSITION_ESTIMATE_MINUTES = "LiveUtils.getPositionEst
 const LIVE_METHOD_NAME_GET_POSITION_COUNTDOWN_MINUTES = "LiveUtils.getPositionCountdownMinutes";
 const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_PRICE = "LiveUtils.getPositionHighestProfitPrice";
 const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_TIMESTAMP = "LiveUtils.getPositionHighestProfitTimestamp";
+const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE = "LiveUtils.getPositionHighestPnlPercentage";
+const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST = "LiveUtils.getPositionHighestPnlCost";
 const LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PROFIT_BREAKEVEN = "LiveUtils.getPositionHighestProfitBreakeven";
 const LIVE_METHOD_NAME_GET_POSITION_DRAWDOWN_MINUTES = "LiveUtils.getPositionDrawdownMinutes";
 const LIVE_METHOD_NAME_GET_POSITION_ENTRY_OVERLAP = "LiveUtils.getPositionEntryOverlap";
@@ -1687,6 +1689,128 @@ export class LiveUtils {
     }
 
     return await backtest.strategyCoreService.getPositionHighestProfitTimestamp(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+  };
+
+  /**
+   * Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns PnL percentage or null if no active position
+   */
+  public getPositionHighestPnlPercentage = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_PERCENTAGE,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestPnlPercentage(
+      false,
+      symbol,
+      {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      },
+    );
+  };
+
+  /**
+   * Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+   *
+   * Returns null if no pending signal exists.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns PnL cost or null if no active position
+   */
+  public getPositionHighestPnlCost = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ) => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_GET_POSITION_HIGHEST_PNL_COST,
+          ),
+        );
+    }
+
+    return await backtest.strategyCoreService.getPositionHighestPnlCost(
       false,
       symbol,
       {
