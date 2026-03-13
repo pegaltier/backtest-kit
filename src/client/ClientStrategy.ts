@@ -932,7 +932,7 @@ const GET_SIGNAL_FN = trycatch(
           timestamp: currentTime,
           _isScheduled: false,
           _entry: [{ price: signal.priceOpen, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, timestamp: currentTime }],
-          _peak: { price: signal.priceOpen, timestamp: currentTime },
+          _peak: { price: signal.priceOpen, timestamp: currentTime, pnlPercentage: 0, pnlCost: 0 },
         };
 
         // Валидируем сигнал перед возвратом
@@ -960,7 +960,7 @@ const GET_SIGNAL_FN = trycatch(
         timestamp: currentTime,
         _isScheduled: true,
         _entry: [{ price: signal.priceOpen, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, timestamp: currentTime }],
-        _peak: { price: signal.priceOpen, timestamp: currentTime },
+        _peak: { price: signal.priceOpen, timestamp: currentTime, pnlPercentage: 0, pnlCost: 0 },
       };
 
       // Валидируем сигнал перед возвратом
@@ -984,7 +984,7 @@ const GET_SIGNAL_FN = trycatch(
       timestamp: currentTime,
       _isScheduled: false,
       _entry: [{ price: currentPrice, cost: signal.cost ?? GLOBAL_CONFIG.CC_POSITION_ENTRY_COST, timestamp: currentTime }],
-      _peak: { price: currentPrice, timestamp: currentTime },
+      _peak: { price: currentPrice, timestamp: currentTime, pnlPercentage: 0, pnlCost: 0 },
     };
 
     // Валидируем сигнал перед возвратом
@@ -1902,7 +1902,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_FN = async (
     ...scheduled,
     pendingAt: activationTime,
     _isScheduled: false,
-    _peak: { price: scheduled.priceOpen, timestamp: activationTime },
+    _peak: { price: scheduled.priceOpen, timestamp: activationTime, pnlPercentage: 0, pnlCost: 0 },
   };
 
   // Sync open: if external system rejects — cancel scheduled signal instead of opening
@@ -3113,7 +3113,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         percentTp = Math.min(progressPercent, 100);
 
         if (currentPrice > signal._peak.price) {
-          signal._peak = { price: currentPrice, timestamp: currentTime };
+          const publicSignal = TO_PUBLIC_SIGNAL(signal, currentPrice);
+          signal._peak = { price: currentPrice, timestamp: currentTime, pnlCost: publicSignal.pnl.pnlCost, pnlPercentage: publicSignal.pnl.pnlPercentage };
           if (self.params.callbacks?.onWrite) {
             self.params.callbacks.onWrite(
               signal.symbol,
@@ -3128,7 +3129,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.exchangeName,
           );
           await self.params.onHighestProfit(
-            TO_PUBLIC_SIGNAL(signal, currentPrice),
+            publicSignal,
             currentPrice,
             currentTime,
           )
@@ -3183,7 +3184,8 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
         percentTp = Math.min(progressPercent, 100);
 
         if (currentPrice < signal._peak.price) {
-          signal._peak = { price: currentPrice, timestamp: currentTime };
+          const publicSignal = TO_PUBLIC_SIGNAL(signal, currentPrice);
+          signal._peak = { price: currentPrice, timestamp: currentTime, pnlCost: publicSignal.pnl.pnlCost, pnlPercentage: publicSignal.pnl.pnlPercentage };
           if (self.params.callbacks?.onWrite) {
             self.params.callbacks.onWrite(
               signal.symbol,
@@ -3198,7 +3200,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.exchangeName,
           );
           await self.params.onHighestProfit(
-            TO_PUBLIC_SIGNAL(signal, currentPrice),
+            publicSignal,
             currentPrice,
             currentTime,
           )
@@ -3430,7 +3432,7 @@ const ACTIVATE_SCHEDULED_SIGNAL_IN_BACKTEST_FN = async (
     ...scheduled,
     pendingAt: activationTime,
     _isScheduled: false,
-    _peak: { price: scheduled.priceOpen, timestamp: activationTime },
+    _peak: { price: scheduled.priceOpen, timestamp: activationTime, pnlPercentage: 0, pnlCost: 0 },
   };
 
   // Sync open: if external system rejects — cancel scheduled signal instead of opening
@@ -3802,7 +3804,7 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
         ...activatedSignal,
         pendingAt: candle.timestamp,
         _isScheduled: false,
-        _peak: { price: activatedSignal.priceOpen, timestamp: candle.timestamp },
+        _peak: { price: activatedSignal.priceOpen, timestamp: candle.timestamp, pnlPercentage: 0, pnlCost: 0 },
       };
 
       // Sync open: if external system rejects — cancel scheduled signal instead of opening
@@ -4090,7 +4092,8 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           const progressPercent = (currentDistance / tpDistance) * 100;
 
           if (averagePrice > signal._peak.price) {
-            signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp };
+            const publicSignal = TO_PUBLIC_SIGNAL(signal, averagePrice);
+            signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp, pnlCost: publicSignal.pnl.pnlCost, pnlPercentage: publicSignal.pnl.pnlPercentage };
             if (self.params.callbacks?.onWrite) {
               self.params.callbacks.onWrite(
                 signal.symbol,
@@ -4099,7 +4102,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
               );
             }
             await self.params.onHighestProfit(
-              TO_PUBLIC_SIGNAL(signal, averagePrice),
+              publicSignal,
               averagePrice,
               currentCandleTimestamp
             );
@@ -4152,7 +4155,8 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
           const progressPercent = (currentDistance / tpDistance) * 100;
 
           if (averagePrice < signal._peak.price) {
-            signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp };
+            const publicSignal = TO_PUBLIC_SIGNAL(signal, averagePrice);
+            signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp, pnlCost: publicSignal.pnl.pnlCost, pnlPercentage: publicSignal.pnl.pnlPercentage };
             if (self.params.callbacks?.onWrite) {
               self.params.callbacks.onWrite(
                 signal.symbol,
@@ -4161,7 +4165,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
               );
             }
             await self.params.onHighestProfit(
-              TO_PUBLIC_SIGNAL(signal, averagePrice),
+              publicSignal,
               averagePrice,
               currentCandleTimestamp
             );
@@ -5187,7 +5191,7 @@ export class ClientStrategy implements IStrategy {
         ...activatedSignal,
         pendingAt: currentTime,
         _isScheduled: false,
-        _peak: { price: activatedSignal.priceOpen, timestamp: currentTime },
+        _peak: { price: activatedSignal.priceOpen, timestamp: currentTime, pnlPercentage: 0, pnlCost: 0 },
       };
 
       const syncOpenAllowed = await CALL_SIGNAL_SYNC_OPEN_FN(currentTime, currentPrice, pendingSignal, this);
