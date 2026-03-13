@@ -104,10 +104,10 @@ getTotalCostClosed: (backtest: boolean, symbol: string, context: { strategyName:
 Returns the cost basis in dollars of the position currently held (not closed).
 Correctly accounts for DCA entries between partial closes.
 
-### getPositionAveragePrice
+### getPositionEffectivePrice
 
 ```ts
-getPositionAveragePrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+getPositionEffectivePrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
 Returns the effective (DCA-averaged) entry price for the current pending signal.
@@ -445,3 +445,76 @@ Checks if there is an active pending signal for the symbol.
 Validates strategy existence and delegates to connection service
 to check if a pending signal exists for the symbol.
 Does not require execution context as this is a state query operation.
+
+### getPositionEstimateMinutes
+
+```ts
+getPositionEstimateMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the original estimated duration for the current pending signal.
+
+Validates strategy existence and delegates to connection service.
+Returns null if no pending signal exists.
+
+### getPositionCountdownMinutes
+
+```ts
+getPositionCountdownMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the remaining time before the position expires, clamped to zero.
+
+Validates strategy existence and delegates to connection service.
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitPrice
+
+```ts
+getPositionHighestProfitPrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the best price reached in the profit direction during this position's life.
+
+### getPositionHighestProfitTimestamp
+
+```ts
+getPositionHighestProfitTimestamp: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the timestamp when the best profit price was recorded during this position's life.
+
+### getPositionHighestPnlPercentage
+
+```ts
+getPositionHighestPnlPercentage: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+
+### getPositionHighestPnlCost
+
+```ts
+getPositionHighestPnlCost: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+
+### getPositionHighestProfitBreakeven
+
+```ts
+getPositionHighestProfitBreakeven: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Returns whether breakeven was mathematically reachable at the highest profit price.
+
+### getPositionDrawdownMinutes
+
+```ts
+getPositionDrawdownMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Validates strategy existence and delegates to connection service.
+Returns null if no pending signal exists.

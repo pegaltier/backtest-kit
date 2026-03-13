@@ -103,10 +103,10 @@ Checks if breakeven threshold has been reached for the current pending signal.
 Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
 to cover transaction costs (slippage + fees) and allow breakeven to be set.
 
-### getPositionAveragePrice
+### getPositionEffectivePrice
 
 ```ts
-getPositionAveragePrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+getPositionEffectivePrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
 ```
 
 Returns the effective (weighted average) entry price for the current pending signal.
@@ -206,6 +206,94 @@ Returns a single-element array if no DCA entries were made.
 Each entry contains:
 - `price` — execution price of this entry
 - `cost` — dollar cost allocated to this entry (e.g. 100 for $100)
+
+### getPositionEstimateMinutes
+
+```ts
+getPositionEstimateMinutes: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the original estimated duration for the current pending signal.
+
+Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+number of minutes the position is expected to be active before `time_expired`.
+
+Returns null if no pending signal exists.
+
+### getPositionCountdownMinutes
+
+```ts
+getPositionCountdownMinutes: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the remaining time before the position expires, clamped to zero.
+
+Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+Returns 0 once the estimate is exceeded (never negative).
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitPrice
+
+```ts
+getPositionHighestProfitPrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the best price reached in the profit direction during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitTimestamp
+
+```ts
+getPositionHighestProfitTimestamp: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the timestamp when the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlPercentage
+
+```ts
+getPositionHighestPnlPercentage: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlCost
+
+```ts
+getPositionHighestPnlCost: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitBreakeven
+
+```ts
+getPositionHighestProfitBreakeven: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Returns whether breakeven was mathematically reachable at the highest profit price.
+
+### getPositionDrawdownMinutes
+
+```ts
+getPositionDrawdownMinutes: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Measures how long the position has been pulling back from its peak profit level.
+Zero when called at the exact moment the peak was set.
+Grows continuously as price moves away from the peak without setting a new record.
+
+Returns null if no pending signal exists.
 
 ### getPositionEntryOverlap
 
@@ -425,7 +513,7 @@ Gets statistical data from all live trading events for a symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$8[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$9[]) => Promise<string>
 ```
 
 Generates markdown report with all events for a symbol-strategy pair.
@@ -433,7 +521,7 @@ Generates markdown report with all events for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$8[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$9[]) => Promise<void>
 ```
 
 Saves strategy report to disk.

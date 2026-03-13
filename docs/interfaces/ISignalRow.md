@@ -145,6 +145,18 @@ Updated by trailingTake() method based on position type and percentage distance.
 When _trailingPriceTakeProfit is set, it replaces priceTakeProfit for TP/SL checks.
 Original priceTakeProfit is preserved in persistence but ignored during execution.
 
+### _peak
+
+```ts
+_peak: { price: number; timestamp: number; pnlPercentage: number; pnlCost: number; }
+```
+
+Best price seen in profit direction during the life of this position.
+Initialized at position open with priceOpen/pendingAt.
+Updated on every tick/candle when price moves toward TP (currentDistance &gt; 0).
+- For LONG: maximum VWAP price seen above effective entry
+- For SHORT: minimum VWAP price seen below effective entry
+
 ### timestamp
 
 ```ts

@@ -97,3 +97,11 @@ sync: boolean
 ```
 
 Enable signal synchronization event logging (signal-open, signal-close)
+
+### highest_profit
+
+```ts
+highest_profit: boolean
+```
+
+Enable highest profit milestone event logging

@@ -1,12 +1,12 @@
 ---
-title: docs/function/getPositionAveragePrice
+title: docs/function/getPositionEffectivePrice
 group: docs
 ---
 
-# getPositionAveragePrice
+# getPositionEffectivePrice
 
 ```ts
-declare function getPositionAveragePrice(symbol: string): Promise<number | null>;
+declare function getPositionEffectivePrice(symbol: string): Promise<number | null>;
 ```
 
 Returns the effective (DCA-weighted) entry price for the current pending signal.

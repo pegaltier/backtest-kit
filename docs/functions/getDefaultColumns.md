@@ -17,6 +17,7 @@ declare function getDefaultColumns(): Readonly<{
     schedule_columns: ColumnModel<ScheduledEvent>[];
     strategy_columns: ColumnModel<StrategyEvent>[];
     sync_columns: ColumnModel<SyncEvent>[];
+    highest_profit_columns: ColumnModel<HighestProfitEvent>[];
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     walker_strategy_columns: ColumnModel<IStrategyResult>[];
 }>;

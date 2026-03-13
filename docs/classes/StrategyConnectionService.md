@@ -133,10 +133,10 @@ getTotalCostClosed: (backtest: boolean, symbol: string, context: { strategyName:
 Returns the cost basis in dollars of the position currently held (not closed).
 Correctly accounts for DCA entries between partial closes.
 
-### getPositionAveragePrice
+### getPositionEffectivePrice
 
 ```ts
-getPositionAveragePrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+getPositionEffectivePrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
 ```
 
 Returns the effective (DCA-averaged) entry price for the current pending signal.
@@ -318,6 +318,96 @@ hasPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: s
 Checks if there is an active pending signal for the strategy.
 Delegates to ClientStrategy.hasPendingSignal() which checks if there is an active position
 that has not been fully closed.
+
+### getPositionEstimateMinutes
+
+```ts
+getPositionEstimateMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the original estimated duration for the current pending signal.
+
+Delegates to ClientStrategy.getPositionEstimateMinutes().
+Returns null if no pending signal exists.
+
+### getPositionCountdownMinutes
+
+```ts
+getPositionCountdownMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the remaining time before the position expires, clamped to zero.
+
+Resolves current timestamp via timeMetaService and delegates to
+ClientStrategy.getPositionCountdownMinutes().
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitPrice
+
+```ts
+getPositionHighestProfitPrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the best price reached in the profit direction during this position's life.
+
+Delegates to ClientStrategy.getPositionHighestProfitPrice().
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitTimestamp
+
+```ts
+getPositionHighestProfitTimestamp: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the timestamp when the best profit price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionHighestProfitTimestamp().
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlPercentage
+
+```ts
+getPositionHighestPnlPercentage: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionHighestPnlPercentage().
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlCost
+
+```ts
+getPositionHighestPnlCost: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionHighestPnlCost().
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitBreakeven
+
+```ts
+getPositionHighestProfitBreakeven: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Returns whether breakeven was mathematically reachable at the highest profit price.
+
+Delegates to ClientStrategy.getPositionHighestProfitBreakeven().
+Returns null if no pending signal exists.
+
+### getPositionDrawdownMinutes
+
+```ts
+getPositionDrawdownMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Resolves current timestamp via timeMetaService and delegates to
+ClientStrategy.getPositionDrawdownMinutes().
+Returns null if no pending signal exists.
 
 ### dispose
 

@@ -101,10 +101,10 @@ Decreases with each partial close, increases with each averageBuy().
 
 Returns totalInvested if no pending signal or no partial closes.
 
-### getPositionAveragePrice
+### getPositionEffectivePrice
 
 ```ts
-getPositionAveragePrice: (symbol: string) => Promise<number>
+getPositionEffectivePrice: (symbol: string) => Promise<number>
 ```
 
 Returns the effective (DCA-averaged) entry price for the current pending signal.
@@ -523,6 +523,97 @@ hasPendingSignal: (symbol: string) => Promise<boolean>
 Checks if there is an active pending signal for the symbol.
 
 Used internally to determine if TP/SL monitoring should occur on tick.
+
+### getPositionEstimateMinutes
+
+```ts
+getPositionEstimateMinutes: (symbol: string) => Promise<number>
+```
+
+Returns the original estimated duration for the current pending signal.
+
+Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
+number of minutes the position is expected to be active before `time_expired`.
+
+Returns null if no pending signal exists.
+
+### getPositionCountdownMinutes
+
+```ts
+getPositionCountdownMinutes: (symbol: string, timestamp: number) => Promise<number>
+```
+
+Returns the remaining time before the position expires, clamped to zero.
+
+Computes elapsed minutes since `pendingAt` and subtracts from `minuteEstimatedTime`.
+Returns 0 once the estimate is exceeded (never negative).
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitPrice
+
+```ts
+getPositionHighestProfitPrice: (symbol: string) => Promise<number>
+```
+
+Returns the best price reached in the profit direction during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlPercentage
+
+```ts
+getPositionHighestPnlPercentage: (symbol: string) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestPnlCost
+
+```ts
+getPositionHighestPnlCost: (symbol: string) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitTimestamp
+
+```ts
+getPositionHighestProfitTimestamp: (symbol: string) => Promise<number>
+```
+
+Returns the timestamp when the best profit price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionHighestProfitBreakeven
+
+```ts
+getPositionHighestProfitBreakeven: (symbol: string) => Promise<boolean>
+```
+
+Returns whether breakeven was mathematically reachable at the highest profit price.
+
+Uses the same threshold formula as getBreakeven with the recorded peak price.
+Returns null if no pending signal exists.
+
+### getPositionDrawdownMinutes
+
+```ts
+getPositionDrawdownMinutes: (symbol: string, timestamp: number) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Measures how long the position has been pulling back from its peak profit level.
+Zero when called at the exact moment the peak was set.
+Grows continuously as price moves away from the peak without setting a new record.
+
+Returns null if no pending signal exists.
 
 ### dispose
 
