@@ -108,7 +108,7 @@ export const close_pending_commit_fields: TypedField[] = [
                         title: "Original Entry",
                         readonly: true,
                         compute: (obj) =>
-                            obj.originalPriceOpen != null
+                            !!obj.originalPriceOpen
                                 ? `${obj.originalPriceOpen.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -121,9 +121,9 @@ export const close_pending_commit_fields: TypedField[] = [
                         name: "totalEntries",
                         title: "Total Entries",
                         readonly: true,
-                        isVisible: (obj) => obj.totalEntries != null && obj.totalEntries > 1,
+                        isVisible: (obj) => !!obj.totalEntries && obj.totalEntries > 1,
                         compute: (obj) =>
-                            obj.totalEntries != null
+                            !!obj.totalEntries
                                 ? String(obj.totalEntries)
                                 : "Not specified",
                     },
@@ -136,7 +136,7 @@ export const close_pending_commit_fields: TypedField[] = [
                         name: "totalPartials",
                         title: "Total Closes",
                         readonly: true,
-                        isVisible: (obj) => obj.totalPartials != null && obj.totalPartials > 0,
+                        isVisible: (obj) => !!obj.totalPartials && obj.totalPartials > 0,
                         compute: (obj) => String(obj.totalPartials),
                     },
                 ],
@@ -184,12 +184,12 @@ export const close_pending_commit_fields: TypedField[] = [
                 type: FieldType.Typography,
                 typoVariant: "h6",
                 placeholder: "PNL Details",
-                isVisible: (obj) => obj.pnlPriceOpen != null,
+                isVisible: (obj) => !!obj.pnlPriceOpen,
             },
             {
                 type: FieldType.Outline,
                 sx: { mb: 3 },
-                isVisible: (obj) => obj.pnlPriceOpen != null,
+                isVisible: (obj) => !!obj.pnlPriceOpen,
                 fields: [
                     {
                         type: FieldType.Text,
@@ -233,7 +233,7 @@ export const close_pending_commit_fields: TypedField[] = [
                         title: "Invested",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlEntries != null
+                            !!obj.pnlEntries
                                 ? `${obj.pnlEntries.toFixed(2)}$`
                                 : "N/A",
                     },
@@ -247,7 +247,7 @@ export const close_pending_commit_fields: TypedField[] = [
                         title: "PNL Entry Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlPriceOpen != null
+                            !!obj.pnlPriceOpen
                                 ? `${obj.pnlPriceOpen.toFixed(6)}$`
                                 : "N/A",
                     },
@@ -261,7 +261,7 @@ export const close_pending_commit_fields: TypedField[] = [
                         title: "PNL Exit Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlPriceClose != null
+                            !!obj.pnlPriceClose
                                 ? `${obj.pnlPriceClose.toFixed(6)}$`
                                 : "N/A",
                     },

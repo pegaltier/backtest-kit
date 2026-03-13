@@ -71,7 +71,7 @@ export const risk_fields: TypedField[] = [
                         title: "Current Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.currentPrice != null
+                            !!obj.currentPrice
                                 ? `${obj.currentPrice.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -192,7 +192,7 @@ export const risk_fields: TypedField[] = [
                         title: "Entry Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.priceOpen != null
+                            !!obj.priceOpen
                                 ? `${obj.priceOpen.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -206,7 +206,7 @@ export const risk_fields: TypedField[] = [
                         title: "Take Profit",
                         readonly: true,
                         compute: (obj) =>
-                            obj.priceTakeProfit != null
+                            !!obj.priceTakeProfit
                                 ? `${obj.priceTakeProfit.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -220,7 +220,7 @@ export const risk_fields: TypedField[] = [
                         title: "Stop Loss",
                         readonly: true,
                         compute: (obj) =>
-                            obj.priceStopLoss != null
+                            !!obj.priceStopLoss
                                 ? `${obj.priceStopLoss.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -233,7 +233,7 @@ export const risk_fields: TypedField[] = [
                         name: "minuteEstimatedTime",
                         title: "Estimated Time (min)",
                         readonly: true,
-                        isVisible: (obj) => obj.minuteEstimatedTime != null,
+                        isVisible: (obj) => !!obj.minuteEstimatedTime,
                         compute: (obj) =>
                             obj.minuteEstimatedTime?.toString() ||
                             "Not specified",

@@ -71,7 +71,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         title: "Current Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.currentPrice != null
+                            !!obj.currentPrice
                                 ? `${obj.currentPrice.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -141,7 +141,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "scheduledAt",
                         title: "Scheduled At",
                         readonly: true,
-                        isVisible: (obj) => obj.scheduledAt != null,
+                        isVisible: (obj) => !!obj.scheduledAt,
                         compute: (obj) =>
                             obj.scheduledAt
                                 ? dayjs(obj.scheduledAt).format(
@@ -158,7 +158,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "pendingAt",
                         title: "Pending At",
                         readonly: true,
-                        isVisible: (obj) => obj.pendingAt != null,
+                        isVisible: (obj) => !!obj.pendingAt,
                         compute: (obj) =>
                             obj.pendingAt
                                 ? dayjs(obj.pendingAt).format(
@@ -215,7 +215,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         title: "Entry Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.priceOpen != null
+                            !!obj.priceOpen
                                 ? `${obj.priceOpen.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -228,9 +228,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "priceStopLoss",
                         title: "Stop Loss",
                         readonly: true,
-                        isVisible: (obj) => obj.priceStopLoss != null,
+                        isVisible: (obj) => !!obj.priceStopLoss,
                         compute: (obj) =>
-                            obj.priceStopLoss != null
+                            !!obj.priceStopLoss
                                 ? `${obj.priceStopLoss.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -243,9 +243,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "priceTakeProfit",
                         title: "Take Profit",
                         readonly: true,
-                        isVisible: (obj) => obj.priceTakeProfit != null,
+                        isVisible: (obj) => !!obj.priceTakeProfit,
                         compute: (obj) =>
-                            obj.priceTakeProfit != null
+                            !!obj.priceTakeProfit
                                 ? `${obj.priceTakeProfit.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -258,9 +258,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "originalPriceStopLoss",
                         title: "Original Stop Loss",
                         readonly: true,
-                        isVisible: (obj) => obj.originalPriceStopLoss != null,
+                        isVisible: (obj) => !!obj.originalPriceStopLoss,
                         compute: (obj) =>
-                            obj.originalPriceStopLoss != null
+                            !!obj.originalPriceStopLoss
                                 ? `${obj.originalPriceStopLoss.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -273,9 +273,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "originalPriceTakeProfit",
                         title: "Original Take Profit",
                         readonly: true,
-                        isVisible: (obj) => obj.originalPriceTakeProfit != null,
+                        isVisible: (obj) => !!obj.originalPriceTakeProfit,
                         compute: (obj) =>
-                            obj.originalPriceTakeProfit != null
+                            !!obj.originalPriceTakeProfit
                                 ? `${obj.originalPriceTakeProfit.toFixed(6)}$`
                                 : "Not specified",
                     },
@@ -303,9 +303,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "totalEntries",
                         title: "Total Entries",
                         readonly: true,
-                        isVisible: (obj) => obj.totalEntries != null && obj.totalEntries > 1,
+                        isVisible: (obj) => !!obj.totalEntries && obj.totalEntries > 1,
                         compute: (obj) =>
-                            obj.totalEntries != null
+                            !!obj.totalEntries
                                 ? String(obj.totalEntries)
                                 : "Not specified",
                     },
@@ -318,7 +318,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "totalPartials",
                         title: "Total Closes",
                         readonly: true,
-                        isVisible: (obj) => obj.totalPartials != null && obj.totalPartials > 0,
+                        isVisible: (obj) => !!obj.totalPartials && obj.totalPartials > 0,
                         compute: (obj) => String(obj.totalPartials),
                     },
                 ],
@@ -327,12 +327,12 @@ export const activate_scheduled_fields: TypedField[] = [
                 type: FieldType.Typography,
                 typoVariant: "h6",
                 placeholder: "PNL Details",
-                isVisible: (obj) => obj.pnlPriceOpen != null,
+                isVisible: (obj) => !!obj.pnlPriceOpen,
             },
             {
                 type: FieldType.Outline,
                 sx: { mb: 3 },
-                isVisible: (obj) => obj.pnlPriceOpen != null,
+                isVisible: (obj) => !!obj.pnlPriceOpen,
                 fields: [
                     {
                         type: FieldType.Text,
@@ -343,9 +343,9 @@ export const activate_scheduled_fields: TypedField[] = [
                         name: "cost",
                         title: "Cost",
                         readonly: true,
-                        isVisible: (obj) => obj.cost != null,
+                        isVisible: (obj) => !!obj.cost,
                         compute: (obj) =>
-                            obj.cost != null
+                            !!obj.cost
                                 ? `${obj.cost.toFixed(2)}$`
                                 : "Not specified",
                     },
@@ -391,7 +391,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         title: "Invested",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlEntries != null
+                            !!obj.pnlEntries
                                 ? `${obj.pnlEntries.toFixed(2)}$`
                                 : "N/A",
                     },
@@ -405,7 +405,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         title: "PNL Entry Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlPriceOpen != null
+                            !!obj.pnlPriceOpen
                                 ? `${obj.pnlPriceOpen.toFixed(6)}$`
                                 : "N/A",
                     },
@@ -419,7 +419,7 @@ export const activate_scheduled_fields: TypedField[] = [
                         title: "PNL Exit Price",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnlPriceClose != null
+                            !!obj.pnlPriceClose
                                 ? `${obj.pnlPriceClose.toFixed(6)}$`
                                 : "N/A",
                     },

@@ -239,7 +239,7 @@ export const signal_fields: TypedField[] = [
                         title: "Original TP",
                         readonly: true,
                         isVisible: (obj) =>
-                            obj.originalPriceTakeProfit != null &&
+                            !!obj.originalPriceTakeProfit &&
                             obj.originalPriceTakeProfit !== obj.priceTakeProfit,
                         compute: (obj) =>
                             obj.originalPriceTakeProfit
@@ -256,7 +256,7 @@ export const signal_fields: TypedField[] = [
                         title: "Original SL",
                         readonly: true,
                         isVisible: (obj) =>
-                            obj.originalPriceStopLoss != null &&
+                            !!obj.originalPriceStopLoss &&
                             obj.originalPriceStopLoss !== obj.priceStopLoss,
                         compute: (obj) =>
                             obj.originalPriceStopLoss
@@ -287,9 +287,9 @@ export const signal_fields: TypedField[] = [
                         name: "totalEntries",
                         title: "Total Entries",
                         readonly: true,
-                        isVisible: (obj) => obj.totalEntries != null && obj.totalEntries > 1,
+                        isVisible: (obj) => !!obj.totalEntries && obj.totalEntries > 1,
                         compute: (obj) =>
-                            obj.totalEntries != null
+                            !!obj.totalEntries
                                 ? String(obj.totalEntries)
                                 : "Not specified",
                     },
@@ -315,7 +315,7 @@ export const signal_fields: TypedField[] = [
                         name: "totalPartials",
                         title: "Total Closes",
                         readonly: true,
-                        isVisible: (obj) => obj.totalPartials != null && obj.totalPartials > 0,
+                        isVisible: (obj) => !!obj.totalPartials && obj.totalPartials > 0,
                         compute: (obj) => String(obj.totalPartials),
                     },
                     {
@@ -327,9 +327,9 @@ export const signal_fields: TypedField[] = [
                         name: "cost",
                         title: "Cost",
                         readonly: true,
-                        isVisible: (obj) => obj.cost != null,
+                        isVisible: (obj) => !!obj.cost,
                         compute: (obj) =>
-                            obj.cost != null
+                            !!obj.cost
                                 ? `${obj.cost.toFixed(2)}$`
                                 : "Not specified",
                     },
@@ -416,7 +416,7 @@ export const signal_fields: TypedField[] = [
                         title: "Invested",
                         readonly: true,
                         compute: (obj) =>
-                            obj.pnl?.pnlEntries != null
+                            !!obj.pnl?.pnlEntries
                                 ? `${obj.pnl.pnlEntries.toFixed(2)}$`
                                 : "N/A",
                     },
