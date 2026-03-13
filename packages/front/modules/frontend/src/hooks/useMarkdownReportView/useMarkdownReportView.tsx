@@ -344,6 +344,20 @@ export const useMarkdownReportView = () => {
         }
     };
 
+    const handleDownload = async () => {
+        const data = await fetchData(id$.current, type$.current);
+        const tab = pathname$.current.replace(
+            "/markdown_report/",
+            "",
+        ) as keyof typeof data;
+        const content = data[tab];
+        if (typeof content === "string") {
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            ioc.layoutService.downloadFile(url, `${tab}_${type$.current}_${Date.now()}.md`);
+        }
+    };
+
     const { pickData, render } = useTabsModal({
         tabs,
         withStaticAction: true,
@@ -387,7 +401,7 @@ export const useMarkdownReportView = () => {
                     }}
                     sx={{ mr: "10px", mt: "2.5px" }}
                 />
-                <ActionIcon onClick={() => handlePrint()}>
+                <ActionIcon onClick={() => handleDownload()}>
                     <Download />
                 </ActionIcon>
                 <ActionIcon onClick={onClose}>
