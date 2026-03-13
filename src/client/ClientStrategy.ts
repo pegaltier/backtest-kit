@@ -3127,7 +3127,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.strategyName,
             self.params.exchangeName,
           );
-          self.params.onHighestProfit(
+          await self.params.onHighestProfit(
             TO_PUBLIC_SIGNAL(signal, currentPrice),
             currentPrice,
             currentTime,
@@ -3197,7 +3197,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
             self.params.strategyName,
             self.params.exchangeName,
           );
-          self.params.onHighestProfit(
+          await self.params.onHighestProfit(
             TO_PUBLIC_SIGNAL(signal, currentPrice),
             currentPrice,
             currentTime,
@@ -4091,6 +4091,13 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
 
           if (averagePrice > signal._peak.price) {
             signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp };
+            if (self.params.callbacks?.onWrite) {
+              self.params.callbacks.onWrite(
+                signal.symbol,
+                signal,
+                true
+              );
+            }
             await self.params.onHighestProfit(
               TO_PUBLIC_SIGNAL(signal, averagePrice),
               averagePrice,
@@ -4146,6 +4153,13 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
 
           if (averagePrice < signal._peak.price) {
             signal._peak = { price: averagePrice, timestamp: currentCandleTimestamp };
+            if (self.params.callbacks?.onWrite) {
+              self.params.callbacks.onWrite(
+                signal.symbol,
+                signal,
+                true
+              );
+            }
             await self.params.onHighestProfit(
               TO_PUBLIC_SIGNAL(signal, averagePrice),
               averagePrice,
