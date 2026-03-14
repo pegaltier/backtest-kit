@@ -2,6 +2,7 @@ import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../../lib/core/types";
 import {
+  Strategy,
   Backtest,
   Live,
   Breakeven,
@@ -20,6 +21,24 @@ import { CC_ENABLE_MOCK } from "../../../config/params";
 export class MarkdownViewService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly markdownMockService = inject<MarkdownMockService>(TYPES.markdownMockService);
+
+  // Strategy
+
+  public getStrategyData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false) => {
+    this.loggerService.log("markdownViewService getStrategyData", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getStrategyData(symbol, strategyName, exchangeName, frameName);
+    }
+    return await Strategy.getData(symbol, { strategyName, exchangeName, frameName }, backtest);
+  };
+
+  public getStrategyReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false): Promise<string> => {
+    this.loggerService.log("markdownViewService getStrategyReport", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getStrategyReport(symbol, strategyName, exchangeName, frameName);
+    }
+    return await Strategy.getReport(symbol, { strategyName, exchangeName, frameName }, backtest);
+  };
 
   // Backtest
 

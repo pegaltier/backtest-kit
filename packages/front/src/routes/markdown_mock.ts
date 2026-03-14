@@ -12,6 +12,17 @@ const router = Router({
 
 // MarkdownMockService endpoints
 
+interface MarkdownStrategyRequest {
+  clientId: string;
+  serviceName: string;
+  userId: string;
+  requestId: string;
+  symbol: string;
+  strategyName: string;
+  exchangeName: string;
+  frameName: string;
+}
+
 interface MarkdownBacktestRequest {
   clientId: string;
   serviceName: string;
@@ -64,6 +75,34 @@ interface MarkdownWalkerRequest {
   symbol: string;
   walkerName: string;
 }
+
+router.post("/api/v1/markdown_mock/strategy_data", async (req, res) => {
+  try {
+    const request = <MarkdownStrategyRequest>await micro.json(req);
+    const { requestId, serviceName, symbol, strategyName, exchangeName, frameName } = request;
+    const data = await ioc.markdownMockService.getStrategyData(symbol, strategyName, exchangeName, frameName);
+    const result = { data, status: "ok", error: "", requestId, serviceName };
+    ioc.loggerService.log("/api/v1/markdown_mock/strategy_data ok", { request, result: omit(result, "data") });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/markdown_mock/strategy_data error", { error: errorData(error) });
+    return await micro.send(res, 200, { status: "error", error: getErrorMessage(error) });
+  }
+});
+
+router.post("/api/v1/markdown_mock/strategy_report", async (req, res) => {
+  try {
+    const request = <MarkdownStrategyRequest>await micro.json(req);
+    const { requestId, serviceName, symbol, strategyName, exchangeName, frameName } = request;
+    const data = await ioc.markdownMockService.getStrategyReport(symbol, strategyName, exchangeName, frameName);
+    const result = { data, status: "ok", error: "", requestId, serviceName };
+    ioc.loggerService.log("/api/v1/markdown_mock/strategy_report ok", { request, result: omit(result, "data") });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/markdown_mock/strategy_report error", { error: errorData(error) });
+    return await micro.send(res, 200, { status: "error", error: getErrorMessage(error) });
+  }
+});
 
 router.post("/api/v1/markdown_mock/backtest_data", async (req, res) => {
   try {

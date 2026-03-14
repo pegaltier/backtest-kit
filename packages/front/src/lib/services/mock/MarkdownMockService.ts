@@ -14,6 +14,7 @@ const makeDataReader = <T>(fileName: string) =>
   singleshot(async () => JSON.parse(await fs.readFile(path.join(MOCK_DIR, "data", fileName), "utf-8")) as T);
 
 const readBacktest = makeReader("backtest.md");
+const readStrategy = makeReader("strategy.md");
 const readLive = makeReader("live.md");
 const readBreakeven = makeReader("breakeven.md");
 const readRisk = makeReader("risk.md");
@@ -26,6 +27,7 @@ const readHeat = makeReader("heat.md");
 const readWalker = makeReader("walker.md");
 
 const readBacktestData = makeDataReader("backtest.json");
+const readStrategyData = makeDataReader("strategy.json");
 const readLiveData = makeDataReader("live.json");
 const readBreakevenData = makeDataReader("breakeven.json");
 const readRiskData = makeDataReader("risk.json");
@@ -39,6 +41,18 @@ const readWalkerData = makeDataReader("walker.json");
 
 export class MarkdownMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+
+  // Strategy
+
+  public getStrategyData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string) => {
+    this.loggerService.log("markdownMockService getStrategyData", { symbol, strategyName, exchangeName, frameName });
+    return readStrategyData();
+  };
+
+  public getStrategyReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string): Promise<string> => {
+    this.loggerService.log("markdownMockService getStrategyReport", { symbol, strategyName, exchangeName, frameName });
+    return readStrategy();
+  };
 
   // Backtest
 

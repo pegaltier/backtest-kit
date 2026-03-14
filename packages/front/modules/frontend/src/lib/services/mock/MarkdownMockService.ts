@@ -6,6 +6,50 @@ import { CC_CLIENT_ID, CC_SERVICE_NAME, CC_USER_ID } from "../../../config/param
 export class MarkdownMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
+  // Strategy
+
+  public getStrategyData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string) => {
+    this.loggerService.log("markdownMockService getStrategyData", { symbol, strategyName, exchangeName, frameName });
+    const { data, error } = await fetchApi("/api/v1/markdown_mock/strategy_data", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
+  public getStrategyReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string): Promise<string> => {
+    this.loggerService.log("markdownMockService getStrategyReport", { symbol, strategyName, exchangeName, frameName });
+    const { data, error } = await fetchApi("/api/v1/markdown_mock/strategy_report", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
   // Backtest
 
   public getBacktestData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string) => {

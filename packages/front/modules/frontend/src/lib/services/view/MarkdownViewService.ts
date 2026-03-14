@@ -13,6 +13,58 @@ export class MarkdownViewService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly markdownMockService = inject<MarkdownMockService>(TYPES.markdownMockService);
 
+  // Strategy
+
+  public getStrategyData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false) => {
+    this.loggerService.log("markdownViewService getStrategyData", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getStrategyData(symbol, strategyName, exchangeName, frameName);
+    }
+    const { data, error } = await fetchApi("/api/v1/markdown_view/strategy_data", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+        backtest,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
+  public getStrategyReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false): Promise<string> => {
+    this.loggerService.log("markdownViewService getStrategyReport", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getStrategyReport(symbol, strategyName, exchangeName, frameName);
+    }
+    const { data, error } = await fetchApi("/api/v1/markdown_view/strategy_report", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+        backtest,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
   // Backtest
 
   public getBacktestData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string) => {
