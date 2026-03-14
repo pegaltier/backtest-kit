@@ -99,8 +99,10 @@ declare class ResolveService {
     readonly loggerService: LoggerService;
     readonly loaderService: LoaderService;
     readonly DEFAULT_TEMPLATE_DIR: string;
+    readonly DEFAULT_MODULES_DIR: string;
     readonly OVERRIDE_TEMPLATE_DIR: string;
     readonly OVERRIDE_MODULES_DIR: string;
+    getIsLaunched: () => boolean;
     attachEntryPoint: (entryPoint: string) => Promise<void>;
 }
 

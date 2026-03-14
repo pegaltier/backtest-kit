@@ -5566,6 +5566,91 @@ declare const GLOBAL_CONFIG: {
      */
     CC_AGGREGATED_TRADES_MAX_MINUTES: number;
     /**
+     * Maximum number of events to keep in backtest markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_BACKTEST_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in breakeven markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_BREAKEVEN_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in heatmap markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_HEATMAP_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in highest profit markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in live markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_LIVE_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in partial markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_PARTIAL_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in risk markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_RISK_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in schedule markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_SCHEDULE_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in strategy markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_STRATEGY_MARKDOWN_ROWS: number;
+    /**
+     * Maximum number of events to keep in sync markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_SYNC_MARKDOWN_ROWS: number;
+    /**
+     * Number of top strategies to include in the walker comparison table.
+     *
+     * Default: 10 strategies
+     */
+    CC_WALKER_MARKDOWN_TOP_N: number;
+    /**
+     * Maximum number of performance metric events to keep in storage.
+     * Older events are removed when this limit is exceeded.
+     * Higher than other report event limits because performance metrics are lightweight
+     * and benefit from larger sample sizes for accurate statistical analysis.
+     *
+     * Default: 10000 events
+     */
+    CC_MAX_PERFORMANCE_MARKDOWN_ROWS: number;
+    /**
      * Maximum number of notifications to keep in storage.
      * Older notifications are removed when this limit is exceeded.
      *
@@ -5727,6 +5812,18 @@ declare function getConfig(): {
     CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
     CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
     CC_AGGREGATED_TRADES_MAX_MINUTES: number;
+    CC_MAX_BACKTEST_MARKDOWN_ROWS: number;
+    CC_MAX_BREAKEVEN_MARKDOWN_ROWS: number;
+    CC_MAX_HEATMAP_MARKDOWN_ROWS: number;
+    CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
+    CC_MAX_LIVE_MARKDOWN_ROWS: number;
+    CC_MAX_PARTIAL_MARKDOWN_ROWS: number;
+    CC_MAX_RISK_MARKDOWN_ROWS: number;
+    CC_MAX_SCHEDULE_MARKDOWN_ROWS: number;
+    CC_MAX_STRATEGY_MARKDOWN_ROWS: number;
+    CC_MAX_SYNC_MARKDOWN_ROWS: number;
+    CC_WALKER_MARKDOWN_TOP_N: number;
+    CC_MAX_PERFORMANCE_MARKDOWN_ROWS: number;
     CC_MAX_NOTIFICATIONS: number;
     CC_MAX_SIGNALS: number;
     CC_MAX_LOG_LINES: number;
@@ -5769,6 +5866,18 @@ declare function getDefaultConfig(): Readonly<{
     CC_ORDER_BOOK_TIME_OFFSET_MINUTES: number;
     CC_ORDER_BOOK_MAX_DEPTH_LEVELS: number;
     CC_AGGREGATED_TRADES_MAX_MINUTES: number;
+    CC_MAX_BACKTEST_MARKDOWN_ROWS: number;
+    CC_MAX_BREAKEVEN_MARKDOWN_ROWS: number;
+    CC_MAX_HEATMAP_MARKDOWN_ROWS: number;
+    CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
+    CC_MAX_LIVE_MARKDOWN_ROWS: number;
+    CC_MAX_PARTIAL_MARKDOWN_ROWS: number;
+    CC_MAX_RISK_MARKDOWN_ROWS: number;
+    CC_MAX_SCHEDULE_MARKDOWN_ROWS: number;
+    CC_MAX_STRATEGY_MARKDOWN_ROWS: number;
+    CC_MAX_SYNC_MARKDOWN_ROWS: number;
+    CC_WALKER_MARKDOWN_TOP_N: number;
+    CC_MAX_PERFORMANCE_MARKDOWN_ROWS: number;
     CC_MAX_NOTIFICATIONS: number;
     CC_MAX_SIGNALS: number;
     CC_MAX_LOG_LINES: number;

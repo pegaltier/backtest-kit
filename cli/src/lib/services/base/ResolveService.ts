@@ -21,6 +21,7 @@ export class ResolveService {
     readonly loaderService = inject<LoaderService>(TYPES.loaderService);
 
     public readonly DEFAULT_TEMPLATE_DIR = path.resolve(__dirname, '..', 'template');
+    public readonly DEFAULT_MODULES_DIR = path.resolve(__dirname, '..', 'modules');
     public readonly OVERRIDE_TEMPLATE_DIR = path.resolve(process.cwd(), 'template');
     public readonly OVERRIDE_MODULES_DIR = path.resolve(process.cwd(), 'modules');
 

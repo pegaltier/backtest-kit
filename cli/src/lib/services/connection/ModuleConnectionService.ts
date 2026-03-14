@@ -2,35 +2,42 @@ import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import ResolveService from "../base/ResolveService";
-import fs from "fs/promises";
-import { constants } from "fs";
 import path from "path";
 import LoaderService from "../base/LoaderService";
+
+const CANDIDATES_FN = (
+  fileName: string,
+  self: ModuleConnectionService,
+): [filePath: string, baseDir: string][] => [
+  [
+    path.join(process.cwd(), "modules", fileName),
+    path.join(process.cwd(), "modules"),
+  ],
+  [
+    path.join(self.resolveService.OVERRIDE_MODULES_DIR, fileName),
+    self.resolveService.OVERRIDE_MODULES_DIR,
+  ],
+  [
+    path.join(self.resolveService.DEFAULT_MODULES_DIR, fileName),
+    self.resolveService.DEFAULT_MODULES_DIR,
+  ],
+];
 
 const LOAD_MODULE_MODULE_FN = async (
   fileName: string,
   self: ModuleConnectionService,
 ): Promise<boolean> => {
-  const overridePath = path.join(
-    self.resolveService.OVERRIDE_MODULES_DIR,
-    fileName,
-  );
-  const targetPath = path.join(process.cwd(), "modules", fileName);
-  const hasOverride = await fs
-    .access(overridePath, constants.F_OK | constants.R_OK)
-    .then(() => true)
-    .catch(() => false);
-  const resolvedFile = hasOverride ? overridePath : targetPath;
-  try {
-    if (self.loaderService.check(resolvedFile)) {
-      self.loaderService.import(resolvedFile);
-      return true;
-    }    
-    return false;
-  } catch {
-    console.warn(`Module module import failed for file: ${resolvedFile}`);
-    return false;
+  for (const [filePath, baseDir] of CANDIDATES_FN(fileName, self)) {
+    try {
+      if (await self.loaderService.check(filePath, baseDir)) {
+        self.loaderService.import(filePath, baseDir);
+        return true;
+      }
+    } catch {
+      console.warn(`Module module import failed for file: ${filePath}`);
+    }
   }
+  return false;
 };
 
 export class ModuleConnectionService {
