@@ -293,6 +293,10 @@ class PerformanceStorage {
     return [
       `# Performance Report: ${strategyName}`,
       "",
+      summaryTable,
+      "",
+      "**Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times. Wait times show the interval between consecutive events of the same type.",
+      "",
       `**Total events:** ${stats.totalEvents}`,
       `**Total execution time:** ${stats.totalDuration.toFixed(2)}ms`,
       `**Number of metric types:** ${Object.keys(stats.metricStats).length}`,
@@ -301,11 +305,6 @@ class PerformanceStorage {
       "",
       percentages.join("\n"),
       "",
-      "## Detailed Metrics",
-      "",
-      summaryTable,
-      "",
-      "**Note:** All durations are in milliseconds. P95/P99 represent 95th and 99th percentile response times. Wait times show the interval between consecutive events of the same type."
     ].join("\n");
   }
 
