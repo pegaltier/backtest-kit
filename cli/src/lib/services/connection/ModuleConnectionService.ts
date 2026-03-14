@@ -5,29 +5,35 @@ import ResolveService from "../base/ResolveService";
 import path from "path";
 import LoaderService from "../base/LoaderService";
 
-const CANDIDATES_FN = (
+const GET_MODULE_VARIANTS_FN = (
   fileName: string,
   self: ModuleConnectionService,
-): [filePath: string, baseDir: string][] => [
-  [
-    path.join(process.cwd(), "modules", fileName),
-    path.join(process.cwd(), "modules"),
-  ],
-  [
-    path.join(self.resolveService.OVERRIDE_MODULES_DIR, fileName),
-    self.resolveService.OVERRIDE_MODULES_DIR,
-  ],
-  [
-    path.join(self.resolveService.DEFAULT_MODULES_DIR, fileName),
-    self.resolveService.DEFAULT_MODULES_DIR,
-  ],
-];
+) => {
+  const result: {filePath: string; baseDir: string}[] = [];
+
+  result.push({
+    filePath: path.join(process.cwd(), "modules", fileName),
+    baseDir: path.join(process.cwd(), "modules")
+  })
+
+  result.push({
+    filePath: path.join(self.resolveService.OVERRIDE_MODULES_DIR, fileName),
+    baseDir: self.resolveService.OVERRIDE_MODULES_DIR,
+  })
+
+  result.push({
+    filePath: path.join(self.resolveService.DEFAULT_MODULES_DIR, fileName),
+    baseDir: self.resolveService.DEFAULT_MODULES_DIR,
+  })
+
+  return result;
+}
 
 const LOAD_MODULE_MODULE_FN = async (
   fileName: string,
   self: ModuleConnectionService,
 ): Promise<boolean> => {
-  for (const [filePath, baseDir] of CANDIDATES_FN(fileName, self)) {
+  for (const {filePath, baseDir} of GET_MODULE_VARIANTS_FN(fileName, self)) {
     try {
       if (await self.loaderService.check(filePath, baseDir)) {
         self.loaderService.import(filePath, baseDir);
