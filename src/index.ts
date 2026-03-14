@@ -277,6 +277,7 @@ export { WalkerStatisticsModel } from "./model/WalkerStatistics.model";
 export { PartialStatisticsModel } from "./model/PartialStatistics.model";
 export { HighestProfitStatisticsModel } from "./model/HighestProfitStatistics.model";
 export { RiskStatisticsModel } from "./model/RiskStatistics.model";
+export { BreakevenStatisticsModel } from "./model/BreakevenStatistics.model";
 export {
   StrategyStatisticsModel,
   StrategyEvent,
@@ -429,6 +430,7 @@ export { type RiskEvent } from "./model/RiskStatistics.model";
 export { type SyncEvent, type SyncStatisticsModel } from "./model/SyncStatistics.model";
 export { type ScheduledEvent } from "./model/ScheduleStatistics.model";
 export { type IStrategyResult } from "./model/WalkerStatistics.model";
+export { type BreakevenEvent } from "./model/BreakevenStatistics.model";
 export { type SignalData as WalkerSignalData } from "./model/WalkerStatistics.model";
 
 export * as emitters from "./config/emitters";
