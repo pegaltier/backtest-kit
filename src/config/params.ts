@@ -225,6 +225,12 @@ export const GLOBAL_CONFIG = {
    */
   CC_MAX_SYNC_MARKDOWN_ROWS: 250,
   /**
+   * Number of top strategies to include in the walker comparison table.
+   *
+   * Default: 10 strategies
+   */
+  CC_WALKER_MARKDOWN_TOP_N: 10,
+  /**
    * Maximum number of performance metric events to keep in storage.
    * Older events are removed when this limit is exceeded.
    * Higher than other report event limits because performance metrics are lightweight

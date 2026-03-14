@@ -22,6 +22,7 @@ import { COLUMN_CONFIG } from "../../../config/columns";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
+import { GLOBAL_CONFIG } from "../../../config/params";
 
 /**
  * Type alias for column configuration used in walker strategy markdown reports.
@@ -213,7 +214,7 @@ class ReportStorage {
    * @returns Markdown formatted comparison table
    */
   private async getComparisonTable(
-    topN: number = 10,
+    topN: number = GLOBAL_CONFIG.CC_WALKER_MARKDOWN_TOP_N,
     columns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns
   ): Promise<string> {
     if (this._strategyResults.length === 0) {
@@ -352,7 +353,7 @@ class ReportStorage {
       "",
       "## Top Strategies Comparison",
       "",
-      await this.getComparisonTable(10, strategyColumns),
+      await this.getComparisonTable(GLOBAL_CONFIG.CC_WALKER_MARKDOWN_TOP_N, strategyColumns),
       "",
       "## All Signals (PNL Table)",
       "",
