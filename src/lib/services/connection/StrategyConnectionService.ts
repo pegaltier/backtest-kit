@@ -1086,6 +1086,27 @@ export class StrategyConnectionService implements TStrategy {
   }
 
   /**
+   * Checks if there is an active scheduled signal for the strategy.
+   * Delegates to ClientStrategy.hasScheduledSignal() which checks if there is a waiting position signal
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise resolving to true if there is a waiting scheduled signal, false otherwise
+   */
+  public hasScheduledSignal = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyConnectionService hasScheduledSignal", {
+      symbol,
+      context,
+    });
+    const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
+    return await strategy.hasScheduledSignal(symbol);
+  }
+
+  /**
    * Returns the original estimated duration for the current pending signal.
    *
    * Delegates to ClientStrategy.getPositionEstimateMinutes().

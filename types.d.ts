@@ -3400,6 +3400,15 @@ interface IStrategy {
      */
     hasPendingSignal: (symbol: string) => Promise<boolean>;
     /**
+     * Checks if there is an active scheduled signal for the symbol.
+     *
+     * Used internally to determine if TP/SL monitoring should occur on tick.
+     *
+     * @param symbol - Trading pair symbol
+     * @returns Promise resolving to true if scheduled signal exists, false otherwise
+     */
+    hasScheduledSignal: (symbol: string) => Promise<boolean>;
+    /**
      * Returns the original estimated duration for the current pending signal.
      *
      * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum
@@ -12296,6 +12305,48 @@ declare class BacktestUtils {
         frameName: FrameName;
     }) => Promise<IScheduledSignalRow>;
     /**
+     * Returns true if there is NO active pending signal for the given symbol.
+     *
+     * Inverse of strategyCoreService.hasPendingSignal. Use to guard signal generation logic.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if no pending signal exists, false if one does
+     *
+     * @example
+     * ```typescript
+     * if (await Backtest.hasNoPendingSignal("BTCUSDT", { strategyName, exchangeName, frameName })) {
+     *   // safe to open a new position
+     * }
+     * ```
+     */
+    hasNoPendingSignal: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Returns true if there is NO active scheduled signal for the given symbol.
+     *
+     * Inverse of strategyCoreService.hasScheduledSignal. Use to guard signal generation logic.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if no scheduled signal exists, false if one does
+     *
+     * @example
+     * ```typescript
+     * if (await Backtest.hasNoScheduledSignal("BTCUSDT", { strategyName, exchangeName, frameName })) {
+     *   // safe to schedule a new signal
+     * }
+     * ```
+     */
+    hasNoScheduledSignal: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Checks if breakeven threshold has been reached for the current pending signal.
      *
      * Uses the same formula as BREAKEVEN_FN to determine if price has moved far enough
@@ -13546,6 +13597,46 @@ declare class LiveUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
     }) => Promise<IScheduledSignalRow>;
+    /**
+     * Returns true if there is NO active pending signal for the given symbol.
+     *
+     * Inverse of strategyCoreService.hasPendingSignal. Use to guard signal generation logic.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise<boolean> - true if no pending signal exists, false if one does
+     *
+     * @example
+     * ```typescript
+     * if (await Live.hasNoPendingSignal("BTCUSDT", { strategyName, exchangeName })) {
+     *   // safe to open a new position
+     * }
+     * ```
+     */
+    hasNoPendingSignal: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
+    /**
+     * Returns true if there is NO active scheduled signal for the given symbol.
+     *
+     * Inverse of strategyCoreService.hasScheduledSignal. Use to guard signal generation logic.
+     *
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName and exchangeName
+     * @returns Promise<boolean> - true if no scheduled signal exists, false if one does
+     *
+     * @example
+     * ```typescript
+     * if (await Live.hasNoScheduledSignal("BTCUSDT", { strategyName, exchangeName })) {
+     *   // safe to schedule a new signal
+     * }
+     * ```
+     */
+    hasNoScheduledSignal: (symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+    }) => Promise<boolean>;
     /**
      * Checks if breakeven threshold has been reached for the current pending signal.
      *
@@ -22433,6 +22524,19 @@ declare class StrategyConnectionService implements TStrategy$1 {
         frameName: FrameName;
     }) => Promise<boolean>;
     /**
+     * Checks if there is an active scheduled signal for the strategy.
+     * Delegates to ClientStrategy.hasScheduledSignal() which checks if there is a waiting position signal
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to true if there is a waiting scheduled signal, false otherwise
+     */
+    hasScheduledSignal: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Returns the original estimated duration for the current pending signal.
      *
      * Delegates to ClientStrategy.getPositionEstimateMinutes().
@@ -24182,6 +24286,21 @@ declare class StrategyCoreService implements TStrategy {
      * @returns Promise<boolean> - true if pending signal exists, false otherwise
      */
     hasPendingSignal: (backtest: boolean, symbol: string, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Checks if there is a waiting scheduled signal for the symbol.
+     * Validates strategy existence and delegates to connection service
+     * to check if a scheduled signal exists for the symbol.
+     * Does not require execution context as this is a state query operation.
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if scheduled signal exists, false otherwise
+     */
+    hasScheduledSignal: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;

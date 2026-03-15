@@ -55,6 +55,8 @@ const GET_POSITION_HIGHEST_PROFIT_BREAKEVEN_METHOD_NAME = "strategy.getPositionH
 const GET_POSITION_DRAWDOWN_MINUTES_METHOD_NAME = "strategy.getPositionDrawdownMinutes";
 const GET_POSITION_ENTRY_OVERLAP_METHOD_NAME = "strategy.getPositionEntryOverlap";
 const GET_POSITION_PARTIAL_OVERLAP_METHOD_NAME = "strategy.getPositionPartialOverlap";
+const HAS_NO_PENDING_SIGNAL_METHOD_NAME = "strategy.hasNoPendingSignal";
+const HAS_NO_SCHEDULED_SIGNAL_METHOD_NAME = "strategy.hasNoScheduledSignal";
 
 /**
  * Cancels the scheduled signal without stopping the strategy.
@@ -2116,4 +2118,80 @@ export async function getPositionPartialOverlap(
     const lowerStep = (partial.currentPrice * ladder.lowerPercent) / 100;
     return currentPrice >= partial.currentPrice - lowerStep && currentPrice <= partial.currentPrice + upperStep;
   });
+}
+
+/**
+ * Returns true if there is NO active pending signal for the given symbol.
+ *
+ * Inverse of hasPendingSignal. Use to guard signal generation logic.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<boolean> - true if no pending signal exists, false if one does
+ *
+ * @example
+ * ```typescript
+ * import { hasNoPendingSignal } from "backtest-kit";
+ *
+ * if (await hasNoPendingSignal("BTCUSDT")) {
+ *   // safe to open a new position
+ * }
+ * ```
+ */
+export async function hasNoPendingSignal(symbol: string): Promise<boolean> {
+  backtest.loggerService.info(HAS_NO_PENDING_SIGNAL_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("hasNoPendingSignal requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("hasNoPendingSignal requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await not(
+    backtest.strategyCoreService.hasPendingSignal(
+      isBacktest,
+      symbol,
+      { exchangeName, frameName, strategyName },
+    )
+  );
+}
+
+/**
+ * Returns true if there is NO active scheduled signal for the given symbol.
+ *
+ * Inverse of hasScheduledSignal. Use to guard signal generation logic.
+ *
+ * Automatically detects backtest/live mode from execution context.
+ *
+ * @param symbol - Trading pair symbol
+ * @returns Promise<boolean> - true if no scheduled signal exists, false if one does
+ *
+ * @example
+ * ```typescript
+ * import { hasNoScheduledSignal } from "backtest-kit";
+ *
+ * if (await hasNoScheduledSignal("BTCUSDT")) {
+ *   // safe to schedule a new signal
+ * }
+ * ```
+ */
+export async function hasNoScheduledSignal(symbol: string): Promise<boolean> {
+  backtest.loggerService.info(HAS_NO_SCHEDULED_SIGNAL_METHOD_NAME, { symbol });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("hasNoScheduledSignal requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("hasNoScheduledSignal requires a method context");
+  }
+  const { backtest: isBacktest } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } = backtest.methodContextService.context;
+  return await not(
+    backtest.strategyCoreService.hasScheduledSignal(
+      isBacktest,
+      symbol,
+      { exchangeName, frameName, strategyName },
+    )
+  );
 }

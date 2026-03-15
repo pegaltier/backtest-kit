@@ -4317,6 +4317,19 @@ export class ClientStrategy implements IStrategy {
   }
 
   /**
+   * Checks if there is a scheduled signal.
+   *
+   * @param symbol - Trading symbol to check for scheduled signal
+   * @returns Promise resolving to true if a scheduled signal exists, false otherwise
+   */
+  public async hasScheduledSignal(symbol: string): Promise<boolean> {
+    this.params.logger.debug("ClientStrategy hasScheduledSignal", {
+      symbol,
+    });
+    return this._scheduledSignal !== null;
+  }
+
+  /**
    * Updates pending signal and persists to disk in live mode.
    *
    * Centralized method for all signal state changes.

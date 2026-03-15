@@ -1454,6 +1454,16 @@ export interface IStrategy {
   hasPendingSignal: (symbol: string) => Promise<boolean>;
 
   /**
+   * Checks if there is an active scheduled signal for the symbol.
+   *
+   * Used internally to determine if TP/SL monitoring should occur on tick.
+   *
+   * @param symbol - Trading pair symbol
+   * @returns Promise resolving to true if scheduled signal exists, false otherwise
+   */
+  hasScheduledSignal: (symbol: string) => Promise<boolean>;
+
+  /**
    * Returns the original estimated duration for the current pending signal.
    *
    * Reflects `minuteEstimatedTime` as set in the signal DTO — the maximum

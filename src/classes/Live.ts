@@ -79,6 +79,10 @@ const LIVE_METHOD_NAME_TRAILING_PROFIT_COST =
   "LiveUtils.commitTrailingTakeCost";
 const LIVE_METHOD_NAME_ACTIVATE_SCHEDULED = "Live.commitActivateScheduled";
 const LIVE_METHOD_NAME_AVERAGE_BUY = "Live.commitAverageBuy";
+const LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL =
+  "LiveUtils.hasNoPendingSignal";
+const LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL =
+  "LiveUtils.hasNoScheduledSignal";
 
 /**
  * Internal task function that runs live trading and handles completion.
@@ -852,6 +856,138 @@ export class LiveUtils {
         exchangeName: context.exchangeName,
         frameName: "",
       },
+    );
+  };
+
+  /**
+   * Returns true if there is NO active pending signal for the given symbol.
+   *
+   * Inverse of strategyCoreService.hasPendingSignal. Use to guard signal generation logic.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns Promise<boolean> - true if no pending signal exists, false if one does
+   *
+   * @example
+   * ```typescript
+   * if (await Live.hasNoPendingSignal("BTCUSDT", { strategyName, exchangeName })) {
+   *   // safe to open a new position
+   * }
+   * ```
+   */
+  public hasNoPendingSignal = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ): Promise<boolean> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_HAS_NO_PENDING_SIGNAL,
+          ),
+        );
+    }
+
+    return await not(
+      backtest.strategyCoreService.hasPendingSignal(false, symbol, {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      }),
+    );
+  };
+
+  /**
+   * Returns true if there is NO active scheduled signal for the given symbol.
+   *
+   * Inverse of strategyCoreService.hasScheduledSignal. Use to guard signal generation logic.
+   *
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName and exchangeName
+   * @returns Promise<boolean> - true if no scheduled signal exists, false if one does
+   *
+   * @example
+   * ```typescript
+   * if (await Live.hasNoScheduledSignal("BTCUSDT", { strategyName, exchangeName })) {
+   *   // safe to schedule a new signal
+   * }
+   * ```
+   */
+  public hasNoScheduledSignal = async (
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName },
+  ): Promise<boolean> => {
+    backtest.loggerService.info(LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL, {
+      symbol,
+      context,
+    });
+    backtest.strategyValidationService.validate(
+      context.strategyName,
+      LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL,
+    );
+    backtest.exchangeValidationService.validate(
+      context.exchangeName,
+      LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL,
+    );
+
+    {
+      const { riskName, riskList, actions } =
+        backtest.strategySchemaService.get(context.strategyName);
+      riskName &&
+        backtest.riskValidationService.validate(
+          riskName,
+          LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL,
+        );
+      riskList &&
+        riskList.forEach((riskName) =>
+          backtest.riskValidationService.validate(
+            riskName,
+            LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL,
+          ),
+        );
+      actions &&
+        actions.forEach((actionName) =>
+          backtest.actionValidationService.validate(
+            actionName,
+            LIVE_METHOD_NAME_HAS_NO_SCHEDULED_SIGNAL,
+          ),
+        );
+    }
+
+    return await not(
+      backtest.strategyCoreService.hasScheduledSignal(false, symbol, {
+        strategyName: context.strategyName,
+        exchangeName: context.exchangeName,
+        frameName: "",
+      }),
     );
   };
 

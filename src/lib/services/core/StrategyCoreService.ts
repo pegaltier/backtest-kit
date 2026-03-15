@@ -1051,6 +1051,29 @@ export class StrategyCoreService implements TStrategy {
   }
 
   /**
+   * Checks if there is a waiting scheduled signal for the symbol.
+   * Validates strategy existence and delegates to connection service
+   * to check if a scheduled signal exists for the symbol.
+   * Does not require execution context as this is a state query operation.
+   * @param backtest - Whether running in backtest mode
+   * @param symbol - Trading pair symbol
+   * @param context - Execution context with strategyName, exchangeName, frameName
+   * @returns Promise<boolean> - true if scheduled signal exists, false otherwise
+   */
+  public hasScheduledSignal = async (
+    backtest: boolean,
+    symbol: string,
+    context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
+  ): Promise<boolean> => {
+    this.loggerService.log("strategyCoreService hasScheduledSignal", {
+      symbol,
+      context,
+    });
+    await this.validate(context);
+    return await this.strategyConnectionService.hasScheduledSignal(backtest, symbol, context);
+  }
+
+  /**
    * Returns the original estimated duration for the current pending signal.
    *
    * Validates strategy existence and delegates to connection service.
