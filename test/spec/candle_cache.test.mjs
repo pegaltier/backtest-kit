@@ -1,7 +1,12 @@
 import { test } from "worker-testbed";
-import { PersistCandleAdapter } from "../../build/index.mjs";
+import { PersistCandleAdapter, Exchange, addExchangeSchema } from "../../build/index.mjs";
 
 const MS_PER_MINUTE = 60_000;
+
+const alignTimestamp = (timestampMs, intervalMinutes) => {
+  const intervalMs = intervalMinutes * MS_PER_MINUTE;
+  return Math.floor(timestampMs / intervalMs) * intervalMs;
+};
 
 /**
  * In-memory adapter for testing PersistCandleAdapter.
@@ -50,6 +55,9 @@ const makeCandle = (timestamp, price = 50000) => ({
   close: price,
   volume: 10,
 });
+
+// Fixed point well in the past — deterministic sinceTimestamp for getRawCandles
+const PAST = new Date("2023-01-01T00:00:00Z").getTime();
 
 test("PersistCandleAdapter: readCandlesData returns null on empty cache", async ({ pass, fail }) => {
   PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
@@ -248,21 +256,20 @@ test("PersistCandleAdapter: different symbols use isolated caches", async ({ pas
 test("PersistCandleAdapter: different intervals use isolated caches", async ({ pass, fail }) => {
   PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
 
-  const sinceTimestamp1m = new Date("2024-07-01T00:00:00Z").getTime();
-  const since5m = sinceTimestamp1m;
+  const sinceTimestamp = new Date("2024-07-01T00:00:00Z").getTime();
   const limit = 2;
 
-  const candles1m = [0, 1].map((i) => makeCandle(sinceTimestamp1m + i * MS_PER_MINUTE, 50000));
-  const candles5m = [0, 1].map((i) => makeCandle(since5m + i * 5 * MS_PER_MINUTE, 50000));
+  const candles1m = [0, 1].map((i) => makeCandle(sinceTimestamp + i * MS_PER_MINUTE, 50000));
+  const candles5m = [0, 1].map((i) => makeCandle(sinceTimestamp + i * 5 * MS_PER_MINUTE, 50000));
 
   await PersistCandleAdapter.writeCandlesData(candles1m, "BTCUSDT-intv", "1m", "binance-cache-7");
   await PersistCandleAdapter.writeCandlesData(candles5m, "BTCUSDT-intv", "5m", "binance-cache-7");
 
   const result1m = await PersistCandleAdapter.readCandlesData(
-    "BTCUSDT-intv", "1m", "binance-cache-7", limit, sinceTimestamp1m, sinceTimestamp1m + limit * MS_PER_MINUTE,
+    "BTCUSDT-intv", "1m", "binance-cache-7", limit, sinceTimestamp, sinceTimestamp + limit * MS_PER_MINUTE,
   );
   const result5m = await PersistCandleAdapter.readCandlesData(
-    "BTCUSDT-intv", "5m", "binance-cache-7", limit, since5m, since5m + limit * 5 * MS_PER_MINUTE,
+    "BTCUSDT-intv", "5m", "binance-cache-7", limit, sinceTimestamp, sinceTimestamp + limit * 5 * MS_PER_MINUTE,
   );
 
   if (!Array.isArray(result1m)) {
@@ -275,12 +282,12 @@ test("PersistCandleAdapter: different intervals use isolated caches", async ({ p
     return;
   }
 
-  if (result1m[1].timestamp !== sinceTimestamp1m + MS_PER_MINUTE) {
+  if (result1m[1].timestamp !== sinceTimestamp + MS_PER_MINUTE) {
     fail(`1m second candle timestamp wrong: ${result1m[1].timestamp}`);
     return;
   }
 
-  if (result5m[1].timestamp !== since5m + 5 * MS_PER_MINUTE) {
+  if (result5m[1].timestamp !== sinceTimestamp + 5 * MS_PER_MINUTE) {
     fail(`5m second candle timestamp wrong: ${result5m[1].timestamp}`);
     return;
   }
@@ -343,7 +350,6 @@ test("PersistCandleAdapter: useDummy makes cache always return null", async ({ p
     untilTimestamp,
   );
 
-  // Restore to memory adapter for subsequent tests
   PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
 
   if (result === null) {
@@ -352,4 +358,339 @@ test("PersistCandleAdapter: useDummy makes cache always return null", async ({ p
   }
 
   fail(`Expected null from dummy adapter, got ${result.length} candles`);
+});
+
+// ---------------------------------------------------------------------------
+// Exchange.getCandles — cache hit prevents second adapter call
+// ---------------------------------------------------------------------------
+
+test("Exchange.getCandles: cache hit prevents second adapter call", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const limit = 10;
+  let adapterCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-gc-cache-hit",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      adapterCallCount++;
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 50000));
+      }
+      return candles;
+    },
+  });
+
+  // First call — populates cache
+  const first = await Exchange.getCandles("BTCUSDT", "1m", limit, {
+    exchangeName: "binance-gc-cache-hit",
+  });
+
+  if (first.length !== limit) {
+    fail(`First call: expected ${limit} candles, got ${first.length}`);
+    return;
+  }
+
+  const callsAfterFirst = adapterCallCount;
+
+  // Second call — same symbol/interval/limit/exchangeName, must hit cache
+  const second = await Exchange.getCandles("BTCUSDT", "1m", limit, {
+    exchangeName: "binance-gc-cache-hit",
+  });
+
+  if (second.length !== limit) {
+    fail(`Second call: expected ${limit} candles, got ${second.length}`);
+    return;
+  }
+
+  if (adapterCallCount !== callsAfterFirst) {
+    fail(`Adapter was called again on cache hit (total calls: ${adapterCallCount})`);
+    return;
+  }
+
+  pass(`Cache hit: adapter called ${callsAfterFirst} time(s), second call served from cache`);
+});
+
+test("Exchange.getCandles: returns correct candle count and timestamps", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const now = Date.now();
+  const aligned = alignTimestamp(now, 1);
+  const limit = 5;
+  const sinceTimestamp = aligned - limit * MS_PER_MINUTE;
+
+  addExchangeSchema({
+    exchangeName: "binance-gc-count",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 42000));
+      }
+      return candles;
+    },
+  });
+
+  const result = await Exchange.getCandles("BTCUSDT", "1m", limit, {
+    exchangeName: "binance-gc-count",
+  });
+
+  if (result.length !== limit) {
+    fail(`Expected ${limit} candles, got ${result.length}`);
+    return;
+  }
+
+  if (result[0].timestamp !== sinceTimestamp) {
+    fail(`First candle timestamp wrong: expected ${sinceTimestamp}, got ${result[0].timestamp}`);
+    return;
+  }
+
+  for (let i = 1; i < limit; i++) {
+    const expected = sinceTimestamp + i * MS_PER_MINUTE;
+    if (result[i].timestamp !== expected) {
+      fail(`Candle [${i}] timestamp wrong: expected ${expected}, got ${result[i].timestamp}`);
+      return;
+    }
+  }
+
+  pass(`Exchange.getCandles returned ${limit} candles with correct timestamps`);
+});
+
+test("Exchange.getCandles: no future (unclosed) candles returned", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const limit = 10;
+
+  addExchangeSchema({
+    exchangeName: "binance-gc-no-future",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 50000));
+      }
+      return candles;
+    },
+  });
+
+  const beforeCall = Date.now();
+
+  const result = await Exchange.getCandles("BTCUSDT", "1m", limit, {
+    exchangeName: "binance-gc-no-future",
+  });
+
+  const lastCloseTime = result[result.length - 1].timestamp + MS_PER_MINUTE;
+
+  if (lastCloseTime > beforeCall) {
+    fail(`Last candle closes at ${lastCloseTime}, which is after call time ${beforeCall}`);
+    return;
+  }
+
+  pass(`All candles are closed: last close time ${new Date(lastCloseTime).toISOString()}`);
+});
+
+// ---------------------------------------------------------------------------
+// Exchange.getRawCandles — cache hit prevents second adapter call
+// ---------------------------------------------------------------------------
+
+test("Exchange.getRawCandles: cache hit prevents second adapter call (sDate+eDate)", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const sDate = PAST;
+  const limit = 8;
+  const eDate = sDate + limit * MS_PER_MINUTE;
+  let adapterCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-rc-cache-hit",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      adapterCallCount++;
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 50000));
+      }
+      return candles;
+    },
+  });
+
+  // First call — populates cache
+  const first = await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-cache-hit",
+  }, undefined, sDate, eDate);
+
+  if (first.length === 0) {
+    fail("First call returned no candles");
+    return;
+  }
+
+  const callsAfterFirst = adapterCallCount;
+
+  // Second call — same params, must hit cache
+  const second = await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-cache-hit",
+  }, undefined, sDate, eDate);
+
+  if (second.length !== first.length) {
+    fail(`Second call returned ${second.length} candles, expected ${first.length}`);
+    return;
+  }
+
+  if (adapterCallCount !== callsAfterFirst) {
+    fail(`Adapter was called again on cache hit (total calls: ${adapterCallCount})`);
+    return;
+  }
+
+  pass(`Cache hit: adapter called ${callsAfterFirst} time(s), second getRawCandles served from cache`);
+});
+
+test("Exchange.getRawCandles: sDate+eDate returns correct candles", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const sDate = PAST;
+  const limit = 6;
+  const eDate = sDate + limit * MS_PER_MINUTE;
+  const alignedSince = alignTimestamp(sDate, 1);
+
+  addExchangeSchema({
+    exchangeName: "binance-rc-sdate-edate",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 45000));
+      }
+      return candles;
+    },
+  });
+
+  const result = await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-sdate-edate",
+  }, undefined, sDate, eDate);
+
+  if (result.length !== limit) {
+    fail(`Expected ${limit} candles, got ${result.length}`);
+    return;
+  }
+
+  if (result[0].timestamp !== alignedSince) {
+    fail(`First candle timestamp wrong: expected ${alignedSince}, got ${result[0].timestamp}`);
+    return;
+  }
+
+  pass(`Exchange.getRawCandles (sDate+eDate) returned ${result.length} candles from ${new Date(alignedSince).toISOString()}`);
+});
+
+test("Exchange.getRawCandles: eDate+limit returns correct candles", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const limit = 5;
+  const eDate = PAST + 60 * MS_PER_MINUTE;
+  const alignedEDate = alignTimestamp(eDate, 1);
+  const expectedSince = alignedEDate - limit * MS_PER_MINUTE;
+
+  addExchangeSchema({
+    exchangeName: "binance-rc-edate-limit",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 48000));
+      }
+      return candles;
+    },
+  });
+
+  const result = await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-edate-limit",
+  }, limit, undefined, eDate);
+
+  if (result.length !== limit) {
+    fail(`Expected ${limit} candles, got ${result.length}`);
+    return;
+  }
+
+  if (result[0].timestamp !== expectedSince) {
+    fail(`First candle timestamp wrong: expected ${expectedSince}, got ${result[0].timestamp}`);
+    return;
+  }
+
+  pass(`Exchange.getRawCandles (eDate+limit) returned ${result.length} candles starting at ${new Date(expectedSince).toISOString()}`);
+});
+
+test("Exchange.getRawCandles: sDate+limit returns correct candles", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const sDate = PAST;
+  const limit = 5;
+  const alignedSince = alignTimestamp(sDate, 1);
+
+  addExchangeSchema({
+    exchangeName: "binance-rc-sdate-limit",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 47000));
+      }
+      return candles;
+    },
+  });
+
+  const result = await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-sdate-limit",
+  }, limit, sDate, undefined);
+
+  if (result.length !== limit) {
+    fail(`Expected ${limit} candles, got ${result.length}`);
+    return;
+  }
+
+  if (result[0].timestamp !== alignedSince) {
+    fail(`First candle timestamp wrong: expected ${alignedSince}, got ${result[0].timestamp}`);
+    return;
+  }
+
+  pass(`Exchange.getRawCandles (sDate+limit) returned ${result.length} candles from ${new Date(alignedSince).toISOString()}`);
+});
+
+test("Exchange.getRawCandles: cache hit prevents second adapter call (eDate+limit)", async ({ pass, fail }) => {
+  PersistCandleAdapter.usePersistCandleAdapter(PersistMemory);
+
+  const limit = 5;
+  const eDate = PAST + 120 * MS_PER_MINUTE;
+
+  let adapterCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-rc-cache-hit-2",
+    getCandles: async (_symbol, _interval, since, reqLimit) => {
+      adapterCallCount++;
+      const start = alignTimestamp(since.getTime(), 1);
+      const candles = [];
+      for (let i = 0; i < reqLimit; i++) {
+        candles.push(makeCandle(start + i * MS_PER_MINUTE, 50000));
+      }
+      return candles;
+    },
+  });
+
+  await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-cache-hit-2",
+  }, limit, undefined, eDate);
+
+  const callsAfterFirst = adapterCallCount;
+
+  await Exchange.getRawCandles("BTCUSDT", "1m", {
+    exchangeName: "binance-rc-cache-hit-2",
+  }, limit, undefined, eDate);
+
+  if (adapterCallCount !== callsAfterFirst) {
+    fail(`Adapter was called again on cache hit (total calls: ${adapterCallCount})`);
+    return;
+  }
+
+  pass(`Cache hit: adapter called ${callsAfterFirst} time(s), second getRawCandles served from cache`);
 });
