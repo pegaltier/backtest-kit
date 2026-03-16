@@ -8,6 +8,9 @@ import {
   listenDoneBacktest,
   listenError,
   listenSignalBacktest,
+  listenActivePing,
+  getPositionHighestProfitBreakeven,
+  commitClosePending,
 } from "../../build/index.mjs";
 
 import { Subject } from "functools-kit";
@@ -819,4 +822,266 @@ test("HOLD: finite minuteEstimatedTime — signal closes by time_expired", async
 
   const closeMinute = Math.round((finalResult.closeTimestamp - startTime) / intervalMs);
   pass(`HOLD TIMEOUT: finite minuteEstimatedTime=30 signal closed by time_expired at minute ~${closeMinute}.`);
+});
+
+/**
+ * ТЕСТ #9: LONG 5 дней — закрытие по breakeven через listenActivePing
+ *
+ * Сценарий:
+ * - minuteEstimatedTime: Infinity, LONG, priceOpen=42000
+ * - Цена растёт до breakeven (~+0.6%) на минуте 4320 (3 дня)
+ * - В onActivePing: getPositionHighestProfitBreakeven → true → commitClosePending
+ * - Ожидается closeReason = "committed" (ручное закрытие)
+ */
+test("HOLD: Infinity LONG 5 days — closes via commitClosePending when breakeven reached in onActivePing", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T08:00:00Z").getTime();
+  const intervalMs = 60_000;
+  // Breakeven: +0.6% от priceOpen = 42000 * 1.006 = 42252
+  const BREAKEVEN_MINUTE = 4320; // 3 days in
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let pingBreakevenFired = false;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-be-long",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          // VWAP буфер: выше priceOpen
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          // Scheduled ожидание
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          // Активация LONG: low = priceOpen = 42000
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else if (m < BREAKEVEN_MINUTE) {
+          // Нейтраль: ниже breakeven, выше SL
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        } else {
+          // Цена пробила breakeven: VWAP >= 42252
+          // VWAP = (open+high+low+close)/4 = (42300+42400+42250+42350)/4 = 42325 >= 42252
+          result.push({ timestamp, open: 42300, high: 42400, low: 42250, close: 42350, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-be-long",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+  });
+
+  listenActivePing(async ({ symbol, currentPrice }) => {
+    const canBreakeven = await getPositionHighestProfitBreakeven(symbol);
+    console.log(`[LONG ping] symbol=${symbol} currentPrice=${currentPrice} canBreakeven=${canBreakeven}`);
+    if (canBreakeven) {
+      pingBreakevenFired = true;
+      await commitClosePending(symbol);
+    }
+  })
+
+  addFrameSchema({
+    frameName: "5m-hold-be-long",
+    interval: "1m",
+    startDate: new Date("2024-01-01T08:00:00Z"),
+    endDate: new Date("2024-01-01T08:06:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  const unsubscribeActivePing = listenActivePing((_event) => {});
+
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-be-long",
+    exchangeName: "binance-hold-be-long",
+    frameName: "5m-hold-be-long",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeActivePing();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT closed!");
+    return;
+  }
+
+  if (!pingBreakevenFired) {
+    fail("getPositionHighestProfitBreakeven never returned true in onActivePing");
+    return;
+  }
+
+  if (finalResult.closeReason !== "closed") {
+    fail(`Expected "closed", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
+  pass(`HOLD BE LONG: closed via commitClosePending at day ~${closeDays} when breakeven reached. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+});
+
+/**
+ * ТЕСТ #10: SHORT 5 дней — закрытие по breakeven через listenActivePing
+ *
+ * Сценарий:
+ * - minuteEstimatedTime: Infinity, SHORT, priceOpen=42000
+ * - SHORT: breakeven при падении ~-0.6% = 42000 * (1 - 0.006) = 41748
+ * - В onActivePing: getPositionHighestProfitBreakeven → true → commitClosePending
+ * - Ожидается closeReason = "committed"
+ */
+test("HOLD: Infinity SHORT 5 days — closes via commitClosePending when breakeven reached in onActivePing", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T09:00:00Z").getTime();
+  const intervalMs = 60_000;
+  // SHORT breakeven: -0.6% от priceOpen = 42000 * 0.994 = 41748
+  const BREAKEVEN_MINUTE = 4320; // 3 days in
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let pingBreakevenFired = false;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-be-short",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          // VWAP буфер: ниже priceOpen для SHORT (high < 42000)
+          result.push({ timestamp, open: 41000, high: 41900, low: 40900, close: 41000, volume: 100 });
+        } else if (m < 5) {
+          // Scheduled ожидание: ниже priceOpen
+          result.push({ timestamp, open: 41000, high: 41900, low: 40900, close: 41000, volume: 100 });
+        } else if (m === 5) {
+          // Активация SHORT: high = priceOpen = 42000
+          result.push({ timestamp, open: 41900, high: 42000, low: 41800, close: 41900, volume: 100 });
+        } else if (m < BREAKEVEN_MINUTE) {
+          // Нейтраль: выше breakeven, ниже SL
+          result.push({ timestamp, open: 41900, high: 41950, low: 41850, close: 41900, volume: 100 });
+        } else {
+          // Цена пробила breakeven SHORT: VWAP <= 41748
+          // VWAP = (open+high+low+close)/4 = (41700+41750+41600+41650)/4 = 41675 <= 41748
+          result.push({ timestamp, open: 41700, high: 41750, low: 41600, close: 41650, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-be-short",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "short",
+        priceOpen: 42000,
+        priceTakeProfit: 40000,
+        priceStopLoss: 43000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+  });
+
+  listenActivePing(async ({ symbol, currentPrice }) => {
+    const canBreakeven = await getPositionHighestProfitBreakeven(symbol);
+    console.log(`[SHORT ping] symbol=${symbol} currentPrice=${currentPrice} canBreakeven=${canBreakeven}`);
+    if (canBreakeven) {
+      pingBreakevenFired = true;
+      await commitClosePending(symbol);
+    }
+  })
+
+  addFrameSchema({
+    frameName: "5m-hold-be-short",
+    interval: "1m",
+    startDate: new Date("2024-01-01T09:00:00Z"),
+    endDate: new Date("2024-01-01T09:06:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  const unsubscribeActivePing = listenActivePing((_event) => {});
+
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-be-short",
+    exchangeName: "binance-hold-be-short",
+    frameName: "5m-hold-be-short",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeActivePing();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT closed!");
+    return;
+  }
+
+  if (!pingBreakevenFired) {
+    fail("getPositionHighestProfitBreakeven never returned true in onActivePing");
+    return;
+  }
+
+  if (finalResult.closeReason !== "closed") {
+    fail(`Expected "closed", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
+  pass(`HOLD BE SHORT: closed via commitClosePending at day ~${closeDays} when breakeven reached. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
