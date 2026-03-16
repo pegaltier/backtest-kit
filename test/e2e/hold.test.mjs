@@ -592,3 +592,123 @@ test("HOLD: Infinity LONG — 3rd chunk request triggered (TP at minute 2300)", 
   const closeMinute = Math.round((finalResult.closeTimestamp - startTime) / intervalMs);
   pass(`HOLD 3-CHUNK: closed by take_profit at minute ~${closeMinute}. getCandles called ${getCandlesCallCount}x (≥3 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
+
+
+/**
+ * ТЕСТ #6: 10 календарных дней непрерывной обработки (14 400 минут)
+ *
+ * Расчёт чанков:
+ * - Первый запрос (scheduled): 4 + 120 + 1000 + 1 = 1125 свечей → покрывает до минуты 1120
+ * - Каждый чанк цикла: 1000 свечей, буфер 4 мин → +996 новых минут покрытия
+ * - Покрытие после N чанков цикла: 1120 + N×996 ≥ 14400 → N = 14
+ * - Итого вызовов getCandles: 1 (scheduled) + 14 (цикл) = 15
+ * - TP на минуте 14400 (ровно 10 дней)
+ */
+test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 chunk requests)", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T05:00:00Z").getTime();
+  const intervalMs = 60_000;
+  const TP_MINUTE = 14_400; // 10 days * 24h * 60min
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let getCandlesCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-10days",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      getCandlesCallCount++;
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          // Активация: low = priceOpen = 42000
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else if (m < TP_MINUTE) {
+          // Нейтраль 10 дней: между SL=41000 и TP=43000
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        } else {
+          // TP на ровно 10 дней
+          result.push({ timestamp, open: 43000, high: 43100, low: 42900, close: 43000, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-10days",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+    callbacks: {},
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-10days",
+    interval: "1m",
+    startDate: new Date("2024-01-01T05:00:00Z"),
+    endDate: new Date("2024-01-01T05:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-10days",
+    exchangeName: "binance-hold-10days",
+    frameName: "5m-hold-10days",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT closed after 10 days!");
+    return;
+  }
+
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`Expected "take_profit", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  // 1 initial scheduled call + 14 chunk loop iterations = 15 minimum
+  if (getCandlesCallCount < 15) {
+    fail(`Expected ≥15 getCandles calls for 10-day period (1 scheduled + 14 chunks), got ${getCandlesCallCount}`);
+    return;
+  }
+
+  const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
+  pass(`HOLD 10-DAYS: closed by take_profit at day ~${closeDays}. getCandles called ${getCandlesCallCount}x (≥15 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+});
