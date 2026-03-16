@@ -23,7 +23,7 @@ const buildTree = async (
   const nodes: ExplorerNode[] = [];
   for (const entry of entries) {
     const childPath = path.join(dir, entry.name);
-    const childRelPath = path.relative(process.cwd(), childPath);
+    const childRelPath = path.relative(process.cwd(), childPath).replace(/\\/g, "/");
     if (entry.isDirectory()) {
       nodes.push({
         path: childRelPath,
@@ -65,7 +65,7 @@ export class ExplorerViewService {
     }
     const dir = await this.getDir();
     const absPath = path.resolve(process.cwd(), nodePath);
-    if (!absPath.startsWith(dir + path.sep) && absPath !== dir) {
+    if (!absPath.startsWith(dir + path.sep) && !absPath.startsWith(dir + "/") && absPath !== dir) {
       throw new Error(`Path is outside of dump dir: ${nodePath}`);
     }
     return await fs.readFile(absPath, "utf-8");
@@ -77,11 +77,15 @@ export class ExplorerViewService {
       return await this.explorerMockService.getTree();
     }
     const dir = await this.getDir();
+    const allNodes = await buildTree(dir, new Set());
+    const nodes = allNodes.filter(
+      (node) => !(node.type === "directory" && node.label === "data"),
+    );
     const rootNode: ExplorerDirectory = {
-      path: path.relative(process.cwd(), dir),
+      path: path.relative(process.cwd(), dir).replace(/\\/g, "/"),
       label: path.basename(dir),
       type: "directory",
-      nodes: await buildTree(dir, new Set()),
+      nodes,
     };
     return [rootNode];
   };
