@@ -19,12 +19,12 @@ declare global {
 
 type AceElement = any;
 
-const getMode = (mimeType: string) => {
+const getMode = (_mimeType: string) => {
     /*
-    if (mimeType === "application/json") {
+    if (_mimeType === "application/json") {
         return "ace/mode/json";
     }
-    if (mimeType === "text/markdown") {
+    if (_mimeType === "text/markdown") {
         return "ace/mode/markdown";
     }
     */
