@@ -22,15 +22,6 @@ import ActionCoreService from "../../core/ActionCoreService";
 const ACTIVE_CANDLE_INCLUDED = 1;
 const SCHEDULE_ACTIVATION_CANDLE_SKIP = 1;
 
-interface IProcessSignalResult {
-  iNext?: boolean;
-  previousEventTimestamp: number | null;
-  closeTimestamp?: number;
-  shouldStop?: boolean;
-  scheduledYield?: IStrategyTickResultOpened;
-  backtestYield?: IStrategyTickResultClosed | IStrategyTickResultCancelled;
-}
-
 const EMIT_PROGRESS_FN = async (
   self: BacktestLogicPrivateService,
   symbol: string,
@@ -230,13 +221,20 @@ const EMIT_TIMEFRAME_PERFORMANCE_FN = async (
   return currentTimestamp;
 };
 
-const PROCESS_SCHEDULED_SIGNAL_FN = async (
+type TProcessSignalResult =
+  | { type: "skip" }
+  | { type: "closed"; previousEventTimestamp: number; closeTimestamp: number; shouldStop: boolean };
+
+const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
   self: BacktestLogicPrivateService,
   symbol: string,
   when: Date,
   result: IStrategyTickResultScheduled,
   previousEventTimestamp: number | null
-): Promise<IProcessSignalResult> => {
+): AsyncGenerator<
+  IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled,
+  TProcessSignalResult
+> {
   const signalStartTime = performance.now();
   const signal = result.signal;
 
@@ -256,11 +254,11 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async (
 
   const candles = await GET_CANDLES_FN(self, symbol, candlesNeeded, bufferStartTime, { signalId: signal.id, candlesNeeded, bufferMinutes });
   if (candles === null) {
-    return { iNext: true, previousEventTimestamp };
+    return { type: "skip" };
   }
 
   if (!candles.length) {
-    return { iNext: true, previousEventTimestamp };
+    return { type: "skip" };
   }
 
   self.loggerService.info("backtestLogicPrivateService candles fetched for scheduled", {
@@ -309,7 +307,7 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async (
   try {
     const firstResult = await BACKTEST_FN(self, symbol, candles, when, context, { signalId: signal.id });
     if (firstResult === null) {
-      return { iNext: true, previousEventTimestamp };
+      return { type: "skip" };
     }
     backtestResult = firstResult;
   } finally {
@@ -320,13 +318,13 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async (
     const bufferMs = bufferMinutes * 60_000;
     const chunkResult = await RUN_INFINITY_CHUNK_LOOP_FN(self, symbol, when, context, backtestResult, bufferMs, signal.id);
     if (chunkResult === null) {
-      return { iNext: true, previousEventTimestamp };
+      return { type: "skip" };
     }
     backtestResult = chunkResult;
   }
 
   if (backtestResult.action === "active") {
-    return { iNext: true, previousEventTimestamp };
+    return { type: "skip" };
   }
 
   self.loggerService.info("backtestLogicPrivateService scheduled signal closed", {
@@ -346,22 +344,24 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async (
     totalFrames: undefined,
   });
 
-  return {
-    previousEventTimestamp: newTimestamp,
-    closeTimestamp: backtestResult.closeTimestamp,
-    shouldStop,
-    scheduledYield: scheduleOpenResult,
-    backtestYield: backtestResult,
-  };
+  if (scheduleOpenResult!) {
+    yield scheduleOpenResult;
+  }
+  yield backtestResult;
+
+  return { type: "closed", previousEventTimestamp: newTimestamp, closeTimestamp: backtestResult.closeTimestamp, shouldStop };
 };
 
-const PROCESS_OPENED_SIGNAL_FN = async (
+const PROCESS_OPENED_SIGNAL_FN = async function*(
   self: BacktestLogicPrivateService,
   symbol: string,
   when: Date,
   result: IStrategyTickResultOpened,
   previousEventTimestamp: number | null
-): Promise<IProcessSignalResult> => {
+): AsyncGenerator<
+  IStrategyTickResultClosed | IStrategyTickResultCancelled,
+  TProcessSignalResult
+> {
   const signalStartTime = performance.now();
   const signal = result.signal;
 
@@ -386,11 +386,11 @@ const PROCESS_OPENED_SIGNAL_FN = async (
 
     const candles = await GET_CANDLES_FN(self, symbol, totalCandles, bufferStartTime, { signalId: signal.id, totalCandles, bufferMinutes });
     if (candles === null) {
-      return { iNext: true, previousEventTimestamp };
+      return { type: "skip" };
     }
 
     if (!candles.length) {
-      return { iNext: true, previousEventTimestamp };
+      return { type: "skip" };
     }
 
     self.loggerService.info("backtestLogicPrivateService candles fetched", {
@@ -401,7 +401,7 @@ const PROCESS_OPENED_SIGNAL_FN = async (
 
     const firstResult = await BACKTEST_FN(self, symbol, candles, when, context, { signalId: signal.id });
     if (firstResult === null) {
-      return { iNext: true, previousEventTimestamp };
+      return { type: "skip" };
     }
     backtestResult = firstResult;
   } else {
@@ -413,17 +413,17 @@ const PROCESS_OPENED_SIGNAL_FN = async (
     chunkLoop: while (true) {
       const chunkCandles = await GET_CANDLES_FN(self, symbol, CHUNK, chunkStart, { signalId: signal.id, bufferMinutes });
       if (chunkCandles === null) {
-        return { iNext: true, previousEventTimestamp };
+        return { type: "skip" };
       }
 
       if (!chunkCandles.length) {
         if (!lastChunkCandles.length) {
-          return { iNext: true, previousEventTimestamp };
+          return { type: "skip" };
         }
         await self.strategyCoreService.closePending(true, symbol, context);
         const result = await BACKTEST_FN(self, symbol, lastChunkCandles, when, context, { signalId: signal.id });
         if (result === null) {
-          return { iNext: true, previousEventTimestamp };
+          return { type: "skip" };
         }
         backtestResult = result.action !== "active" ? result : undefined;
         break chunkLoop;
@@ -437,7 +437,7 @@ const PROCESS_OPENED_SIGNAL_FN = async (
 
       const chunkResult = await BACKTEST_FN(self, symbol, chunkCandles, when, context, { signalId: signal.id });
       if (chunkResult === null) {
-        return { iNext: true, previousEventTimestamp };
+        return { type: "skip" };
       }
 
       if (chunkResult.action !== "active") {
@@ -451,7 +451,7 @@ const PROCESS_OPENED_SIGNAL_FN = async (
   }
 
   if (backtestResult === undefined) {
-    return { iNext: true, previousEventTimestamp };
+    return { type: "skip" };
   }
 
   if (backtestResult.action === "active") {
@@ -475,12 +475,9 @@ const PROCESS_OPENED_SIGNAL_FN = async (
     totalFrames: undefined,
   });
 
-  return {
-    previousEventTimestamp: newTimestamp,
-    closeTimestamp: backtestResult.closeTimestamp,
-    shouldStop,
-    backtestYield: backtestResult,
-  };
+  yield backtestResult;
+
+  return { type: "closed", previousEventTimestamp: newTimestamp, closeTimestamp: backtestResult.closeTimestamp, shouldStop };
 };
 
 /**
@@ -583,55 +580,32 @@ export class BacktestLogicPrivateService {
       if (result.action === "scheduled") {
         yield result;
 
-        const r = await PROCESS_SCHEDULED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
-        previousEventTimestamp = r.previousEventTimestamp;
+        const r = yield* PROCESS_SCHEDULED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
 
-        if (r.iNext) {
-          i++;
-          continue;
-        }
-
-        if (r.scheduledYield) {
-          yield r.scheduledYield;
-        }
-        if (r.backtestYield) {
-          yield r.backtestYield;
-        }
-
-        if (r.closeTimestamp) {
+        if (r.type === "closed") {
+          previousEventTimestamp = r.previousEventTimestamp;
           while (i < timeframes.length && timeframes[i].getTime() < r.closeTimestamp) {
             i++;
           }
-        }
-
-        if (r.shouldStop) {
-          break;
+          if (r.shouldStop) {
+            break;
+          }
         }
       }
 
       if (result.action === "opened") {
         yield result;
 
-        const r = await PROCESS_OPENED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
-        previousEventTimestamp = r.previousEventTimestamp;
+        const r = yield* PROCESS_OPENED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
 
-        if (r.iNext) {
-          i++;
-          continue;
-        }
-
-        if (r.backtestYield) {
-          yield r.backtestYield;
-        }
-
-        if (r.closeTimestamp) {
+        if (r.type === "closed") {
+          previousEventTimestamp = r.previousEventTimestamp;
           while (i < timeframes.length && timeframes[i].getTime() < r.closeTimestamp) {
             i++;
           }
-        }
-
-        if (r.shouldStop) {
-          break;
+          if (r.shouldStop) {
+            break;
+          }
         }
       }
 
