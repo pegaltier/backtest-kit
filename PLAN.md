@@ -1,217 +1,255 @@
-# Plan: Infinite minuteEstimatedTime — дозапрос свечей по мере надобности
+# Plan: Infinite minuteEstimatedTime — промежуточный `active` вместо исключения
 
 ## Context
 
-Сейчас `BacktestLogicPrivateService` запрашивает ровно `signal.minuteEstimatedTime + buffer` свечей **одним запросом** перед вызовом `backtest()`. Если стратегия хочет работать неограниченно долго (открытый сигнал без таймаута), это невозможно — `minuteEstimatedTime` должно быть конечным числом, а `PROCESS_PENDING_SIGNAL_CANDLES_FN` бросает исключение если свечи кончились до истечения таймера.
+`PROCESS_PENDING_SIGNAL_CANDLES_FN` в `ClientStrategy` бросает исключение `"Insufficient candle data"` когда свечи кончились, а `elapsedTime < maxTimeToWait`. При `minuteEstimatedTime = Infinity` это условие всегда true — сигнал не может корректно завершиться через `backtest()`.
 
-Цель: поддержать `minuteEstimatedTime = Infinity` — сигнал работает до закрытия по TP/SL или до явного `closePending()`, а свечи подгружаются пачками по мере надобности.
+Цель: вместо исключения возвращать `IStrategyTickResultActive` — промежуточное состояние "свечи кончились, сигнал всё ещё открыт". `BacktestLogicPrivateService` видит `active` и запрашивает следующий чанк свечей, вызывая `backtest()` повторно до получения `closed`/`cancelled`.
 
-## Affected Files
+---
 
-- `src/client/ClientStrategy.ts` — `PROCESS_PENDING_SIGNAL_CANDLES_FN`, `PROCESS_SCHEDULED_SIGNAL_CANDLES_FN`, `VALIDATE_SIGNAL_FN`
-- `src/lib/services/logic/private/BacktestLogicPrivateService.ts` — метод `run()`, блоки `opened` и `scheduled`
-- `src/interfaces/Strategy.interface.ts` — тип `minuteEstimatedTime` в `ISignalDto`
+## Затронутые файлы
 
-## Подход
+- `src/interfaces/Strategy.interface.ts`
+- `src/client/ClientStrategy.ts`
+- `src/lib/services/core/StrategyCoreService.ts`
+- `src/lib/services/logic/private/BacktestLogicPrivateService.ts`
 
-### 1. `Strategy.interface.ts` — разрешить Infinity в типе
+---
 
-`minuteEstimatedTime: number` уже позволяет `Infinity` на уровне TS (тип `number` включает `Infinity`). Менять тип не нужно, но нужно обновить JSDoc комментарий.
+## Изменения
 
-### 2. `ClientStrategy.ts` — VALIDATE_SIGNAL_FN
+### 1. `src/interfaces/Strategy.interface.ts`
 
-Текущие проверки (строки ~783–818):
-```ts
-if (signal.minuteEstimatedTime <= 0) { errors.push(...) }
-if (!Number.isInteger(signal.minuteEstimatedTime)) { errors.push(...) }
-if (!isFinite(signal.minuteEstimatedTime)) { errors.push(...) }
-```
-
-Изменить: снять проверки `!Number.isInteger` и `!isFinite` для `Infinity`:
-- `Infinity > 0` → OK
-- Разрешить `Infinity` как специальный маркер "без таймаута"
-- Сохранить проверку `<= 0`
-
-### 3. `ClientStrategy.ts` — PROCESS_PENDING_SIGNAL_CANDLES_FN
-
-Текущая логика (строки ~4010–4248):
-- Итерирует по свечам
-- После цикла, если `elapsedTime < maxTimeToWait` → бросает исключение (недостаточно свечей)
-- Если `elapsedTime >= maxTimeToWait` → закрывает по `time_expired`
-
-При `minuteEstimatedTime = Infinity`:
-- `maxTimeToWait = Infinity * 60 * 1000 = Infinity`
-- `elapsedTime < Infinity` → **всегда true** → функция всегда бросит исключение
-
-**Решение**: не менять `PROCESS_PENDING_SIGNAL_CANDLES_FN`. Функция остаётся как есть — она работает корректно, если ей передать достаточно свечей. Дозапрос делается на уровне `BacktestLogicPrivateService`.
-
-### 4. `BacktestLogicPrivateService.ts` — основное изменение
-
-**Блок `opened` (строки ~374–513):**
-
-Текущий код:
-```ts
-const totalCandles = signal.minuteEstimatedTime + GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
-candles = await this.exchangeCoreService.getNextCandles(symbol, "1m", totalCandles, bufferStartTime, true);
-backtestResult = await this.strategyCoreService.backtest(symbol, candles, when, true, {...});
-```
-
-Новый код при `minuteEstimatedTime === Infinity`:
-```ts
-if (signal.minuteEstimatedTime === Infinity) {
-  // Итерационный цикл с дозапросом
-  backtestResult = await this._backtestWithInfiniteTime(symbol, signal, when, bufferStartTime, bufferMinutes);
-} else {
-  // существующий код
-}
-```
-
-Вспомогательный приватный метод `_backtestWithInfiniteTime`:
-```
-loop:
-  1. Запросить CHUNK_SIZE (=CC_MAX_CANDLES_PER_REQUEST) свечей начиная от lastEndTime
-  2. Передать accumulated_candles в backtest()
-  3. Если backtest() вернул результат (closed/cancelled) → выйти из loop
-  4. Если backtest() бросил исключение с сообщением "Insufficient candle data" →
-     запросить следующую порцию и повторить
-  5. Если getNextCandles вернул [] (достигли Date.now()) → закрыть по time_expired вручную
-     (вызвать closePending + backtest снова)
-```
-
-**Но есть проблема**: `backtest()` мутирует состояние стратегии — если он бросает исключение на нехватке данных, состояние сигнала частично изменено (обработаны partials, callbacks вызваны за часть свечей). Повторный вызов `backtest()` с новым батчем свечей невозможен — нельзя "продолжить" с середины.
-
-**Правильное решение**: передавать свечи накопленным буфером в `backtest()` который ожидает полный массив, НО:
-- Нельзя запросить бесконечно много свечей заранее
-- `PROCESS_PENDING_SIGNAL_CANDLES_FN` обрабатывает свечи **итеративно** и остановится как только найдёт TP/SL
-
-Реальный вариант: `PROCESS_PENDING_SIGNAL_CANDLES_FN` **не мутирует** стратегию до закрытия — она вызывает коллбеки (включая `onActivePing`), но `setPendingSignal(null)` только в `CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN`. Если свечи кончились без TP/SL — функция **бросает исключение** и сигнал остаётся открытым (`_pendingSignal` не очищен).
-
-Значит: после поглощения исключения "Insufficient candle data" можно сделать ещё один вызов `backtest()` с новой порцией свечей (включая VWAP буфер).
-
-**Итоговая стратегия в BacktestLogicPrivateService:**
-
-```typescript
-// Для Infinity minuteEstimatedTime:
-const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
-const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - ACTIVE_CANDLE_INCLUDED;
-
-let chunkStart = bufferStartTime; // начальная точка включая буфер
-let backtestResult: IStrategyBacktestResult | undefined;
-
-while (!backtestResult) {
-  let chunkCandles: ICandleData[];
-  try {
-    chunkCandles = await this.exchangeCoreService.getNextCandles(symbol, "1m", CHUNK, chunkStart, true);
-  } catch (error) { /* handle */ }
-
-  if (!chunkCandles.length) {
-    // Достигли конца фрейма — стратегия не закрылась по TP/SL
-    // Принудительно закрыть: вызвать closePending() + backtest() с пустым/мини массивом
-    // ИЛИ вызвать CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN напрямую
-    // Решение: вызвать strategyCoreService.backtest() с одной "dummy" свечой (последняя известная)
-    // чтобы сработал путь _closedSignal из closePending()
-    // НО: проще всего — стратегия вызывает closePending() через setClosedSignal,
-    // и следующий backtest() с любыми свечами обработает _closedSignal
-    //
-    // Реально: BacktestLogicPrivateService напрямую не имеет доступа к _closedSignal.
-    // Самый чистый способ: вызвать strategyCoreService.closePending()
-    // затем backtest() с последним чанком (хотя бы 1 свеча) —
-    // backtest() увидит _closedSignal и вернёт closed результат с текущей ценой.
-    break; // → после loop принудительно закрыть через closePending + повторный backtest
-  }
-
-  try {
-    backtestResult = await this.strategyCoreService.backtest(symbol, chunkCandles, when, true, {...});
-  } catch (error) {
-    if (/* "Insufficient candle data" */) {
-      // Сигнал остался открытым, продолжаем
-      // Следующий chunk начинается от последней свечи предыдущего
-      chunkStart = new Date(chunkCandles[chunkCandles.length - 1].timestamp + 60_000 - bufferMinutes * 60_000);
-      continue;
-    }
-    throw error; // другая ошибка
-  }
-}
-```
-
-**Проблема с VWAP буфером между чанками**: при переходе к следующему чанку нужно включить `bufferMinutes` предыдущих свечей чтобы VWAP рассчитался правильно для первых свечей нового чанка. Уже обрабатывается: начало следующего чанка = конец предыдущего - bufferMinutes.
-
-**Проблема с уже вызванными коллбеками**: `onActivePing` и `CALL_PARTIAL_*` вызываются для каждой свечи. При повторном вызове `backtest()` со следующим чанком — первые `bufferMinutes` свечей пропускаются (буфер), и обработка начинается с правильного места. Коллбеки НЕ будут дублированы.
-
-### 5. Для блока `scheduled` в BacktestLogicPrivateService
-
-Аналогично: при `minuteEstimatedTime = Infinity` запрашивать только `bufferMinutes + CC_SCHEDULE_AWAIT_MINUTES + CHUNK` свечей вместо `bufferMinutes + CC_SCHEDULE_AWAIT_MINUTES + Infinity`. После активации scheduled сигнала — применить тот же итерационный подход для pending фазы.
-
-## Детальные изменения
-
-### `src/interfaces/Strategy.interface.ts` (~строка 43)
-Обновить JSDoc: добавить `Infinity` как допустимое значение — позиция работает до TP/SL.
-
-### `src/client/ClientStrategy.ts`
-
-**VALIDATE_SIGNAL_FN** (~строки 783–818):
+**`IStrategyBacktestResult`** (~строка 786):
 ```ts
 // Было:
-if (!Number.isInteger(signal.minuteEstimatedTime)) { errors.push(...) }
-if (!isFinite(signal.minuteEstimatedTime)) { errors.push(...) }
+export type IStrategyBacktestResult =
+  | IStrategyTickResultOpened
+  | IStrategyTickResultScheduled
+  | IStrategyTickResultClosed
+  | IStrategyTickResultCancelled;
 
 // Стало:
+export type IStrategyBacktestResult =
+  | IStrategyTickResultOpened
+  | IStrategyTickResultScheduled
+  | IStrategyTickResultActive
+  | IStrategyTickResultClosed
+  | IStrategyTickResultCancelled;
+```
+
+**JSDoc `minuteEstimatedTime`** (~строка 43):
+```ts
+/**
+ * Expected duration in minutes before time_expired.
+ * Use `Infinity` for no timeout — position stays open until TP/SL or explicit closePending().
+ */
+minuteEstimatedTime: number;
+```
+
+---
+
+### 2. `src/client/ClientStrategy.ts`
+
+#### VALIDATE_SIGNAL_FN (~строки 783–818)
+
+Убрать блокировку `Infinity`. Три изменения:
+
+```ts
+// 1. Убрать: !Number.isInteger → заменить:
 if (signal.minuteEstimatedTime !== Infinity && !Number.isInteger(signal.minuteEstimatedTime)) {
+  errors.push(`minuteEstimatedTime must be an integer (whole number), got ${signal.minuteEstimatedTime}`);
+}
+
+// 2. Убрать проверку isFinite полностью (Infinity — допустимое значение)
+// Строку: if (!isFinite(signal.minuteEstimatedTime)) { errors.push(...) }  — УДАЛИТЬ
+
+// 3. CC_MAX_SIGNAL_LIFETIME_MINUTES — пропускать для Infinity:
+if (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES
+    && signal.minuteEstimatedTime !== Infinity
+    && signal.minuteEstimatedTime > GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES) {
   errors.push(...)
 }
-// Убрать проверку isFinite (Infinity — допустимое значение)
 ```
 
-**CC_MAX_SIGNAL_LIFETIME_MINUTES** check (~строка 808):
+#### PROCESS_PENDING_SIGNAL_CANDLES_FN (~строки 3975–4250)
+
+Изменить return type: `Promise<IStrategyTickResultClosed>` → `Promise<IStrategyTickResultClosed | IStrategyTickResultActive>`
+
+После цикла (строки ~4207–4248), вместо безусловного throw:
+
 ```ts
-// Убрать для Infinity (не применять limit к бесконечным сигналам)
-if (GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES && signal.minuteEstimatedTime !== Infinity) {
-  ...
+// Текущее:
+if (elapsedTime < maxTimeToWait) {
+  throw new Error(`ClientStrategy backtest: Insufficient candle data...`);
+}
+
+// Новое:
+if (elapsedTime < maxTimeToWait) {
+  if (signal.minuteEstimatedTime === Infinity) {
+    // Свечи кончились — сигнал всё ещё открыт.
+    // Возвращаем промежуточный active, caller запросит следующий чанк.
+    const result: IStrategyTickResultActive = {
+      action: "active",
+      signal: TO_PUBLIC_SIGNAL(signal, lastPrice),
+      currentPrice: lastPrice,
+      strategyName: self.params.method.context.strategyName,
+      exchangeName: self.params.method.context.exchangeName,
+      frameName: self.params.method.context.frameName,
+      symbol: self.params.execution.context.symbol,
+      percentTp: 0,
+      percentSl: 0,
+      pnl: toProfitLossDto(signal, lastPrice),
+      backtest: self.params.execution.context.backtest,
+      createdAt: closeTimestamp,
+    };
+    return result;
+  }
+  throw new Error(`ClientStrategy backtest: Insufficient candle data...`);
 }
 ```
 
-### `src/lib/services/logic/private/BacktestLogicPrivateService.ts`
+#### `backtest()` метод (~строка 5487)
 
-Добавить константу: `const INFINITE_SIGNAL_CHUNK_MINUTES = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;`
-
-**Блок `opened` (~строки 374–513):** обернуть существующий `getNextCandles + backtest` в условие:
-```ts
-if (signal.minuteEstimatedTime !== Infinity) {
-  // существующий код
-} else {
-  backtestResult = await this._runInfiniteBacktest(symbol, signal, when, bufferMinutes, bufferStartTime);
-}
-```
-
-Добавить приватный метод `_runInfiniteBacktest` с итерационным дозапросом (см. выше).
-
-**Блок `scheduled` (~строки 175–370):** аналогично изменить `candlesNeeded`:
+Обновить сигнатуру:
 ```ts
 // Было:
-const candlesNeeded = bufferMinutes + CC_SCHEDULE_AWAIT_MINUTES + signal.minuteEstimatedTime + SCHEDULE_ACTIVATION_CANDLE_SKIP;
+public async backtest(...): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>
 
 // Стало:
-const pendingMinutes = signal.minuteEstimatedTime === Infinity
-  ? INFINITE_SIGNAL_CHUNK_MINUTES
-  : signal.minuteEstimatedTime;
-const candlesNeeded = bufferMinutes + CC_SCHEDULE_AWAIT_MINUTES + pendingMinutes + SCHEDULE_ACTIVATION_CANDLE_SKIP;
+public async backtest(...): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive>
 ```
 
-После получения `backtestResult` из scheduled — если `minuteEstimatedTime === Infinity` и результат не "closed"/"cancelled" — продолжить итерационный дозапрос.
+---
 
-## Обнаружение "Insufficient candle data" error
+### 3. `src/lib/services/core/StrategyCoreService.ts`
 
-В `PROCESS_PENDING_SIGNAL_CANDLES_FN` (~строка 4219) брошенная ошибка содержит текст:
-`"ClientStrategy backtest: Insufficient candle data for pending signal."`
-
-В `BacktestLogicPrivateService` перехватывать по этому ключевому тексту:
+Обновить возвращаемый тип метода `backtest()`:
 ```ts
-if (getErrorMessage(error).includes("Insufficient candle data")) { /* continue */ }
+// Было:
+): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>
+
+// Стало:
+): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive>
 ```
+
+---
+
+### 4. `src/lib/services/logic/private/BacktestLogicPrivateService.ts`
+
+#### Блок `opened` (~строки 374–514)
+
+Заменить одиночный вызов `getNextCandles + backtest` на итерационный цикл при `Infinity`:
+
+```ts
+const bufferMinutes = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - ACTIVE_CANDLE_INCLUDED;
+const bufferStartTime = new Date(when.getTime() - bufferMinutes * 60 * 1000);
+
+let backtestResult: IStrategyBacktestResult;
+
+if (signal.minuteEstimatedTime !== Infinity) {
+  // Существующий код — одиночный запрос
+  const totalCandles = signal.minuteEstimatedTime + GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
+  candles = await this.exchangeCoreService.getNextCandles(symbol, "1m", totalCandles, bufferStartTime, true);
+  if (!candles.length) { i++; continue; }
+  backtestResult = await this.strategyCoreService.backtest(symbol, candles, when, true, context);
+} else {
+  // Infinity: итерационный дозапрос чанками
+  const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
+  const bufferMs = (GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1) * 60_000;
+  let chunkStart = bufferStartTime;
+  let lastChunkCandles: ICandleData[] = [];
+
+  while (true) {
+    const chunkCandles = await this.exchangeCoreService.getNextCandles(symbol, "1m", CHUNK, chunkStart, true);
+
+    if (!chunkCandles.length) {
+      // Конец фрейма — сигнал не закрылся по TP/SL
+      // Принудительно закрыть по time_expired через closePending + повторный backtest
+      await this.strategyCoreService.closePending(true, symbol, context);
+      backtestResult = await this.strategyCoreService.backtest(symbol, lastChunkCandles, when, true, context);
+      break;
+    }
+
+    lastChunkCandles = chunkCandles;
+    const chunkResult = await this.strategyCoreService.backtest(symbol, chunkCandles, when, true, context);
+
+    if (chunkResult.action !== "active") {
+      backtestResult = chunkResult;
+      break;
+    }
+
+    // Сдвигаем начало следующего чанка с учётом VWAP буфера
+    chunkStart = new Date(chunkCandles[chunkCandles.length - 1].timestamp + 60_000 - bufferMs);
+  }
+}
+// Далее: yield backtestResult, продвижение i
+```
+
+#### Блок `scheduled` (~строки 175–371)
+
+Ограничить `candlesNeeded` при Infinity и добавить итерационный дозапрос после первого `backtest()`:
+
+```ts
+// Расчёт свечей:
+const pendingPhaseMinutes = signal.minuteEstimatedTime === Infinity
+  ? GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST
+  : signal.minuteEstimatedTime;
+const candlesNeeded = bufferMinutes + GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES + pendingPhaseMinutes + SCHEDULE_ACTIVATION_CANDLE_SKIP;
+
+// ... getNextCandles с candlesNeeded ...
+
+// После первого backtest():
+backtestResult = await this.strategyCoreService.backtest(symbol, candles, when, true, context);
+
+// Если infinite и signal активировался но ещё не закрылся:
+if (backtestResult.action === "active" && signal.minuteEstimatedTime === Infinity) {
+  const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
+  const bufferMs = (GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT - 1) * 60_000;
+  let lastChunkCandles = candles;
+  let chunkStart = new Date(candles[candles.length - 1].timestamp + 60_000 - bufferMs);
+
+  while (backtestResult.action === "active") {
+    const chunkCandles = await this.exchangeCoreService.getNextCandles(symbol, "1m", CHUNK, chunkStart, true);
+
+    if (!chunkCandles.length) {
+      await this.strategyCoreService.closePending(true, symbol, context);
+      backtestResult = await this.strategyCoreService.backtest(symbol, lastChunkCandles, when, true, context);
+      break;
+    }
+
+    lastChunkCandles = chunkCandles;
+    backtestResult = await this.strategyCoreService.backtest(symbol, chunkCandles, when, true, context);
+    chunkStart = new Date(chunkCandles[chunkCandles.length - 1].timestamp + 60_000 - bufferMs);
+  }
+}
+```
+
+---
+
+## Продвижение `i` после Infinity сигнала
+
+Текущий код продвигает `i` на `signal.minuteEstimatedTime + N`. Для Infinity это сломает цикл.
+
+После получения итогового `backtestResult` при Infinity — продвигать на фактически прошедшее время:
+```ts
+const actualElapsedMinutes = Math.ceil(
+  (backtestResult.closeTimestamp - signal.pendingAt) / 60_000
+);
+// Использовать actualElapsedMinutes вместо signal.minuteEstimatedTime
+```
+
+Точные строки выяснить при чтении `BacktestLogicPrivateService` блока `opened` (конец блока после `yield`).
+
+---
+
+---
 
 ## Verification
 
-1. Написать e2e тест: стратегия с `minuteEstimatedTime: Infinity`, TP далеко, SL близко — должна закрыться по SL
-2. Написать e2e тест: `minuteEstimatedTime: Infinity`, TP достигается через 1200 минут (> CC_MAX_CANDLES_PER_REQUEST=1000) — должна закрыться по TP
-3. Существующие 88 тестов в `test/spec/dca.test.mjs` и 28 e2e тестов в `test/e2e/dca.test.mjs` должны пройти без изменений
-4. `npm test` / `node test/index.mjs`
+1. Unit: сигнал с `minuteEstimatedTime = Infinity`, TP на +5% → закрывается по TP
+2. Unit: `minuteEstimatedTime = Infinity`, SL на -2% → закрывается по SL
+3. e2e: сигнал с `minuteEstimatedTime = Infinity`, TP достигается после 1200 минут (> CC_MAX_CANDLES_PER_REQUEST) → закрывается по TP с правильным PNL
+4. Все 88 тестов в `test/spec/dca.test.mjs` и 28 в `test/e2e/dca.test.mjs` — без изменений
+5. `node test/index.mjs`

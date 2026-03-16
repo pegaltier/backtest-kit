@@ -705,7 +705,7 @@ export interface IStrategyTickResultActive {
   /** Unix timestamp in milliseconds when this tick result was created (from candle timestamp in backtest or execution context when in live) */
   createdAt: number;
   /** Unix timestamp in milliseconds of the last processed candle. Used by BacktestLogicPrivateService to advance chunkStart for the next chunk request. */
-  lastTimestamp: number;
+  _backtestLastTimestamp: number;
 }
 
 /**

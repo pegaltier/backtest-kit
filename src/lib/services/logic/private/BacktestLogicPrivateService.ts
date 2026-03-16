@@ -311,7 +311,7 @@ export class BacktestLogicPrivateService {
           const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
           const bufferMs = bufferMinutes * 60_000;
           let lastChunkCandles = candles;
-          let chunkStart = new Date(backtestResult.lastTimestamp + 60_000 - bufferMs);
+          let chunkStart = new Date(backtestResult._backtestLastTimestamp + 60_000 - bufferMs);
 
           chunkLoop: while (backtestResult.action === "active") {
             let chunkCandles: ICandleData[];
@@ -400,7 +400,7 @@ export class BacktestLogicPrivateService {
 
             lastChunkCandles = chunkCandles;
             if (backtestResult.action === "active") {
-              chunkStart = new Date(backtestResult.lastTimestamp + 60_000 - bufferMs);
+              chunkStart = new Date(backtestResult._backtestLastTimestamp + 60_000 - bufferMs);
             }
           }
         }
@@ -667,7 +667,7 @@ export class BacktestLogicPrivateService {
             }
 
             lastChunkCandles = chunkCandles;
-            chunkStart = new Date(chunkResult.lastTimestamp + 60_000 - bufferMs);
+            chunkStart = new Date(chunkResult._backtestLastTimestamp + 60_000 - bufferMs);
           }
         }
 

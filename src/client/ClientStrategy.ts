@@ -3246,7 +3246,7 @@ const RETURN_PENDING_SIGNAL_ACTIVE_FN = async (
     pnl,
     backtest: self.params.execution.context.backtest,
     createdAt: currentTime,
-    lastTimestamp: currentTime,
+    _backtestLastTimestamp: currentTime,
   };
 
   await CALL_TICK_CALLBACKS_FN(
@@ -4219,7 +4219,7 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
       pnl: toProfitLossDto(signal, lastPrice),
       backtest: self.params.execution.context.backtest,
       createdAt: closeTimestamp,
-      lastTimestamp: closeTimestamp,
+      _backtestLastTimestamp: closeTimestamp,
     };
     return result;
   }
