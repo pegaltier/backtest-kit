@@ -362,3 +362,233 @@ test("HOLD: Infinity LONG closes by take_profit after 1200 minutes (cross-chunk)
   const closeMinute = Math.round((finalResult.closeTimestamp - startTime) / intervalMs);
   pass(`HOLD CROSS-CHUNK: Infinity signal closed by take_profit at minute ~${closeMinute} (>1000). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
+
+
+/**
+ * ТЕСТ #4: Верификация 2-го подзапроса свечей (пагинация)
+ *
+ * Сценарий:
+ * - CC_MAX_CANDLES_PER_REQUEST = 1000, bufferMinutes = 4, CC_SCHEDULE_AWAIT_MINUTES = 120
+ * - Первый запрос (scheduled): 4 + 120 + 1000 + 1 = 1125 свечей → покрывает до минуты 1120
+ * - TP размещён на минуте 1200 → требует 2-й подзапрос
+ * - Тест считает вызовы getCandles и проверяет, что их ≥ 2
+ */
+test("HOLD: Infinity LONG — 2nd chunk request triggered (TP at minute 1200)", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T03:00:00Z").getTime();
+  const intervalMs = 60_000;
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let getCandlesCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-2chunk",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      getCandlesCallCount++;
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else if (m < 1200) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        } else {
+          // TP на минуте 1200: вне первого чанка (1125 свечей), требует 2-й подзапрос
+          result.push({ timestamp, open: 43000, high: 43100, low: 42900, close: 43000, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-2chunk",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+    callbacks: {},
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-2chunk",
+    interval: "1m",
+    startDate: new Date("2024-01-01T03:00:00Z"),
+    endDate: new Date("2024-01-01T03:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-2chunk",
+    exchangeName: "binance-hold-2chunk",
+    frameName: "5m-hold-2chunk",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT closed!");
+    return;
+  }
+
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`Expected "take_profit", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  if (getCandlesCallCount < 2) {
+    fail(`Expected ≥2 getCandles calls (2nd chunk required for TP@1200), got ${getCandlesCallCount}`);
+    return;
+  }
+
+  const closeMinute = Math.round((finalResult.closeTimestamp - startTime) / intervalMs);
+  pass(`HOLD 2-CHUNK: closed by take_profit at minute ~${closeMinute}. getCandles called ${getCandlesCallCount}x (≥2 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+});
+
+
+/**
+ * ТЕСТ #5: Верификация 3-го подзапроса свечей (пагинация)
+ *
+ * Сценарий:
+ * - Первый запрос: 1125 свечей → покрывает до минуты 1120
+ * - 2-й подзапрос: 1000 свечей с учётом буфера → покрывает до ~минуты 2116
+ * - TP размещён на минуте 2300 → требует 3-й подзапрос
+ * - Тест считает вызовы getCandles и проверяет, что их ≥ 3
+ */
+test("HOLD: Infinity LONG — 3rd chunk request triggered (TP at minute 2300)", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T04:00:00Z").getTime();
+  const intervalMs = 60_000;
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let getCandlesCallCount = 0;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-3chunk",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      getCandlesCallCount++;
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else if (m < 2300) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        } else {
+          // TP на минуте 2300: требует 3-й подзапрос (1120 + ~1000 + ~1000 → ~3120 покрытие)
+          result.push({ timestamp, open: 43000, high: 43100, low: 42900, close: 43000, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-3chunk",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+    callbacks: {},
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-3chunk",
+    interval: "1m",
+    startDate: new Date("2024-01-01T04:00:00Z"),
+    endDate: new Date("2024-01-01T04:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  listenSignalBacktest((result) => {
+    if (result.action === "closed") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-3chunk",
+    exchangeName: "binance-hold-3chunk",
+    frameName: "5m-hold-3chunk",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT closed!");
+    return;
+  }
+
+  if (finalResult.closeReason !== "take_profit") {
+    fail(`Expected "take_profit", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  if (getCandlesCallCount < 3) {
+    fail(`Expected ≥3 getCandles calls (3rd chunk required for TP@2300), got ${getCandlesCallCount}`);
+    return;
+  }
+
+  const closeMinute = Math.round((finalResult.closeTimestamp - startTime) / intervalMs);
+  pass(`HOLD 3-CHUNK: closed by take_profit at minute ~${closeMinute}. getCandles called ${getCandlesCallCount}x (≥3 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+});
