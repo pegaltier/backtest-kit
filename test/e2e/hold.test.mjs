@@ -951,6 +951,13 @@ test("HOLD: Infinity LONG 5 days — closes via commitClosePending when breakeve
     return;
   }
 
+  // breakeven threshold = (slippage + fee) * 2 + CC_BREAKEVEN_THRESHOLD = (0.1 + 0.1) * 2 + 0.2 = 0.6%
+  // commitClosePending fires when peak >= effectivePriceOpen * 1.006, so PNL must be >= 0
+  if (finalResult.pnl.pnlPercentage < 0) {
+    fail(`Expected non-negative PNL at breakeven close, got ${finalResult.pnl.pnlPercentage.toFixed(4)}%`);
+    return;
+  }
+
   const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
   pass(`HOLD BE LONG: closed via commitClosePending at day ~${closeDays} when breakeven reached. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
@@ -1079,6 +1086,13 @@ test("HOLD: Infinity SHORT 5 days — closes via commitClosePending when breakev
 
   if (finalResult.closeReason !== "closed") {
     fail(`Expected "closed", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  // breakeven threshold = (slippage + fee) * 2 + CC_BREAKEVEN_THRESHOLD = (0.1 + 0.1) * 2 + 0.2 = 0.6%
+  // commitClosePending fires when peak <= effectivePriceOpen * 0.994, so PNL must be >= 0
+  if (finalResult.pnl.pnlPercentage < 0) {
+    fail(`Expected non-negative PNL at breakeven close, got ${finalResult.pnl.pnlPercentage.toFixed(4)}%`);
     return;
   }
 
