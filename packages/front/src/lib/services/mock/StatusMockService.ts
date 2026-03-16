@@ -65,6 +65,7 @@ export class StatusMockService {
       partialExecuted: signal.partialExecuted,
       minuteEstimatedTime: signal.minuteEstimatedTime,
       pendingAt: signal.pendingAt,
+      timestamp: signal.timestamp,
       positionLevels,
       positionEntries,
       positionPartials,

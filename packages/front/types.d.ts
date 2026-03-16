@@ -109,6 +109,7 @@ declare class StatusMockService {
         partialExecuted: any;
         minuteEstimatedTime: any;
         pendingAt: any;
+        timestamp: any;
         positionLevels: any;
         positionEntries: any;
         positionPartials: any;
@@ -141,6 +142,26 @@ declare class MarkdownMockService {
     getHeatReport: (strategyName: string, exchangeName: string, frameName: string) => Promise<string>;
     getWalkerData: (symbol: string, walkerName: string) => Promise<unknown>;
     getWalkerReport: (symbol: string, walkerName: string) => Promise<string>;
+}
+
+interface ExplorerFile {
+    path: string;
+    label: string;
+    type: "file";
+    mimeType: string;
+}
+interface ExplorerDirectory {
+    path: string;
+    label: string;
+    type: "directory";
+    nodes: ExplorerNode[];
+}
+type ExplorerNode = ExplorerFile | ExplorerDirectory;
+
+declare class ExplorerMockService {
+    private readonly loggerService;
+    getNode: (nodePath: string) => Promise<string>;
+    getTree: () => Promise<ExplorerNode[]>;
 }
 
 declare class NotificationViewService {
@@ -177,6 +198,7 @@ declare class StatusViewService {
         partialExecuted: any;
         minuteEstimatedTime: any;
         pendingAt: any;
+        timestamp: any;
         positionLevels: any;
         positionEntries: any;
         positionPartials: any;
@@ -237,6 +259,14 @@ declare class MarkdownViewService {
     getHeatReport: (strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<string>;
     getWalkerData: (symbol: string, walkerName: string) => Promise<unknown>;
     getWalkerReport: (symbol: string, walkerName: string) => Promise<string>;
+}
+
+declare class ExplorerViewService {
+    private readonly loggerService;
+    private readonly explorerMockService;
+    private getDir;
+    getNode: (nodePath: string) => Promise<string>;
+    getTree: () => Promise<ExplorerNode[]>;
 }
 
 declare class SymbolConnectionService {
@@ -318,12 +348,14 @@ declare const ioc: {
     logViewService: LogViewService;
     statusViewService: StatusViewService;
     markdownViewService: MarkdownViewService;
+    explorerViewService: ExplorerViewService;
     notificationMockService: NotificationMockService;
     storageMockService: StorageMockService;
     exchangeMockService: ExchangeMockService;
     logMockService: LogMockService;
     statusMockService: StatusMockService;
     markdownMockService: MarkdownMockService;
+    explorerMockService: ExplorerMockService;
     liveMetaService: LiveMetaService;
     symbolMetaService: SymbolMetaService;
     backtestMetaService: BacktestMetaService;

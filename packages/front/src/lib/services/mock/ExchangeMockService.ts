@@ -47,13 +47,13 @@ export class ExchangeMockService {
     if (!signal) {
       throw new Error(`Signal with ID ${signalId} not found`);
     }
-    const { pendingAt, scheduledAt } = signal;
+    const { pendingAt, scheduledAt, updatedAt } = signal;
     const eventAt = pendingAt || scheduledAt;
     return await this.exchangeService.getRangeCandles({
       symbol: signal.symbol,
       exchangeName: signal.exchangeName,
       signalStartTime: eventAt,
-      signalStopTime: alignToInterval(new Date(), interval).getTime(),
+      signalStopTime: alignToInterval(new Date(updatedAt), interval).getTime(),
       interval,
     });
   };
