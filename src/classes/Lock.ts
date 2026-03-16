@@ -35,17 +35,8 @@ const ACQUIRE_LOCK_FN = async (self: Lock) => {
  * }
  * ```
  *
- * **Explicit Resource Management (`using` / TC39)**
- * ```ts
- * {
- *   using _lock = lock.obtain();
- *   // critical section — lock released automatically on block exit
- * }
- * ```
- *
  * @see {@link acquireLock}
  * @see {@link releaseLock}
- * @see {@link obtain}
  */
 export class Lock {
   private _isBusy = 0;
