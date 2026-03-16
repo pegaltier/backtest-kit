@@ -9,8 +9,10 @@ import {
   listenError,
   listenSignalBacktest,
   listenActivePing,
+  listenSchedulePing,
   getPositionHighestProfitBreakeven,
   commitClosePending,
+  commitCancelScheduled,
 } from "../../build/index.mjs";
 
 import { Subject } from "functools-kit";
@@ -19,6 +21,7 @@ const alignTimestamp = (timestampMs, intervalMinutes) => {
   const intervalMs = intervalMinutes * 60 * 1000;
   return Math.floor(timestampMs / intervalMs) * intervalMs;
 };
+
 
 /**
  * ТЕСТ #1: Infinity LONG закрывается по SL
@@ -1098,4 +1101,108 @@ test("HOLD: Infinity SHORT 5 days — closes via commitClosePending when breakev
 
   const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
   pass(`HOLD BE SHORT: closed via commitClosePending at day ~${closeDays} when breakeven reached. PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+});
+
+
+/**
+ * ТЕСТ #11: Scheduled сигнал отменяется через commitCancelScheduled в listenSchedulePing
+ *
+ * Сценарий:
+ * - Scheduled сигнал ждёт активации (priceOpen не достигается)
+ * - listenSchedulePing вызывает commitCancelScheduled при первом пинге
+ * - Ожидается action === "cancelled"
+ */
+test("HOLD: scheduled signal cancelled via commitCancelScheduled in listenSchedulePing", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T10:00:00Z").getTime();
+  const intervalMs = 60_000;
+
+  let signalGenerated = false;
+  let finalResult = null;
+  let errorCaught = null;
+  let pingFired = false;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-cancel-scheduled",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        // Цена всегда ниже priceOpen=42000 для LONG — активация никогда не произойдёт
+        result.push({ timestamp, open: 41000, high: 41500, low: 40900, close: 41000, volume: 100 });
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-cancel-scheduled",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 30000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 25000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+  });
+
+  const unsubscribeSchedulePing = listenSchedulePing(async ({ symbol }) => {
+    if (!pingFired) {
+      pingFired = true;
+      await commitCancelScheduled(symbol);
+    }
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-cancel-scheduled",
+    interval: "1m",
+    startDate: new Date("2024-01-01T10:00:00Z"),
+    endDate: new Date("2024-01-01T10:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  listenSignalBacktest((result) => {
+    if (result.action === "cancelled") finalResult = result;
+  });
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-cancel-scheduled",
+    exchangeName: "binance-hold-cancel-scheduled",
+    frameName: "5m-hold-cancel-scheduled",
+  });
+
+  await awaitSubject.toPromise();
+  unsubscribeSchedulePing();
+  unsubscribeError();
+
+  if (errorCaught) {
+    fail(`Error: ${errorCaught.message || errorCaught}`);
+    return;
+  }
+
+  if (!pingFired) {
+    fail("listenSchedulePing callback was never called");
+    return;
+  }
+
+  if (!finalResult) {
+    fail("Signal was NOT cancelled!");
+    return;
+  }
+
+  const cancelMinute = Math.round((finalResult.signal.cancelledAt - startTime) / intervalMs);
+  pass(`HOLD CANCEL SCHEDULED: signal cancelled via commitCancelScheduled at minute ~${cancelMinute}.`);
 });
