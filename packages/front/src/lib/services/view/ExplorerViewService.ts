@@ -77,15 +77,11 @@ export class ExplorerViewService {
       return await this.explorerMockService.getTree();
     }
     const dir = await this.getDir();
-    const allNodes = await buildTree(dir, new Set());
-    const nodes = allNodes.filter(
-      (node) => !(node.type === "directory" && node.label === "data"),
-    );
     const rootNode: ExplorerDirectory = {
       path: path.relative(process.cwd(), dir).replace(/\\/g, "/"),
       label: path.basename(dir),
       type: "directory",
-      nodes,
+      nodes: await buildTree(dir, new Set([path.join(dir, "data")])),
     };
     return [rootNode];
   };
