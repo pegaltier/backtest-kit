@@ -221,8 +221,20 @@ const EMIT_TIMEFRAME_PERFORMANCE_FN = async (
   return currentTimestamp;
 };
 
+/**
+ * Discriminated union returned by PROCESS_SCHEDULED_SIGNAL_FN and PROCESS_OPENED_SIGNAL_FN.
+ *
+ * - `"skip"` — signal did not resolve within the estimated timeframe (e.g. no candles available,
+ *   backtest still active after allotted minutes). Backtest continues to the next timeframe.
+ * - `"error"` — a sub-operation failed (getCandles, backtest, or chunk loop returned null).
+ *   Backtest stops immediately.
+ * - `"closed"` — signal resolved (closed or cancelled). Contains the updated performance
+ *   timestamp, the close timestamp used to skip ahead in the timeframe loop, and a flag
+ *   indicating whether the user has requested a stop.
+ */
 type TProcessSignalResult =
   | { type: "skip" }
+  | { type: "error" }
   | { type: "closed"; previousEventTimestamp: number; closeTimestamp: number; shouldStop: boolean };
 
 const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
@@ -254,7 +266,8 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
 
   const candles = await GET_CANDLES_FN(self, symbol, candlesNeeded, bufferStartTime, { signalId: signal.id, candlesNeeded, bufferMinutes });
   if (candles === null) {
-    return { type: "skip" };
+    console.error(`backtestLogicPrivateService scheduled signal: getCandles failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+    return { type: "error" };
   }
 
   if (!candles.length) {
@@ -307,7 +320,8 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
   try {
     const firstResult = await BACKTEST_FN(self, symbol, candles, when, context, { signalId: signal.id });
     if (firstResult === null) {
-      return { type: "skip" };
+      console.error(`backtestLogicPrivateService scheduled signal: backtest failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+      return { type: "error" };
     }
     backtestResult = firstResult;
   } finally {
@@ -318,7 +332,8 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
     const bufferMs = bufferMinutes * 60_000;
     const chunkResult = await RUN_INFINITY_CHUNK_LOOP_FN(self, symbol, when, context, backtestResult, bufferMs, signal.id);
     if (chunkResult === null) {
-      return { type: "skip" };
+      console.error(`backtestLogicPrivateService scheduled signal: infinity chunk loop failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+      return { type: "error" };
     }
     backtestResult = chunkResult;
   }
@@ -350,6 +365,71 @@ const PROCESS_SCHEDULED_SIGNAL_FN = async function*(
   yield backtestResult;
 
   return { type: "closed", previousEventTimestamp: newTimestamp, closeTimestamp: backtestResult.closeTimestamp, shouldStop };
+};
+
+const RUN_OPENED_CHUNK_LOOP_FN = async (
+  self: BacktestLogicPrivateService,
+  symbol: string,
+  when: Date,
+  context: { strategyName: string; exchangeName: string; frameName: string },
+  bufferStartTime: Date,
+  bufferMs: number,
+  signalId: string
+): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | null> => {
+  const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
+  let chunkStart = bufferStartTime;
+  let lastChunkCandles: ICandleData[] = [];
+
+  while (true) {
+    const chunkCandles = await GET_CANDLES_FN(self, symbol, CHUNK, chunkStart, { signalId, bufferMs });
+    if (chunkCandles === null) {
+      return null;
+    }
+
+    if (!chunkCandles.length) {
+      if (!lastChunkCandles.length) {
+        self.loggerService.warn("backtestLogicPrivateService opened infinity: no candles fetched on first chunk", {
+          symbol,
+          signalId,
+          bufferStartTime,
+        });
+        await errorEmitter.next(new Error(`backtestLogicPrivateService opened infinity: no candles fetched for signal ${signalId}`));
+        return null;
+      }
+      await self.strategyCoreService.closePending(true, symbol, context);
+      const result = await BACKTEST_FN(self, symbol, lastChunkCandles, when, context, { signalId });
+      if (result === null) {
+        return null;
+      }
+      if (result.action === "active") {
+        self.loggerService.warn("backtestLogicPrivateService opened infinity: signal still active after closePending", {
+          symbol,
+          signalId,
+        });
+        await errorEmitter.next(new Error(`backtestLogicPrivateService opened infinity: signal ${signalId} still active after closePending`));
+        return null;
+      }
+      return result;
+    }
+
+    self.loggerService.info("backtestLogicPrivateService candles fetched", {
+      symbol,
+      signalId,
+      candlesCount: chunkCandles.length,
+    });
+
+    const chunkResult = await BACKTEST_FN(self, symbol, chunkCandles, when, context, { signalId });
+    if (chunkResult === null) {
+      return null;
+    }
+
+    if (chunkResult.action !== "active") {
+      return chunkResult;
+    }
+
+    lastChunkCandles = chunkCandles;
+    chunkStart = new Date(chunkResult._backtestLastTimestamp + 60_000 - bufferMs);
+  }
 };
 
 const PROCESS_OPENED_SIGNAL_FN = async function*(
@@ -386,7 +466,8 @@ const PROCESS_OPENED_SIGNAL_FN = async function*(
 
     const candles = await GET_CANDLES_FN(self, symbol, totalCandles, bufferStartTime, { signalId: signal.id, totalCandles, bufferMinutes });
     if (candles === null) {
-      return { type: "skip" };
+      console.error(`backtestLogicPrivateService opened signal: getCandles failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+      return { type: "error" };
     }
 
     if (!candles.length) {
@@ -401,57 +482,18 @@ const PROCESS_OPENED_SIGNAL_FN = async function*(
 
     const firstResult = await BACKTEST_FN(self, symbol, candles, when, context, { signalId: signal.id });
     if (firstResult === null) {
-      return { type: "skip" };
+      console.error(`backtestLogicPrivateService opened signal: backtest failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+      return { type: "error" };
     }
     backtestResult = firstResult;
   } else {
     const bufferMs = bufferMinutes * 60_000;
-    const CHUNK = GLOBAL_CONFIG.CC_MAX_CANDLES_PER_REQUEST;
-    let chunkStart = bufferStartTime;
-    let lastChunkCandles: ICandleData[] = [];
-
-    chunkLoop: while (true) {
-      const chunkCandles = await GET_CANDLES_FN(self, symbol, CHUNK, chunkStart, { signalId: signal.id, bufferMinutes });
-      if (chunkCandles === null) {
-        return { type: "skip" };
-      }
-
-      if (!chunkCandles.length) {
-        if (!lastChunkCandles.length) {
-          return { type: "skip" };
-        }
-        await self.strategyCoreService.closePending(true, symbol, context);
-        const result = await BACKTEST_FN(self, symbol, lastChunkCandles, when, context, { signalId: signal.id });
-        if (result === null) {
-          return { type: "skip" };
-        }
-        backtestResult = result.action !== "active" ? result : undefined;
-        break chunkLoop;
-      }
-
-      self.loggerService.info("backtestLogicPrivateService candles fetched", {
-        symbol,
-        signalId: signal.id,
-        candlesCount: chunkCandles.length,
-      });
-
-      const chunkResult = await BACKTEST_FN(self, symbol, chunkCandles, when, context, { signalId: signal.id });
-      if (chunkResult === null) {
-        return { type: "skip" };
-      }
-
-      if (chunkResult.action !== "active") {
-        backtestResult = chunkResult;
-        break chunkLoop;
-      }
-
-      lastChunkCandles = chunkCandles;
-      chunkStart = new Date(chunkResult._backtestLastTimestamp + 60_000 - bufferMs);
+    const chunkResult = await RUN_OPENED_CHUNK_LOOP_FN(self, symbol, when, context, bufferStartTime, bufferMs, signal.id);
+    if (chunkResult === null) {
+      console.error(`backtestLogicPrivateService opened signal: chunk loop failed, stopping backtest symbol=${symbol} signalId=${signal.id}`);
+      return { type: "error" };
     }
-  }
-
-  if (backtestResult === undefined) {
-    return { type: "skip" };
+    backtestResult = chunkResult;
   }
 
   if (backtestResult.action === "active") {
@@ -582,6 +624,10 @@ export class BacktestLogicPrivateService {
 
         const r = yield* PROCESS_SCHEDULED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
 
+        if (r.type === "error") {
+          break;
+        }
+
         if (r.type === "closed") {
           previousEventTimestamp = r.previousEventTimestamp;
           while (i < timeframes.length && timeframes[i].getTime() < r.closeTimestamp) {
@@ -597,6 +643,10 @@ export class BacktestLogicPrivateService {
         yield result;
 
         const r = yield* PROCESS_OPENED_SIGNAL_FN(this, symbol, when, result, previousEventTimestamp);
+
+        if (r.type === "error") {
+          break;
+        }
 
         if (r.type === "closed") {
           previousEventTimestamp = r.previousEventTimestamp;
