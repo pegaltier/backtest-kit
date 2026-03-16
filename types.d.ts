@@ -25097,12 +25097,14 @@ declare class WalkerSchemaService {
  * Supports early termination via break in consumer.
  */
 declare class BacktestLogicPrivateService {
-    private readonly loggerService;
-    private readonly strategyCoreService;
-    private readonly exchangeCoreService;
-    private readonly frameCoreService;
-    private readonly methodContextService;
-    private readonly actionCoreService;
+    readonly loggerService: LoggerService;
+    readonly strategyCoreService: StrategyCoreService;
+    readonly exchangeCoreService: ExchangeCoreService;
+    readonly frameCoreService: FrameCoreService;
+    readonly methodContextService: {
+        readonly context: IMethodContext;
+    };
+    readonly actionCoreService: ActionCoreService;
     /**
      * Runs backtest for a symbol, streaming closed signals as async generator.
      *
@@ -25174,6 +25176,7 @@ type IBacktestLogicPrivateService = Omit<BacktestLogicPrivateService, keyof {
     strategyCoreService: never;
     exchangeCoreService: never;
     frameCoreService: never;
+    actionCoreService: never;
     methodContextService: never;
 }>;
 /**
