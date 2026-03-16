@@ -333,6 +333,11 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      pnl: event.data.pnl,
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
     await this._updateStorage();
@@ -352,6 +357,10 @@ export class StoragePersistBacktestUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
     await this._updateStorage();
@@ -511,6 +520,11 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      pnl: event.data.pnl,
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
   };
@@ -528,6 +542,10 @@ export class StorageMemoryBacktestUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
   };
@@ -798,6 +816,11 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      pnl: event.data.pnl,
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
     await this._updateStorage();
@@ -817,6 +840,10 @@ export class StoragePersistLiveUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
     await this._updateStorage();
@@ -976,6 +1003,11 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      pnl: event.data.pnl,
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
   };
@@ -993,6 +1025,10 @@ export class StorageMemoryLiveUtils implements IStorageUtils {
     }
     this._signals.set(event.data.id, {
       ...lastStorage,
+      ...event.data,
+      status: lastStorage.status,
+      priority: Date.now(),
+      createdAt: lastStorage.createdAt,
       updatedAt: event.timestamp,
     });
   };
