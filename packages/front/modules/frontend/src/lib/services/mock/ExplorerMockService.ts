@@ -2,13 +2,13 @@ import LoggerService from "../base/LoggerService";
 import { fetchApi, inject, randomString } from "react-declarative";
 import TYPES from "../../core/TYPES";
 import { CC_CLIENT_ID, CC_SERVICE_NAME, CC_USER_ID } from "../../../config/params";
-import { ExplorerNode } from "../../../model/Explorer.model";
+import { ExplorerNode, ExplorerNodeDict } from "../../../model/Explorer.model";
 
 export class ExplorerMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
-  public getTree = async (): Promise<ExplorerNode[]> => {
-    this.loggerService.log("explorerMockService getTree");
+  public getTreeRaw = async (): Promise<ExplorerNode[]> => {
+    this.loggerService.log("explorerMockService getTreeRaw");
     const { data, error } = await fetchApi("/api/v1/explorer_mock/tree", {
       method: "POST",
       body: JSON.stringify({
@@ -22,6 +22,24 @@ export class ExplorerMockService {
       throw new Error(error);
     }
     return data;
+  };
+
+  public getTree = async (): Promise<ExplorerNodeDict[]> => {
+    this.loggerService.log("explorerMockService getTree");
+    const raw = await this.getTreeRaw();
+    const toDict = (nodes: ExplorerNode[]): ExplorerNodeDict[] =>
+      nodes.map((node) => {
+        if (node.type === "file") {
+          return node;
+        }
+        return {
+          ...node,
+          nodes: Object.fromEntries(
+            toDict(node.nodes).map((child) => [child.label, child]),
+          ),
+        };
+      });
+    return toDict(raw);
   };
 
   public getNode = async (path: string): Promise<string> => {
