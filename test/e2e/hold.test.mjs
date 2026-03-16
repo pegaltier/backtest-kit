@@ -1,4 +1,4 @@
-import { test } from "worker-testbed";
+import { test } from "tape";
 
 import {
   addExchangeSchema,
@@ -593,21 +593,17 @@ test("HOLD: Infinity LONG — 3rd chunk request triggered (TP at minute 2300)", 
   pass(`HOLD 3-CHUNK: closed by take_profit at minute ~${closeMinute}. getCandles called ${getCandlesCallCount}x (≥3 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
 
-
 /**
- * ТЕСТ #6: 10 календарных дней непрерывной обработки (14 400 минут)
+ * ТЕСТ #7: 10 календарных дней — закрытие по stop_loss (14 400 минут)
  *
- * Расчёт чанков:
- * - Первый запрос (scheduled): 4 + 120 + 1000 + 1 = 1125 свечей → покрывает до минуты 1120
- * - Каждый чанк цикла: 1000 свечей, буфер 4 мин → +996 новых минут покрытия
- * - Покрытие после N чанков цикла: 1120 + N×996 ≥ 14400 → N = 14
- * - Итого вызовов getCandles: 1 (scheduled) + 14 (цикл) = 15
- * - TP на минуте 14400 (ровно 10 дней)
+ * Та же схема пагинации, что и тест #6, но SL пробивается вместо TP:
+ * - Нейтраль до минуты 14400, затем low <= 41000 (SL = 41000)
+ * - Ожидается ≥15 вызовов getCandles, closeReason = "stop_loss", PNL < 0
  */
-test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 chunk requests)", async ({ pass, fail }) => {
-  const startTime = new Date("2024-01-01T05:00:00Z").getTime();
+test("HOLD: Infinity LONG — 10 calendar days processed, closes by stop_loss", async ({ pass, fail }) => {
+  const startTime = new Date("2024-01-01T06:00:00Z").getTime();
   const intervalMs = 60_000;
-  const TP_MINUTE = 14_400; // 10 days * 24h * 60min
+  const SL_MINUTE = 14_400; // 10 days * 24h * 60min
 
   let signalGenerated = false;
   let finalResult = null;
@@ -615,9 +611,10 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
   let getCandlesCallCount = 0;
 
   addExchangeSchema({
-    exchangeName: "binance-hold-10days",
+    exchangeName: "binance-hold-10days-sl",
     getCandles: async (_symbol, _interval, since, limit) => {
       getCandlesCallCount++;
+      console.log(`[getCandles] call #${getCandlesCallCount} since=${since.toISOString()} limit=${limit}`);
       const alignedSince = alignTimestamp(since.getTime(), 1);
       const result = [];
       for (let i = 0; i < limit; i++) {
@@ -630,12 +627,12 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
         } else if (m === 5) {
           // Активация: low = priceOpen = 42000
           result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
-        } else if (m < TP_MINUTE) {
+        } else if (m < SL_MINUTE) {
           // Нейтраль 10 дней: между SL=41000 и TP=43000
           result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
         } else {
-          // TP на ровно 10 дней
-          result.push({ timestamp, open: 43000, high: 43100, low: 42900, close: 43000, volume: 100 });
+          // SL пробит на ровно 10 дней: все цены < 41000, high < 43000 (TP не задет)
+          result.push({ timestamp, open: 40500, high: 40900, low: 40200, close: 40500, volume: 100 });
         }
       }
       return result;
@@ -645,7 +642,7 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
   });
 
   addStrategySchema({
-    strategyName: "test-hold-10days",
+    strategyName: "test-hold-10days-sl",
     interval: "1m",
     getSignal: async () => {
       if (signalGenerated) return null;
@@ -662,10 +659,10 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
   });
 
   addFrameSchema({
-    frameName: "5m-hold-10days",
+    frameName: "5m-hold-10days-sl",
     interval: "1m",
-    startDate: new Date("2024-01-01T05:00:00Z"),
-    endDate: new Date("2024-01-01T05:05:00Z"),
+    startDate: new Date("2024-01-01T06:00:00Z"),
+    endDate: new Date("2024-01-01T06:06:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -680,9 +677,9 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
   });
 
   Backtest.background("BTCUSDT", {
-    strategyName: "test-hold-10days",
-    exchangeName: "binance-hold-10days",
-    frameName: "5m-hold-10days",
+    strategyName: "test-hold-10days-sl",
+    exchangeName: "binance-hold-10days-sl",
+    frameName: "5m-hold-10days-sl",
   });
 
   await awaitSubject.toPromise();
@@ -698,8 +695,13 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
     return;
   }
 
-  if (finalResult.closeReason !== "take_profit") {
-    fail(`Expected "take_profit", got "${finalResult.closeReason}"`);
+  if (finalResult.closeReason !== "stop_loss") {
+    fail(`Expected "stop_loss", got "${finalResult.closeReason}"`);
+    return;
+  }
+
+  if (finalResult.pnl.pnlPercentage >= 0) {
+    fail(`Expected negative PNL, got ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
     return;
   }
 
@@ -710,5 +712,6 @@ test("HOLD: Infinity LONG — 10 calendar days processed (14 400 minutes, ≥15 
   }
 
   const closeDays = ((finalResult.closeTimestamp - startTime) / intervalMs / 60 / 24).toFixed(2);
-  pass(`HOLD 10-DAYS: closed by take_profit at day ~${closeDays}. getCandles called ${getCandlesCallCount}x (≥15 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
+  pass(`HOLD 10-DAYS SL: closed by stop_loss at day ~${closeDays}. getCandles called ${getCandlesCallCount}x (≥15 verified). PNL: ${finalResult.pnl.pnlPercentage.toFixed(2)}%`);
 });
+
