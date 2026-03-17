@@ -6,6 +6,10 @@ export interface ExplorerFile {
   mimeType: string;
 }
 
+export interface ExplorerFileMock extends ExplorerFile {
+  content: string;
+}
+
 export interface ExplorerDirectory {
   id: string;
   path: string;
