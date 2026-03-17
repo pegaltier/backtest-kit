@@ -6,7 +6,11 @@ import {
     CC_SERVICE_NAME,
     CC_USER_ID,
 } from "../../../config/params";
-import { ExplorerData, ExplorerNode } from "../../../model/Explorer.model";
+import {
+    ExplorerData,
+    ExplorerFile,
+    ExplorerNode,
+} from "../../../model/Explorer.model";
 import ExplorerHelperService from "../helpers/ExplorerHelperService";
 
 const TTL_TIMEOUT = 45_000;
@@ -72,6 +76,25 @@ export class ExplorerMockService {
             throw new Error(error);
         }
         return data;
+    };
+
+    public getFileInfo = async (id: string): Promise<ExplorerFile> => {
+        this.loggerService.log("explorerMockService getFileInfo", {
+            id,
+        });
+        const { map } = await this.getTree();
+        const value = map[id];
+        if (!value) {
+            throw new Error(
+                `explorerMockService getFileInfo file not found id=${id}`,
+            );
+        }
+        if (value.type !== "file") {
+            throw new Error(
+                `explorerMockService getFileInfo not a file id=${id} type=${value.type}`,
+            );
+        }
+        return value;
     };
 
     public clear = () => {
