@@ -71,7 +71,7 @@ export const MainView = () => {
 
     const [data, { loading }] = useAsyncValue(
         async () => {
-            return await ioc.explorerViewService.getTree();
+            return await ioc.explorerViewService.getFolderTree();
         },
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
