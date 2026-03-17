@@ -60,8 +60,8 @@ export class ExplorerMockService {
         },
     );
 
-    public getContent = async (path: string): Promise<string> => {
-        this.loggerService.log("explorerMockService getContent", { path });
+    public getFileContent = async (path: string): Promise<string> => {
+        this.loggerService.log("explorerMockService getFileContent", { path });
         const { data, error } = await fetchApi("/api/v1/explorer_mock/node", {
             method: "POST",
             body: JSON.stringify({

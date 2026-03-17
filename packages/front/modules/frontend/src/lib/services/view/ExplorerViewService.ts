@@ -71,10 +71,10 @@ export class ExplorerViewService {
         },
     );
 
-    public getContent = async (path: string): Promise<string> => {
-        this.loggerService.log("explorerViewService getContent", { path });
+    public getFileContent = async (path: string): Promise<string> => {
+        this.loggerService.log("explorerViewService getFileContent", { path });
         if (CC_ENABLE_MOCK) {
-            return await this.explorerMockService.getContent(path);
+            return await this.explorerMockService.getFileContent(path);
         }
         const { data, error } = await fetchApi("/api/v1/explorer_view/node", {
             method: "POST",
