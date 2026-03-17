@@ -253,7 +253,7 @@ const other_routes: IRoute[] = [
     {
         label: "Markdown Reports",
         to: `/report`,
-        color: "#F44336",
+        color: "#009688",
         icon: AdfScannerTwoTone,
     },
 ];
