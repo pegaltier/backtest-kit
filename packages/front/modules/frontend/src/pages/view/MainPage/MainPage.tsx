@@ -243,7 +243,7 @@ const live_routes: IRoute[] = [
     },
     {
         label: "Dump Explorer",
-        to: `/files`,
+        to: `/dump`,
         color: "#0090FF",
         icon: FilePresentTwoTone,
     },
