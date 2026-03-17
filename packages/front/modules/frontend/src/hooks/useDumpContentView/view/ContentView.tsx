@@ -1,21 +1,50 @@
-import { IOutletModalProps, ScrollView } from "react-declarative";
-import { Box, Typography } from "@mui/material";
+import { AutoSizer, IOutletModalProps } from "react-declarative";
+import { Box } from "@mui/material";
+import CodeEditor from "../../../components/common/CodeEditor";
+import { makeStyles } from "../../../styles";
 
-export const ContentView = ({ data }: IOutletModalProps) => (
-    <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
-        <ScrollView withScrollbar hideOverflowX sx={{ height: "100%" }}>
-            <div>
-                <Typography
-                    component="pre"
-                    variant="body2"
-                    sx={{ fontFamily: "monospace", whiteSpace: "pre-wrap", p: 1 }}
-                >
-                    {data || ""}
-                </Typography>
-                <Box sx={{ paddingBottom: "65px" }} />
+const useStyles = makeStyles()({
+    root: {
+        height: "100%",
+        width: "100%",
+        pt: 1,
+        display: "flex",
+        alignItems: "stretch",
+        justifyContent: "stretch",
+    },
+    container: {
+        flex: 1,
+        position: "relative",
+        overflow: "hidden",
+    },
+    content: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        height: "100%",
+        width: "100%",
+    },
+});
+
+export const ContentView = ({ data }: IOutletModalProps) => {
+    const { classes } = useStyles();
+    return (
+        <div className={classes.root}>
+            <div className={classes.container}>
+                <AutoSizer>
+                    {({ height, width }) => (
+                        <CodeEditor
+                            className={classes.content}
+                            height={height}
+                            width={width}
+                            mimeType={data.mimeType}
+                            code={data.content}
+                        />
+                    )}
+                </AutoSizer>
             </div>
-        </ScrollView>
-    </Box>
-);
+        </div>
+    );
+};
 
 export default ContentView;

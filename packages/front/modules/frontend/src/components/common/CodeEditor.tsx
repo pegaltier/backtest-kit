@@ -1,9 +1,8 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 import { SxProps } from "@mui/material";
 
-import Box from "@mui/material/Box";
-
 import type * as Ace from "../../types/ace@1.4.12";
+import { compose, useSubject } from "react-declarative";
 
 interface ICodeEditorProps {
     className?: string;
@@ -11,6 +10,8 @@ interface ICodeEditorProps {
     sx?: SxProps;
     code: string;
     mimeType: string;
+    height: number;
+    width: number;
 }
 
 declare global {
@@ -34,11 +35,14 @@ const getMode = (_mimeType: string) => {
 export const CodeEditor = ({
     className,
     style,
-    sx,
     code,
+    height,
+    width,
     mimeType,
 }: ICodeEditorProps) => {
     const disposeRef = useRef<Function>();
+
+    const resizeSubject = useSubject<void>();
 
     const handleRef = useCallback((element: AceElement) => {
         disposeRef.current && disposeRef.current();
@@ -55,7 +59,14 @@ export const CodeEditor = ({
             editor.getSession().setUseWorker(false);
         }
 
-        disposeRef.current = () => editor.destroy();
+        const unResize = resizeSubject.subscribe(() => {
+            editor.resize(true);
+        });
+
+        disposeRef.current = compose(
+            () => editor.destroy(),
+            () => unResize(),
+        );
     }, []);
 
     useLayoutEffect(
@@ -65,16 +76,14 @@ export const CodeEditor = ({
         [],
     );
 
+    useLayoutEffect(() => {
+        resizeSubject.next();
+    }, [height, width]);
+
     return (
-        <Box
-            component="pre"
-            className={className}
-            style={style}
-            sx={sx}
-            ref={handleRef}
-        >
+        <pre className={className} style={style} ref={handleRef}>
             {code}
-        </Box>
+        </pre>
     );
 };
 

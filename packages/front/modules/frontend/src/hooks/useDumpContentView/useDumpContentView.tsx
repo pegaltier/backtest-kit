@@ -119,7 +119,10 @@ export const useDumpContentView = () => {
         ),
         fetchState: async () => await fetchData(id$.current),
         mapInitialData: ([{ content, mimeType }]) => ({
-            content,
+            content: {
+                content,
+                mimeType,
+            },
             markdown: content,
             mimeType,
         }),
