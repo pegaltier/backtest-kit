@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import mime from "mime-types";
-import { singleshot } from "functools-kit";
+import { randomString, singleshot } from "functools-kit";
 
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../../lib/core/types";
@@ -26,6 +26,7 @@ const buildTree = async (
     const childRelPath = path.relative(process.cwd(), childPath).replace(/\\/g, "/");
     if (entry.isDirectory()) {
       nodes.push({
+        id: randomString(),
         path: childRelPath,
         label: entry.name,
         type: "directory",
@@ -33,6 +34,7 @@ const buildTree = async (
       });
     } else {
       nodes.push({
+        id: randomString(),
         path: childRelPath,
         label: entry.name,
         type: "file",
@@ -78,6 +80,7 @@ export class ExplorerViewService {
     }
     const dir = await this.getDir();
     const rootNode: ExplorerDirectory = {
+      id: randomString(),
       path: path.relative(process.cwd(), dir).replace(/\\/g, "/"),
       label: path.basename(dir),
       type: "directory",

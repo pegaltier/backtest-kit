@@ -1,4 +1,5 @@
 export interface ExplorerFile {
+  id: string;
   path: string;
   label: string;
   type: "file";
@@ -6,6 +7,7 @@ export interface ExplorerFile {
 }
 
 export interface ExplorerDirectory {
+  id: string
   path: string;
   label: string;
   type: "directory";
@@ -13,7 +15,16 @@ export interface ExplorerDirectory {
 }
 
 export type ExplorerRecord = {
-  [path: string]: ExplorerFile | ExplorerRecord;
+  [id: string]: ExplorerRecord | string;
 };
+
+export type ExplorerMap = {
+  [id: string]: ExplorerFile | ExplorerDirectory;
+}
+
+export type ExplorerData = {
+  record: ExplorerRecord;
+  map: ExplorerMap;
+}
 
 export type ExplorerNode = ExplorerFile | ExplorerDirectory;

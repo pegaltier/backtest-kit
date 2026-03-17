@@ -8,11 +8,13 @@ import {
   CC_USER_ID,
 } from "../../../config/params";
 import ExplorerMockService from "../mock/ExplorerMockService";
-import { ExplorerNode } from "../../../model/Explorer.model";
+import { ExplorerData, ExplorerNode } from "../../../model/Explorer.model";
+import ExplorerHelperService from "../helpers/ExplorerHelperService";
 
 export class ExplorerViewService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly explorerMockService = inject<ExplorerMockService>(TYPES.explorerMockService);
+  private readonly explorerHelperService = inject<ExplorerHelperService>(TYPES.explorerHelperService);
 
   public getTreeRaw = async (): Promise<ExplorerNode[]> => {
     this.loggerService.log("explorerViewService getTreeRaw");
@@ -34,10 +36,13 @@ export class ExplorerViewService {
     return data;
   };
 
-  public getTree = async (): Promise<ExplorerNode[]> => {
+  public getTree = async (): Promise<ExplorerData> => {
     this.loggerService.log("explorerViewService getTree");
     const raw = await this.getTreeRaw();
-    return raw;
+    return {
+      record: this.explorerHelperService.treeToRecord(raw),
+      map: this.explorerHelperService.treeToMap(raw),
+    }
   };
 
   public getNode = async (path: string): Promise<string> => {

@@ -13,6 +13,10 @@ const globalServices = {
   liveGlobalService: Symbol("liveGlobalService"),
 }
 
+const helperServices = {
+  explorerHelperService: Symbol("explorerHelperService"),
+}
+
 const mockServices = {
   exchangeMockService: Symbol("exchangeMockService"),
   notificationMockService: Symbol("notificationMockService"),
@@ -38,6 +42,7 @@ const viewServices = {
 export const TYPES = {
   ...baseServices,
   ...globalServices,
+  ...helperServices,
   ...mockServices,
   ...viewServices,
 };

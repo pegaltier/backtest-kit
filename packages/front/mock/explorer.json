@@ -1,15 +1,18 @@
 [
   {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "path": "dump",
     "label": "dump",
     "type": "directory",
     "nodes": [
       {
+        "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
         "path": "dump/log",
         "label": "log",
         "type": "directory",
         "nodes": [
           {
+            "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
             "path": "dump/log/log.jsonl",
             "label": "log.jsonl",
             "type": "file",
@@ -18,53 +21,62 @@
         ]
       },
       {
+        "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
         "path": "dump/report",
         "label": "report",
         "type": "directory",
         "nodes": [
           {
+            "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
             "path": "dump/report/backtest.jsonl",
             "label": "backtest.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
             "path": "dump/report/breakeven.jsonl",
             "label": "breakeven.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
             "path": "dump/report/heat.jsonl",
             "label": "heat.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "b8c9d0e1-f2a3-4567-bcde-678901234567",
             "path": "dump/report/highest_profit.jsonl",
             "label": "highest_profit.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "c9d0e1f2-a3b4-5678-cdef-789012345678",
             "path": "dump/report/partial.jsonl",
             "label": "partial.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "d0e1f2a3-b4c5-6789-defa-890123456789",
             "path": "dump/report/performance.jsonl",
             "label": "performance.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "e1f2a3b4-c5d6-7890-efab-901234567890",
             "path": "dump/report/schedule.jsonl",
             "label": "schedule.jsonl",
             "type": "file",
             "mimeType": "application/octet-stream"
           },
           {
+            "id": "f2a3b4c5-d6e7-8901-fabc-012345678901",
             "path": "dump/report/strategy.jsonl",
             "label": "strategy.jsonl",
             "type": "file",

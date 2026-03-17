@@ -1,4 +1,5 @@
 export interface ExplorerFile {
+  id: string;
   path: string;
   label: string;
   type: "file";
@@ -6,6 +7,7 @@ export interface ExplorerFile {
 }
 
 export interface ExplorerDirectory {
+  id: string;
   path: string;
   label: string;
   type: "directory";

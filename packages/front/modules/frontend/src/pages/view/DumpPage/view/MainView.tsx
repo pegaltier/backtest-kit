@@ -16,6 +16,7 @@ import {
     RECORD_NEVER_VALUE,
     RecordView,
     ScrollView,
+    useActualValue,
     useAsyncValue,
     useReloadTrigger,
 } from "react-declarative";
@@ -23,11 +24,13 @@ import { set } from "lodash";
 import { useMemo } from "react";
 import ioc from "../../../../lib";
 import IconWrapper from "../../../../components/common/IconWrapper";
-import { ExplorerFile, ExplorerNode } from "../../../../model/Explorer.model";
-
-interface IRecord {
-    [key: string]: IRecord | string | null;
-}
+import {
+    ExplorerData,
+    ExplorerFile,
+    ExplorerMap,
+    ExplorerNode,
+    ExplorerRecord,
+} from "../../../../model/Explorer.model";
 
 const options: IBreadcrumbs2Option[] = [
     {
@@ -63,44 +66,21 @@ const getFileIcon = (node: ExplorerFile) => {
     return <InsertDriveFile sx={{ color: "#546e7a", fontSize: 20 }} />;
 };
 
-const buildRecord = (nodes: Record<string, ExplorerNodeDict>): IRecord => {
-    const record: IRecord = {};
-    for (const node of Object.values(nodes)) {
-        if (node.type === "directory") {
-            record[node.path] = buildRecord(node.nodes);
-        } else {
-            record[node.path] = node.path;
-        }
-    }
-    if (!Object.keys(record).length) {
-        set(record, RECORD_NEVER_VALUE, null);
-    }
-    return record;
-};
-
-const buildNodeMap = (
-    nodes: Record<string, ExplorerNodeDict>,
-    acc: Map<string, ExplorerNodeDict>,
-) => {
-    for (const node of Object.values(nodes)) {
-        acc.set(node.path, node);
-        if (node.type === "directory") {
-            buildNodeMap(node.nodes, acc);
-        }
-    }
-};
-
 export const MainView = () => {
     const { reloadTrigger, doReload } = useReloadTrigger();
 
-    const [tree, { loading }] = useAsyncValue(
-        async () => await ioc.explorerViewService.getTree(),
+    const [data, { loading }] = useAsyncValue(
+        async () => {
+            return await ioc.explorerViewService.getTree();
+        },
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
             onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
             deps: [reloadTrigger],
         },
     );
+
+    const data$ = useActualValue<ExplorerData>(data!);
 
     const handleAction = (action: string) => {
         if (action === "back-action") {
@@ -111,29 +91,8 @@ export const MainView = () => {
         }
     };
 
-    const { recordData, nodeMap } = useMemo(() => {
-        if (!tree) {
-            return { recordData: {}, nodeMap: new Map<string, ExplorerNode>() };
-        }
-        const topRecord: IRecord = {};
-        const nodeMap = new Map<string, ExplorerNode>();
-        for (const node of tree) {
-            if (node.type === "directory") {
-                topRecord[node.path] = buildRecord(node.nodes);
-                buildNodeMap(node.nodes, nodeMap);
-            } else {
-                topRecord[node.path] = node.path;
-            }
-            nodeMap.set(node.path, node);
-        }
-        if (!Object.keys(topRecord).length) {
-            set(topRecord, RECORD_NEVER_VALUE, null);
-        }
-        return { recordData: topRecord, nodeMap };
-    }, [tree]);
-
     const renderInner = () => {
-        if (loading || !tree) {
+        if (loading || !data) {
             return (
                 <Center>
                     <Typography variant="h6" sx={{ opacity: 0.5 }}>
@@ -146,55 +105,70 @@ export const MainView = () => {
         return (
             <RecordView
                 key={reloadTrigger}
-                withExpandAll
+                withExpandRoot
                 sx={{
                     background: (theme) => theme.palette.background.default,
                     minHeight: "300px",
                 }}
-                data={recordData}
+                formatSearch={(key) => {
+                    const node = data$.current.map[key];
+                    if (!node) {
+                        return "";
+                    }
+                    return `${node.label}`;
+                }}
                 formatKey={(key) => {
-                    const node = nodeMap.get(key);
+                    const node = data$.current.map[key];
+                    if (!node) {
+                        return null;
+                    }
                     return (
                         <Stack direction="row" alignItems="center" gap={1}>
-                            {node?.type === "directory" && (
-                                <Folder sx={{ color: "#1976d2", fontSize: 20 }} />
+                            {node.type === "directory" && (
+                                <Folder
+                                    sx={{ color: "#1976d2", fontSize: 20 }}
+                                />
                             )}
-                            <Typography>
-                                {node ? node.label : key}
-                            </Typography>
+                            <Typography>{node ? node.label : key}</Typography>
                             <Box sx={{ flex: 1 }} />
                         </Stack>
                     );
                 }}
-                keyWidth={3}
-                valueWidth={9}
                 EmptyItem={() => <span>No files</span>}
-                CustomItem={({ itemKey, value }) => {
-                    const node = nodeMap.get(itemKey);
-                    console.log(recordData)
-                    if (!value) {
-                        debugger
+                CustomItem={({ itemKey }) => {
+                    const node = data$.current.map[itemKey];
+                    if (!node) {
+                        return null;
+                    }
+                    if (node.type !== "file") {
+                        return null;
                     }
                     return (
-                        <Stack direction="row" alignItems="center" gap={1} mb={0.5}>
-                            {node?.type === "file" && getFileIcon(node)}
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            gap={1}
+                            mb={0.5}
+                        >
+                            {getFileIcon(node)}
                             <Stack>
                                 <Typography variant="body2">
-                                    {node ? node.label : itemKey}
+                                    {node.label}
                                 </Typography>
-                                {node && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ opacity: 0.5 }}
-                                    >
-                                        {node.path}
-                                    </Typography>
-                                )}
+                                <Typography
+                                    variant="caption"
+                                    sx={{ opacity: 0.5 }}
+                                >
+                                    {node.mimeType}
+                                </Typography>
                             </Stack>
                             <Box sx={{ flex: 1 }} />
                         </Stack>
                     );
                 }}
+                data={data.record}
+                keyWidth={3}
+                valueWidth={9}
             />
         );
     };
@@ -206,10 +180,7 @@ export const MainView = () => {
                 actions={actions}
                 onAction={handleAction}
             />
-            <ScrollView
-                hideOverflowX
-                sx={{ height: "calc(100vh - 140px)" }}
-            >
+            <ScrollView hideOverflowX sx={{ height: "calc(100vh - 140px)" }}>
                 {renderInner()}
             </ScrollView>
         </>

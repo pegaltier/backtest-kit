@@ -147,12 +147,14 @@ declare class MarkdownMockService {
 }
 
 interface ExplorerFile {
+    id: string;
     path: string;
     label: string;
     type: "file";
     mimeType: string;
 }
 interface ExplorerDirectory {
+    id: string;
     path: string;
     label: string;
     type: "directory";

@@ -30,6 +30,7 @@ import BacktestGlobalService from "./services/global/BacktestGlobalService";
 import LiveGlobalService from "./services/global/LiveGlobalService";
 
 import TYPES from "./core/TYPES";
+import ExplorerHelperService from "./services/helpers/ExplorerHelperService";
 
 const baseServices = {
   errorService: inject<ErrorService>(TYPES.errorService),
@@ -44,6 +45,10 @@ const globalServices = {
   priceGlobalService: inject<PriceGlobalService>(TYPES.priceGlobalService),
   backtestGlobalService: inject<BacktestGlobalService>(TYPES.backtestGlobalService),
   liveGlobalService: inject<LiveGlobalService>(TYPES.liveGlobalService),
+}
+
+const helperServices = {
+  explorerHelperService: inject<ExplorerHelperService>(TYPES.explorerHelperService),
 }
 
 const mockServices = {
@@ -69,6 +74,7 @@ const viewServices = {
 export const ioc = {
   ...baseServices,
   ...globalServices,
+  ...helperServices,
   ...mockServices,
   ...viewServices,
 };
