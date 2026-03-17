@@ -6,7 +6,7 @@ export const MarkdownView = ({ data }: IOutletModalProps) => (
     <Box sx={{ height: "100%", width: "100%", pt: 1 }}>
         <ScrollView withScrollbar hideOverflowX sx={{ height: "100%" }}>
             <div>
-                <Markdown content={data || "# Нет данных"} />
+                <Markdown content={data || "# File is empty"} />
                 <Box sx={{ paddingBottom: "65px" }} />
             </div>
         </ScrollView>
