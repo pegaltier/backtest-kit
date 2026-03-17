@@ -38,7 +38,7 @@ const handleCopy = async (id: string, onCopy: (content: string) => void) => {
     onCopy(content);
 };
 
-export const useFileContentView = () => {
+export const useDumpContentView = () => {
     const [id$, setId] = useActualState("");
     const ctx = useModalManager();
     const { push, pop } = ctx;
@@ -63,7 +63,7 @@ export const useFileContentView = () => {
         withStaticAction: true,
         onTabChange: handleTabChange,
         animation: "none",
-        title: "File Content",
+        title: "Dump Content",
         sizeRequest: CC_FULLSCREEN_SIZE_REQUEST,
         history,
         routes,
@@ -157,4 +157,4 @@ export const useFileContentView = () => {
     return handleOpen;
 };
 
-export default useFileContentView;
+export default useDumpContentView;

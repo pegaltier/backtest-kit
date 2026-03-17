@@ -43,8 +43,8 @@ export class LayoutService {
     public readonly pickCancelScheduledSubject = new Subject<string>();
     public readonly pickClosePendingSubject = new Subject<string>();
 
-    // File content subject
-    public readonly pickFileContentSubject = new Subject<string>();
+    // Dump content subject
+    public readonly pickDumpContentSubject = new Subject<string>();
 
     public readonly reloadOutletSubject = new Subject<void>();
 
@@ -217,9 +217,9 @@ export class LayoutService {
         await this.pickClosePendingSubject.next(notificationId);
     };
 
-    // File content method
-    pickFileContent = async (fileId: string) => {
-        await this.pickFileContentSubject.next(fileId);
+    // Dump content method
+    pickDumpContent = async (fileId: string) => {
+        await this.pickDumpContentSubject.next(fileId);
     };
 }
 
