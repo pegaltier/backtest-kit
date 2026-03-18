@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { SignalScheduledNotification } from "backtest-kit";
 import signal_scheduled_fields from "../../assets/signal_scheduled_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/signal_scheduled";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { signal_scheduled } = await fetchData(id);
+  if (signal_scheduled) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_scheduled_fields, signal_scheduled);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { signal_scheduled } = await fetchData(id);
+  if (signal_scheduled) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_scheduled_fields, signal_scheduled);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `signal_scheduled_${signal_scheduled.signalId || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useSignalScheduledView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { signal_scheduled } = await fetchData(id$.current);
-              if (signal_scheduled) {
-                  ioc.markdownHelperService.printFields(signal_scheduled_fields, signal_scheduled);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

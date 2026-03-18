@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { PartialLossCommitNotification } from "backtest-kit";
 import partial_loss_commit_fields from "../../assets/partial_loss_commit_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/partial_loss_commit";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { partial_loss_commit } = await fetchData(id);
+  if (partial_loss_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(partial_loss_commit_fields, partial_loss_commit);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { partial_loss_commit } = await fetchData(id);
+  if (partial_loss_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(partial_loss_commit_fields, partial_loss_commit);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `partial_loss_commit_${partial_loss_commit.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const usePartialLossCommitView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { partial_loss_commit } = await fetchData(id$.current);
-              if (partial_loss_commit) {
-                  ioc.markdownHelperService.printFields(partial_loss_commit_fields, partial_loss_commit);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

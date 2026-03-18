@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { BreakevenCommitNotification } from "backtest-kit";
 import breakeven_commit_fields from "../../assets/breakeven_commit_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/breakeven_commit";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { breakeven_commit } = await fetchData(id);
+  if (breakeven_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(breakeven_commit_fields, breakeven_commit);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { breakeven_commit } = await fetchData(id);
+  if (breakeven_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(breakeven_commit_fields, breakeven_commit);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `breakeven_commit_${breakeven_commit.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useBreakevenCommitView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { breakeven_commit } = await fetchData(id$.current);
-              if (breakeven_commit) {
-                  ioc.markdownHelperService.printFields(breakeven_commit_fields, breakeven_commit);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

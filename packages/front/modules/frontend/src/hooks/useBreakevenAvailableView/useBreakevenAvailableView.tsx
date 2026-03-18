@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { BreakevenAvailableNotification } from "backtest-kit";
 import breakeven_available_fields from "../../assets/breakeven_available_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/breakeven_available";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { breakeven_available } = await fetchData(id);
+  if (breakeven_available) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(breakeven_available_fields, breakeven_available);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { breakeven_available } = await fetchData(id);
+  if (breakeven_available) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(breakeven_available_fields, breakeven_available);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `breakeven_available_${breakeven_available.signalId || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useBreakevenAvailableView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { breakeven_available } = await fetchData(id$.current);
-              if (breakeven_available) {
-                  ioc.markdownHelperService.printFields(breakeven_available_fields, breakeven_available);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

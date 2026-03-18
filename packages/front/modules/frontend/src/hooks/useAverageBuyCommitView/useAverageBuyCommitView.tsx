@@ -19,6 +19,7 @@ import CopyIcon from "../usePartialProfitCommitView/components/CopyIcon";
 import { AverageBuyCommitNotification } from "backtest-kit";
 import average_buy_commit_fields from "../../assets/average_buy_commit_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/average_buy_commit";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { average_buy_commit } = await fetchData(id);
+  if (average_buy_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(average_buy_commit_fields, average_buy_commit);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { average_buy_commit } = await fetchData(id);
+  if (average_buy_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(average_buy_commit_fields, average_buy_commit);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `average_buy_commit_${average_buy_commit.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useAverageBuyCommitView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { average_buy_commit } = await fetchData(id$.current);
-              if (average_buy_commit) {
-                  ioc.markdownHelperService.printFields(average_buy_commit_fields, average_buy_commit);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

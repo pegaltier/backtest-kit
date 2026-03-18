@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { SignalClosedNotification } from "backtest-kit";
 import signal_closed_fields from "../../assets/signal_closed_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/signal_closed";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { signal_closed } = await fetchData(id);
+  if (signal_closed) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_closed_fields, signal_closed);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { signal_closed } = await fetchData(id);
+  if (signal_closed) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_closed_fields, signal_closed);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `signal_closed_${signal_closed.signalId || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useSignalClosedView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { signal_closed } = await fetchData(id$.current);
-              if (signal_closed) {
-                  ioc.markdownHelperService.printFields(signal_closed_fields, signal_closed);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

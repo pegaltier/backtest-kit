@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { TrailingStopCommitNotification } from "backtest-kit";
 import trailing_stop_fields from "../../assets/trailing_stop_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/trailing_stop";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { trailing_stop } = await fetchData(id);
+  if (trailing_stop) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(trailing_stop_fields, trailing_stop);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { trailing_stop } = await fetchData(id);
+  if (trailing_stop) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(trailing_stop_fields, trailing_stop);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `trailing_stop_${trailing_stop.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useTrailingStopView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { trailing_stop } = await fetchData(id$.current);
-              if (trailing_stop) {
-                  ioc.markdownHelperService.printFields(trailing_stop_fields, trailing_stop);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

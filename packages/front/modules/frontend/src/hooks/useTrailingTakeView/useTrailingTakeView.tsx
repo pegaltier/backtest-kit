@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { TrailingTakeCommitNotification } from "backtest-kit";
 import trailing_take_fields from "../../assets/trailing_take_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/trailing_take";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { trailing_take } = await fetchData(id);
+  if (trailing_take) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(trailing_take_fields, trailing_take);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { trailing_take } = await fetchData(id);
+  if (trailing_take) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(trailing_take_fields, trailing_take);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `trailing_take_${trailing_take.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useTrailingTakeView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { trailing_take } = await fetchData(id$.current);
-              if (trailing_take) {
-                  ioc.markdownHelperService.printFields(trailing_take_fields, trailing_take);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { ClosePendingCommitNotification } from "backtest-kit";
 import close_pending_commit_fields from "../../assets/close_pending_commit_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/close_pending_commit";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { close_pending_commit } = await fetchData(id);
+  if (close_pending_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(close_pending_commit_fields, close_pending_commit);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { close_pending_commit } = await fetchData(id);
+  if (close_pending_commit) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(close_pending_commit_fields, close_pending_commit);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `close_pending_commit_${close_pending_commit.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useClosePendingView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { close_pending_commit } = await fetchData(id$.current);
-              if (close_pending_commit) {
-                  ioc.markdownHelperService.printFields(close_pending_commit_fields, close_pending_commit);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />

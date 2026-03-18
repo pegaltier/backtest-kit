@@ -19,6 +19,7 @@ import CopyIcon from "./components/CopyIcon";
 import { SignalSyncCloseNotification } from "backtest-kit";
 import signal_sync_close_fields from "../../assets/signal_sync_close_fields";
 import MenuIcon from "./components/MenuIcon";
+import downloadMarkdown from "../../utils/downloadMarkdown";
 
 const DEFAULT_PATH = "/signal_sync_close";
 const CACHE_TTL = 45_000;
@@ -117,6 +118,24 @@ const handleCopy = async (pathname: string, id: string, onCopy: (content: string
   if (pathname.includes("/candle_1h")) {
     onCopy(JSON.stringify(candle_1h, null, 2));
     return;
+  }
+};
+
+const handleDownloadPdf = async (id: string) => {
+  const { signal_sync_close } = await fetchData(id);
+  if (signal_sync_close) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_sync_close_fields, signal_sync_close);
+    await downloadMarkdown(content);
+  }
+};
+
+const handleDownloadMarkdown = async (id: string) => {
+  const { signal_sync_close } = await fetchData(id);
+  if (signal_sync_close) {
+    const content = ioc.markdownHelperService.buildMarkdownFromFields(signal_sync_close_fields, signal_sync_close);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `signal_sync_close_${signal_sync_close.id || "unknown"}.md`);
   }
 };
 
@@ -222,12 +241,8 @@ export const useSignalSyncCloseView = () => {
         <MenuIcon
           sx={{ mr: "10px", mt: "0.5px" }}
           onDownloadJson={() => handleDownloadJson(pathname$.current, id$.current)}
-          onDownloadPdf={async () => {
-              const { signal_sync_close } = await fetchData(id$.current);
-              if (signal_sync_close) {
-                  ioc.markdownHelperService.printFields(signal_sync_close_fields, signal_sync_close);
-              }
-          }}
+          onDownloadMarkdown={() => handleDownloadMarkdown(id$.current)}
+          onDownloadPdf={() => handleDownloadPdf(id$.current)}
         />
         <ActionIcon onClick={onClose}>
           <Close />
