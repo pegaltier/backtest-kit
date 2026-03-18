@@ -88,7 +88,8 @@ export const signal_opened_fields: TypedField[] = [
                         title: "Signal ID",
                         readonly: true,
                         trailingIcon: ArrowForward,
-                        click: ({}, {}, { signalId }) => signalId && ioc.layoutService.pickSignal(signalId),
+                        click: ({}, {}, { signalId }) =>
+                            signalId && ioc.layoutService.pickSignal(signalId),
                         isVisible: (obj) => !!obj.signalId,
                         compute: (obj) => obj.signalId || "Not specified",
                     },
@@ -114,7 +115,9 @@ export const signal_opened_fields: TypedField[] = [
                         readonly: true,
                         compute: (obj) =>
                             obj.timestamp
-                                ? dayjs(obj.timestamp).format("DD/MM/YYYY HH:mm:ss")
+                                ? dayjs(obj.timestamp).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
                                 : "",
                     },
                     {
@@ -128,7 +131,9 @@ export const signal_opened_fields: TypedField[] = [
                         readonly: true,
                         compute: (obj) =>
                             obj.createdAt
-                                ? dayjs(obj.createdAt).format("DD/MM/YYYY HH:mm:ss")
+                                ? dayjs(obj.createdAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
                                 : "",
                     },
                     {
@@ -143,7 +148,9 @@ export const signal_opened_fields: TypedField[] = [
                         isVisible: (obj) => !!obj.scheduledAt,
                         compute: (obj) =>
                             obj.scheduledAt
-                                ? dayjs(obj.scheduledAt).format("DD/MM/YYYY HH:mm:ss")
+                                ? dayjs(obj.scheduledAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
                                 : "",
                     },
                     {
@@ -158,7 +165,9 @@ export const signal_opened_fields: TypedField[] = [
                         isVisible: (obj) => !!obj.pendingAt,
                         compute: (obj) =>
                             obj.pendingAt
-                                ? dayjs(obj.pendingAt).format("DD/MM/YYYY HH:mm:ss")
+                                ? dayjs(obj.pendingAt).format(
+                                      "DD/MM/YYYY HH:mm:ss",
+                                  )
                                 : "",
                     },
                 ],
@@ -255,7 +264,9 @@ export const signal_opened_fields: TypedField[] = [
                         name: "originalPriceOpen",
                         title: "Original Entry",
                         readonly: true,
-                        isVisible: (obj) => !!obj.originalPriceOpen && obj.originalPriceOpen !== obj.priceOpen,
+                        isVisible: (obj) =>
+                            !!obj.originalPriceOpen &&
+                            obj.originalPriceOpen !== obj.priceOpen,
                         compute: (obj) =>
                             !!obj.originalPriceOpen
                                 ? `${obj.originalPriceOpen.toFixed(6)}$`
@@ -270,7 +281,8 @@ export const signal_opened_fields: TypedField[] = [
                         name: "totalEntries",
                         title: "Total Entries",
                         readonly: true,
-                        isVisible: (obj) => !!obj.totalEntries && obj.totalEntries > 1,
+                        isVisible: (obj) =>
+                            !!obj.totalEntries && obj.totalEntries > 1,
                         compute: (obj) =>
                             !!obj.totalEntries
                                 ? String(obj.totalEntries)
@@ -285,7 +297,8 @@ export const signal_opened_fields: TypedField[] = [
                         name: "totalPartials",
                         title: "Total Closes",
                         readonly: true,
-                        isVisible: (obj) => !!obj.totalPartials && obj.totalPartials > 0,
+                        isVisible: (obj) =>
+                            !!obj.totalPartials && obj.totalPartials > 0,
                         compute: (obj) => String(obj.totalPartials),
                     },
                     {
@@ -402,18 +415,19 @@ export const signal_opened_fields: TypedField[] = [
                 type: FieldType.Outline,
                 isVisible: (obj) => !!obj.note,
                 sx: { mb: 3 },
-                child: {
-                    type: FieldType.Component,
-                    desktopColumns: "12",
-                    tabletColumns: "12",
-                    phoneColumns: "12",
-                    name: "note",
-                    element: ({ note }) => (
-                        <Box>
-                            <Markdown content={note || "No note"} />
-                        </Box>
-                    ),
-                },
+                fields: [
+                    {
+                        type: FieldType.Text,
+                        outlined: true,
+                        inputRows: 3,
+                        placeholder: "Empty",
+                        title: "",
+                        desktopColumns: "12",
+                        tabletColumns: "12",
+                        phoneColumns: "12",
+                        name: "note",
+                    },
+                ],
             },
             {
                 type: FieldType.Box,
@@ -427,10 +441,7 @@ export const signal_opened_fields: TypedField[] = [
                         type: FieldType.Component,
                         isVisible: (obj) => !!obj.signalId,
                         element: ({ signalId }) => (
-                            <CopyButton
-                                label="Signal ID"
-                                content={signalId}
-                            />
+                            <CopyButton label="Signal ID" content={signalId} />
                         ),
                     },
                     {

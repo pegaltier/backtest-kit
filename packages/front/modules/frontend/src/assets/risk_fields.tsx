@@ -10,7 +10,7 @@ export const risk_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "General Information",
             },
             {
@@ -91,7 +91,7 @@ export const risk_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "Timestamps",
             },
             {
@@ -140,23 +140,19 @@ export const risk_fields: TypedField[] = [
             {
                 type: FieldType.Outline,
                 sx: { mb: 3 },
-                child: {
-                    type: FieldType.Component,
-                    desktopColumns: "12",
-                    tabletColumns: "12",
-                    phoneColumns: "12",
-                    name: "rejectionNote",
-                    element: ({ rejectionNote }) => (
-                        <Box>
-                            <Markdown
-                                content={
-                                    rejectionNote ||
-                                    "No rejection reason provided"
-                                }
-                            />
-                        </Box>
-                    ),
-                },
+                fields: [
+                    {
+                        type: FieldType.Text,
+                        outlined: true,
+                        inputRows: 3,
+                        placeholder: "Rejection note",
+                        title: "",
+                        desktopColumns: "12",
+                        tabletColumns: "12",
+                        phoneColumns: "12",
+                        name: "rejectionNote",
+                    },
+                ],
             },
             {
                 type: FieldType.Typography,

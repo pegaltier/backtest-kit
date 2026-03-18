@@ -41,14 +41,16 @@ export class MarkdownHelperService {
                 return;
             }
 
-            if (field.type === FieldType.Text && field.title) {
+            if (field.type === FieldType.Text) {
                 const value = field.compute
                     ? field.compute(data, payload as any)
                     : field.name
                         ? get(data, field.name)
                         : undefined;
+                const title = field.title;
                 if (value) {
-                    lines.push(`**${field.title}:** ${String(value)}`);
+                    const valueString = String(value);
+                    lines.push(title ? `**${title}:** ${valueString}` : valueString);
                 }
                 return;
             }

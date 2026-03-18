@@ -10,7 +10,7 @@ export const signal_fields: TypedField[] = [
         fields: [
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "General Information",
             },
             {
@@ -114,7 +114,7 @@ export const signal_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "Timestamps",
             },
             {
@@ -191,7 +191,7 @@ export const signal_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "Price Levels",
             },
             {
@@ -283,7 +283,9 @@ export const signal_fields: TypedField[] = [
                         name: "originalPriceOpen",
                         title: "Original Entry",
                         readonly: true,
-                        isVisible: (obj) => !!obj.originalPriceOpen && obj.originalPriceOpen !== obj.priceOpen,
+                        isVisible: (obj) =>
+                            !!obj.originalPriceOpen &&
+                            obj.originalPriceOpen !== obj.priceOpen,
                         compute: (obj) =>
                             !!obj.originalPriceOpen
                                 ? `${obj.originalPriceOpen.toFixed(6)}$`
@@ -298,7 +300,8 @@ export const signal_fields: TypedField[] = [
                         name: "totalEntries",
                         title: "Total Entries",
                         readonly: true,
-                        isVisible: (obj) => !!obj.totalEntries && obj.totalEntries > 1,
+                        isVisible: (obj) =>
+                            !!obj.totalEntries && obj.totalEntries > 1,
                         compute: (obj) =>
                             !!obj.totalEntries
                                 ? String(obj.totalEntries)
@@ -326,7 +329,8 @@ export const signal_fields: TypedField[] = [
                         name: "totalPartials",
                         title: "Total Closes",
                         readonly: true,
-                        isVisible: (obj) => !!obj.totalPartials && obj.totalPartials > 0,
+                        isVisible: (obj) =>
+                            !!obj.totalPartials && obj.totalPartials > 0,
                         compute: (obj) => String(obj.totalPartials),
                     },
                     {
@@ -348,7 +352,7 @@ export const signal_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "Result (PNL)",
                 isVisible: (data) => data.status === "closed" && data.pnl,
             },
@@ -435,7 +439,7 @@ export const signal_fields: TypedField[] = [
             },
             {
                 type: FieldType.Typography,
-                                typoVariant: "h6",
+                typoVariant: "h6",
                 placeholder: "Note",
                 isVisible: (data) => !!data.note,
             },
@@ -443,18 +447,19 @@ export const signal_fields: TypedField[] = [
                 type: FieldType.Outline,
                 isVisible: (data) => !!data.note,
                 sx: { mb: 3 },
-                child: {
-                    type: FieldType.Component,
-                    desktopColumns: "12",
-                    tabletColumns: "12",
-                    phoneColumns: "12",
-                    name: "note",
-                    element: ({ note }) => (
-                        <Box>
-                            <Markdown content={note || "No note"} />
-                        </Box>
-                    ),
-                },
+                fields: [
+                    {
+                        type: FieldType.Text,
+                        outlined: true,
+                        inputRows: 3,
+                        placeholder: "Empty",
+                        title: "",
+                        desktopColumns: "12",
+                        tabletColumns: "12",
+                        phoneColumns: "12",
+                        name: "note",
+                    },
+                ],
             },
             {
                 type: FieldType.Box,
@@ -466,10 +471,7 @@ export const signal_fields: TypedField[] = [
                     {
                         type: FieldType.Component,
                         element: ({ id }) => (
-                            <CopyButton
-                                label="Signal ID"
-                                content={id}
-                            />
+                            <CopyButton label="Signal ID" content={id} />
                         ),
                     },
                     {
