@@ -1,4 +1,5 @@
-import { Box, Container } from "@mui/material";
+import { KeyboardArrowLeft, Refresh } from "@mui/icons-material";
+import { Container } from "@mui/material";
 import {
     Breadcrumbs2,
     Breadcrumbs2Type,
@@ -6,9 +7,8 @@ import {
     IBreadcrumbs2Option,
     IOutletProps,
     Subject,
-    useOnce,
+    useSingleton,
 } from "react-declarative";
-import { KeyboardArrowLeft, Refresh } from "@mui/icons-material";
 import ioc from "../../../../lib";
 import IconWrapper from "../../../../components/common/IconWrapper";
 import PriceChartWidget from "../components/PriceChartWidget";
@@ -32,7 +32,12 @@ const options: IBreadcrumbs2Option[] = [
     {
         type: Breadcrumbs2Type.Link,
         action: "back-action",
-        compute: (payload) => String(payload).toUpperCase(),
+        compute: ({ symbol }) => String(symbol).toUpperCase(),
+    },
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        compute: ({ interval }) => String(interval).toUpperCase(),
     },
 ];
 
@@ -47,11 +52,14 @@ const actions: IBreadcrumbs2Action[] = [
 const reloadSubject = new Subject<void>();
 
 export const ChartView = ({ params }: IOutletProps) => {
-    const symbol = String(params.symbol).toUpperCase();
+    const payload = useSingleton(() => ({
+        symbol: String(params.symbol).toUpperCase(),
+        interval: params.interval,
+    }));
 
     const handleAction = async (action: string) => {
         if (action === "back-action") {
-            ioc.routerService.push("/price_chart");
+            ioc.routerService.push(`/price_chart/${params.symbol}`);
         }
         if (action === "update-now") {
             await reloadSubject.next();
@@ -63,36 +71,15 @@ export const ChartView = ({ params }: IOutletProps) => {
             <Breadcrumbs2
                 items={options}
                 actions={actions}
-                payload={symbol}
+                payload={payload}
                 onAction={handleAction}
             />
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    pb: 3,
-                }}
-            >
-                <PriceChartWidget
-                    symbol={symbol}
-                    interval="1m"
-                    reloadSubject={reloadSubject}
-                    sx={{ height: "calc(33dvh - 40px)", minHeight: "250px" }}
-                />
-                <PriceChartWidget
-                    symbol={symbol}
-                    interval="15m"
-                    reloadSubject={reloadSubject}
-                    sx={{ height: "calc(33dvh - 40px)", minHeight: "250px" }}
-                />
-                <PriceChartWidget
-                    symbol={symbol}
-                    interval="1h"
-                    reloadSubject={reloadSubject}
-                    sx={{ height: "calc(33dvh - 40px)", minHeight: "250px" }}
-                />
-            </Box>
+            <PriceChartWidget
+                symbol={payload.symbol}
+                interval={payload.interval}
+                reloadSubject={reloadSubject}
+                sx={{ height: "calc(100dvh - 100px)" }}
+            />
         </Container>
     );
 };

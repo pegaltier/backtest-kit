@@ -1,0 +1,173 @@
+import {
+    Box,
+    ButtonBase,
+    Chip,
+    Container,
+    lighten,
+    Paper,
+    Stack,
+} from "@mui/material";
+import {
+    Breadcrumbs2,
+    Breadcrumbs2Type,
+    FieldType,
+    IBreadcrumbs2Option,
+    One,
+    TypedField,
+    typo,
+} from "react-declarative";
+import { makeStyles } from "../../../../styles";
+import { KeyboardArrowLeft } from "@mui/icons-material";
+import { useMemo } from "react";
+import ioc from "../../../../lib";
+import { IOutletProps } from "react-declarative";
+
+const GROUP_HEADER = "trade-gpt__groupHeader";
+const GROUP_ROOT = "trade-gpt__groupRoot";
+
+const useStyles = makeStyles()({
+    root: {
+        [`& .${GROUP_ROOT}:hover .${GROUP_HEADER}`]: {
+            opacity: "1 !important",
+        },
+    },
+});
+
+interface IRoute {
+    label: string;
+    to: string;
+}
+
+const options: IBreadcrumbs2Option[] = [
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        label: <KeyboardArrowLeft sx={{ display: "block" }} />,
+    },
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        label: "Main",
+    },
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        label: "Price Chart",
+    },
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        compute: (symbol) => String(symbol).toUpperCase(),
+    },
+];
+
+const createButton = (to: string, label: React.ReactNode): TypedField => ({
+    type: FieldType.Component,
+    desktopColumns: "6",
+    tabletColumns: "12",
+    phoneColumns: "12",
+    fieldRightMargin: "1",
+    fieldBottomMargin: "1",
+    element: () => (
+        <Paper
+            component={ButtonBase}
+            onClick={() => {
+                ioc.routerService.push(to);
+            }}
+            sx={{
+                width: "100%",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "18px",
+                height: "75px",
+                minHeight: "125px",
+                textWrap: "wrap",
+                padding: "16px",
+                "&:hover": {
+                    background: (theme) => lighten(theme.palette.primary.main, 0.23),
+                },
+                background: (theme) => theme.palette.primary.main,
+                transition: "background 500ms",
+            }}
+        >
+            {label}
+        </Paper>
+    ),
+});
+
+const createGroup = (label: string, routes: IRoute[]): TypedField => ({
+    type: FieldType.Group,
+    className: GROUP_ROOT,
+    sx: { p: 2 },
+    desktopColumns: "6",
+    tabletColumns: "6",
+    phoneColumns: "12",
+    fields: [
+        {
+            type: FieldType.Component,
+            className: GROUP_HEADER,
+            style: { transition: "opacity 500ms", opacity: 0.5 },
+            element: () => (
+                <Stack direction="row">
+                    <Chip
+                        variant="outlined"
+                        size="medium"
+                        color="info"
+                        label={`${typo.bullet} ${label}`}
+                        sx={{
+                            mb: 1,
+                            pr: 0.5,
+                            fontSize: "16px",
+                            background: "white",
+                            cursor: "not-allowed",
+                        }}
+                    />
+                    <Box flex={1} />
+                </Stack>
+            ),
+        },
+        {
+            type: FieldType.Group,
+            fields: routes.map(({ label, to }) => createButton(to, label)),
+        },
+    ],
+});
+
+export const CoinView = ({ params }: IOutletProps) => {
+    const { classes } = useStyles();
+    const symbol = params.symbol;
+
+    const candle_routes = useMemo(
+        (): IRoute[] => [
+            { label: "1 минута", to: `/price_chart/${symbol}/1m` },
+            { label: "15 минут", to: `/price_chart/${symbol}/15m` },
+            { label: "1 час", to: `/price_chart/${symbol}/1h` },
+        ],
+        [symbol],
+    );
+
+    const fields = useMemo(
+        (): TypedField[] => [createGroup("График", candle_routes)],
+        [candle_routes],
+    );
+
+    const handleAction = (action: string) => {
+        if (action === "back-action") {
+            ioc.routerService.push("/price_chart");
+        }
+    };
+
+    return (
+        <Container>
+            <Breadcrumbs2
+                items={options}
+                payload={symbol}
+                onAction={handleAction}
+            />
+            <One className={classes.root} fields={fields} />
+            <Box paddingBottom="24px" />
+        </Container>
+    );
+};
+
+export default CoinView;

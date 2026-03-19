@@ -70,6 +70,10 @@ const dashboardRoutes: IRouteItem[] = [
         path: "/price_chart/:symbol",
         element: heavy(() => import("../pages/view/ChartsPage")),
     },
+    {
+        path: "/price_chart/:symbol/:interval",
+        element: heavy(() => import("../pages/view/ChartsPage")),
+    },
 ];
 
 export const routes: IRouteItem[] = [
