@@ -49,6 +49,23 @@ export class StatusMockService {
     }
     return data;
   };
+
+  public getStatusInfo = async () => {
+    this.loggerService.log("statusMockService getStatusInfo");
+    const { data, error } = await fetchApi("/api/v1/mock/status_info", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
 }
 
 export default StatusMockService;

@@ -7,6 +7,7 @@ import { singleshot } from "functools-kit";
 import SignalMockService from "./SignalMockService";
 
 const MOCK_PATH = "./mock/status.json";
+const MOCK_INFO_PATH = "./mock/status-info.json";
 
 const READ_STATUS_LIST_FN = singleshot(
   async () => {
@@ -15,9 +16,21 @@ const READ_STATUS_LIST_FN = singleshot(
   },
 );
 
+const READ_STATUS_INFO_FN = singleshot(
+  async () => {
+    const data = await fs.readFile(MOCK_INFO_PATH, "utf-8");
+    return JSON.parse(data);
+  },
+);
+
 export class StatusMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
   private readonly signalMockService = inject<SignalMockService>(TYPES.signalMockService);
+
+  public getStatusInfo = async () => {
+    this.loggerService.log("statusMockService getStatusInfo");
+    return await READ_STATUS_INFO_FN();
+  };
 
   public getStatusList = async () => {
     this.loggerService.log("statusMockService getStatusList");

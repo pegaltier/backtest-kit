@@ -124,6 +124,13 @@ interface StatusOneRequest {
   requestId: string;
 }
 
+interface StatusInfoRequest {
+  clientId: string;
+  serviceName: string;
+  userId: string;
+  requestId: string;
+}
+
 // ExchangeMockService endpoints
 router.post("/api/v1/mock/candles_signal", async (req, res) => {
   try {
@@ -608,6 +615,34 @@ router.post("/api/v1/mock/status_one/:id", async (req, res) => {
     return await micro.send(res, 200, result);
   } catch (error) {
     ioc.loggerService.log("/api/v1/mock/status_one/:id error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
+router.post("/api/v1/mock/status_info", async (req, res) => {
+  try {
+    const request = <StatusInfoRequest>await micro.json(req);
+    const { requestId, serviceName } = request;
+    const data = await ioc.statusMockService.getStatusInfo();
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/mock/status_info ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/mock/status_info error", {
       error: errorData(error),
     });
     return await micro.send(res, 200, {

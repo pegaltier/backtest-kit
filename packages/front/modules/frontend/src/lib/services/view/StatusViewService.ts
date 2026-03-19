@@ -70,6 +70,26 @@ export class StatusViewService {
         }
         return data;
     };
+
+    public getStatusInfo = async () => {
+        this.loggerService.log("statusViewService getStatusInfo");
+        if (CC_ENABLE_MOCK) {
+            return await this.statusMockService.getStatusInfo();
+        }
+        const { data, error } = await fetchApi("/api/v1/view/status_info", {
+            method: "POST",
+            body: JSON.stringify({
+                clientId: CC_CLIENT_ID,
+                serviceName: CC_SERVICE_NAME,
+                userId: CC_USER_ID,
+                requestId: randomString(),
+            }),
+        });
+        if (error) {
+            throw new Error(error);
+        }
+        return data;
+    };
 }
 
 export default StatusViewService;

@@ -1,0 +1,31 @@
+{
+  "context": {
+    "strategyName": "rsi-dca",
+    "exchangeName": "binance",
+    "frameName": "1m-2024-02"
+  },
+  "portfolioTotalPnl": 12.47,
+  "portfolioSharpeRatio": 1.83,
+  "portfolioTotalTrades": 18,
+  "symbols": [
+    {
+      "symbol": "BTCUSDT",
+      "totalPnl": 8.21,
+      "winRate": 72.73,
+      "profitFactor": 2.14,
+      "maxDrawdown": -4.52,
+      "expectancy": 0.61,
+      "totalTrades": 11
+    },
+    {
+      "symbol": "ETHUSDT",
+      "totalPnl": 4.26,
+      "winRate": 57.14,
+      "profitFactor": 1.47,
+      "maxDrawdown": -6.31,
+      "expectancy": 0.38,
+      "totalTrades": 7
+    }
+  ],
+  "backtest": true
+}
