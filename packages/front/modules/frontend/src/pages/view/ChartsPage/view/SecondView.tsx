@@ -1,10 +1,12 @@
 import {
     Box,
+    Button,
     ButtonBase,
     Chip,
     Container,
+    darken,
+    getContrastRatio,
     lighten,
-    Paper,
     Stack,
 } from "@mui/material";
 import {
@@ -12,18 +14,24 @@ import {
     Breadcrumbs2Type,
     FieldType,
     IBreadcrumbs2Option,
+    IOutletProps,
     One,
     TypedField,
     typo,
 } from "react-declarative";
 import { makeStyles } from "../../../../styles";
-import { KeyboardArrowLeft } from "@mui/icons-material";
+import {
+    KeyboardArrowLeft,
+    Looks3TwoTone,
+    LooksOneTwoTone,
+    LooksTwoTwoTone,
+} from "@mui/icons-material";
 import { useMemo } from "react";
 import ioc from "../../../../lib";
-import { IOutletProps } from "react-declarative";
 
 const GROUP_HEADER = "trade-gpt__groupHeader";
 const GROUP_ROOT = "trade-gpt__groupRoot";
+const ICON_ROOT = "trade-gpt__symbolImage";
 
 const useStyles = makeStyles()({
     root: {
@@ -36,6 +44,14 @@ const useStyles = makeStyles()({
 interface IRoute {
     label: string;
     to: string;
+    color: string;
+    icon: React.ComponentType<any>;
+}
+
+function isLightColor(hex: string) {
+    const contrastWithBlack = getContrastRatio(hex, "#000000");
+    const contrastWithWhite = getContrastRatio(hex, "#FFFFFF");
+    return contrastWithBlack > contrastWithWhite;
 }
 
 const options: IBreadcrumbs2Option[] = [
@@ -61,7 +77,12 @@ const options: IBreadcrumbs2Option[] = [
     },
 ];
 
-const createButton = (to: string, label: React.ReactNode): TypedField => ({
+const createButton = (
+    to: string,
+    label: React.ReactNode,
+    color: string,
+    Icon: React.ComponentType<any>,
+): TypedField => ({
     type: FieldType.Component,
     desktopColumns: "6",
     tabletColumns: "12",
@@ -69,13 +90,14 @@ const createButton = (to: string, label: React.ReactNode): TypedField => ({
     fieldRightMargin: "1",
     fieldBottomMargin: "1",
     element: () => (
-        <Paper
+        <Button
             component={ButtonBase}
             onClick={() => {
                 ioc.routerService.push(to);
             }}
             sx={{
                 width: "100%",
+                background: color,
                 color: "white",
                 fontWeight: "bold",
                 fontSize: "18px",
@@ -83,15 +105,27 @@ const createButton = (to: string, label: React.ReactNode): TypedField => ({
                 minHeight: "125px",
                 textWrap: "wrap",
                 padding: "16px",
-                "&:hover": {
-                    background: (theme) => lighten(theme.palette.primary.main, 0.23),
+                [`& .${ICON_ROOT}`]: {
+                    transition: "filter 500ms",
                 },
-                background: (theme) => theme.palette.primary.main,
+                "&:hover": {
+                    background: () =>
+                        isLightColor(color)
+                            ? darken(color, 0.33)
+                            : lighten(color, 0.33),
+                    [`& .${ICON_ROOT}`]: {
+                        transition: "filter 500ms",
+                        filter: isLightColor(color)
+                            ? "brightness(0.7) contrast(1.2)"
+                            : "brightness(1.3) contrast(0.5)",
+                    },
+                },
                 transition: "background 500ms",
             }}
+            startIcon={<Icon className={ICON_ROOT} />}
         >
             {label}
-        </Paper>
+        </Button>
     ),
 });
 
@@ -128,7 +162,9 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
         },
         {
             type: FieldType.Group,
-            fields: routes.map(({ label, to }) => createButton(to, label)),
+            fields: routes.map(({ label, to, color, icon }) =>
+                createButton(to, label, color, icon),
+            ),
         },
     ],
 });
@@ -139,9 +175,24 @@ export const SecondView = ({ params }: IOutletProps) => {
 
     const candle_routes = useMemo(
         (): IRoute[] => [
-            { label: "1 минута", to: `/price_chart/${symbol}/1m` },
-            { label: "15 минут", to: `/price_chart/${symbol}/15m` },
-            { label: "1 час", to: `/price_chart/${symbol}/1h` },
+            {
+                label: "1 минута",
+                to: `/price_chart/${symbol}/1m`,
+                color: "#2979ff",
+                icon: LooksOneTwoTone,
+            },
+            {
+                label: "15 минут",
+                to: `/price_chart/${symbol}/15m`,
+                color: "#f3a43a",
+                icon: LooksTwoTwoTone,
+            },
+            {
+                label: "1 час",
+                to: `/price_chart/${symbol}/1h`,
+                color: "#d500f9",
+                icon: Looks3TwoTone,
+            },
         ],
         [symbol],
     );

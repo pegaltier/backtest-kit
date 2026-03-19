@@ -26,6 +26,7 @@ import { makeStyles } from "../../../styles";
 import {
     AccountBalanceWalletTwoTone,
     AdfScannerTwoTone,
+    CandlestickChartTwoTone,
     CircleNotificationsTwoTone,
     Dashboard,
     FilePresentTwoTone,
@@ -255,6 +256,12 @@ const other_routes: IRoute[] = [
         to: `/report`,
         color: "#009688",
         icon: AdfScannerTwoTone,
+    },
+    {
+        label: "Price Charts",
+        to: `/price_chart`,
+        color: "#1565C0",
+        icon: CandlestickChartTwoTone,
     },
 ];
 
