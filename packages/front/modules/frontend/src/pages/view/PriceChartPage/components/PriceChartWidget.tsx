@@ -1,5 +1,6 @@
 import { Paper, Box, Typography, Divider, SxProps } from "@mui/material";
 import {
+    ActionIcon,
     AutoSizer,
     LoaderView,
     TSubject,
@@ -10,6 +11,7 @@ import {
 import { CandleInterval } from "backtest-kit";
 import ioc from "../../../../lib";
 import StockChart from "./StockChart";
+import { Info } from "@mui/icons-material";
 
 const colorMap: Record<string, string> = {
     "1m": "#2979ff",
@@ -24,19 +26,21 @@ const titleMap: Record<string, string> = {
 };
 
 function downloadJson(
-  jsonString: string,
-  fileName: string = "data.json"
+    jsonString: string,
+    fileName: string = "data.json",
 ): void {
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = window.URL.createObjectURL(blob);
-  ioc.layoutService.downloadFile(url, fileName);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, fileName);
 }
 
 interface IPriceChartWidgetProps {
     symbol: string;
+    disableInfo: boolean;
     interval: CandleInterval;
     reloadSubject: TSubject<void>;
     downloadSubject: TSubject<void>;
+    onInfoClick: () => void;
     sx?: SxProps;
 }
 
@@ -45,11 +49,16 @@ export const PriceChartWidget = ({
     interval,
     reloadSubject,
     downloadSubject,
+    onInfoClick,
+    disableInfo,
     sx,
 }: IPriceChartWidgetProps) => {
     const [candles, { loading, execute }] = useAsyncValue(
         async () => {
-            return await ioc.exchangeViewService.getLastCandles(symbol, interval);
+            return await ioc.exchangeViewService.getLastCandles(
+                symbol,
+                interval,
+            );
         },
         {
             onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
@@ -62,13 +71,15 @@ export const PriceChartWidget = ({
 
     useOnce(() => reloadSubject.subscribe(execute));
 
-    useOnce(() => downloadSubject.subscribe(() => {
-      const { current: candles } = candles$;
-      downloadJson(
-        JSON.stringify(candles, null, 2),
-        `${symbol}-${interval}.json`
-      );
-    }));
+    useOnce(() =>
+        downloadSubject.subscribe(() => {
+            const { current: candles } = candles$;
+            downloadJson(
+                JSON.stringify(candles, null, 2),
+                `${symbol}-${interval}.json`,
+            );
+        }),
+    );
 
     const renderInner = () => {
         if (!candles || loading) {
@@ -106,6 +117,7 @@ export const PriceChartWidget = ({
                     display: "flex",
                     alignItems: "center",
                     pl: 2,
+                    pr: 1,
                 }}
             >
                 <Typography
@@ -114,6 +126,15 @@ export const PriceChartWidget = ({
                 >
                     {titleMap[interval] || interval}
                 </Typography>
+                <Box sx={{ flex: 1 }} />
+                <ActionIcon disabled={disableInfo} onClick={onInfoClick}>
+                    <Info
+                        style={{
+                            color: "white",
+                            opacity: disableInfo ? 0.5 : 1.0,
+                        }}
+                    />
+                </ActionIcon>
             </Box>
             <Divider />
             {renderInner()}

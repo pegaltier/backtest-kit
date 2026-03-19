@@ -1,6 +1,6 @@
 import http from 'http';
 import * as backtest_kit from 'backtest-kit';
-import { CandleInterval, NotificationModel, IStorageSignalRow, ILogEntry } from 'backtest-kit';
+import { CandleInterval, NotificationModel, IStorageSignalRow, ILogEntry, IPublicSignalRow } from 'backtest-kit';
 import * as functools_kit from 'functools-kit';
 
 declare function serve(host?: string, port?: number): () => void;
@@ -178,6 +178,7 @@ declare class ExplorerMockService {
 declare class SignalMockService {
     private readonly loggerService;
     getLastUpdateTimestamp: (signalId: string) => Promise<number>;
+    getPendingSignal: (symbol: string) => Promise<IPublicSignalRow>;
 }
 
 declare class NotificationViewService {
@@ -291,7 +292,9 @@ declare class ExplorerViewService {
 
 declare class SignalViewService {
     private readonly loggerService;
+    private readonly signalMockService;
     getLastUpdateTimestamp: (signalId: string) => Promise<number>;
+    getPendingSignal: (symbol: string) => Promise<backtest_kit.IPublicSignalRow>;
 }
 
 declare class SymbolConnectionService {

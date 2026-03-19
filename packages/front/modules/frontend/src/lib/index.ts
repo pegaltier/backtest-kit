@@ -32,6 +32,8 @@ import LiveGlobalService from "./services/global/LiveGlobalService";
 import TYPES from "./core/TYPES";
 import ExplorerHelperService from "./services/helpers/ExplorerHelperService";
 import MarkdownHelperService from "./services/helpers/MarkdownHelperService";
+import SignalViewService from "./services/view/SignalViewService";
+import SignalMockService from "./services/mock/SignalMockService";
 
 const baseServices = {
   errorService: inject<ErrorService>(TYPES.errorService),
@@ -61,6 +63,7 @@ const mockServices = {
   statusMockService: inject<StatusMockService>(TYPES.statusMockService),
   markdownMockService: inject<MarkdownMockService>(TYPES.markdownMockService),
   explorerMockService: inject<ExplorerMockService>(TYPES.explorerMockService),
+  signalMockService: inject<SignalMockService>(TYPES.signalMockService),
 };
 
 const viewServices = {
@@ -71,6 +74,7 @@ const viewServices = {
   statusViewService: inject<StatusViewService>(TYPES.statusViewService),
   markdownViewService: inject<MarkdownViewService>(TYPES.markdownViewService),
   explorerViewService: inject<ExplorerViewService>(TYPES.explorerViewService),
+  signalViewService: inject<SignalViewService>(TYPES.signalViewService),
 };
 
 export const ioc = {

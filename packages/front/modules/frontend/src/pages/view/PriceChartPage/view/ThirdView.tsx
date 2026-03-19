@@ -7,6 +7,9 @@ import {
     IBreadcrumbs2Option,
     IOutletProps,
     Subject,
+    useActualCallback,
+    useAsyncValue,
+    useOnce,
     useSingleton,
 } from "react-declarative";
 import ioc from "../../../../lib";
@@ -67,6 +70,17 @@ export const ThirdView = ({ params }: IOutletProps) => {
         interval: params.interval,
     }));
 
+    const [pendingSignal, { loading, execute }] = useAsyncValue(async () => {
+        const symbol = String(params.symbol).toUpperCase();
+        return await ioc.signalViewService.getPendingSignal(symbol);
+    }, {
+        onLoadStart: () => ioc.layoutService.setAppbarLoader(true),
+        onLoadEnd: () => ioc.layoutService.setAppbarLoader(false),
+        deps: [params.symbol],
+    })
+
+    useOnce(() => reloadSubject.subscribe(execute));
+
     const handleAction = async (action: string) => {
         if (action === "back-action") {
             ioc.routerService.push(`/price_chart/${params.symbol}`);
@@ -79,6 +93,27 @@ export const ThirdView = ({ params }: IOutletProps) => {
         }
     };
 
+    const handleOpen = useActualCallback(async () => {
+
+    })
+
+    const renderInner = () => {
+        if (loading) {
+            return null;
+        }
+        return (
+            <PriceChartWidget
+                symbol={payload.symbol}
+                interval={payload.interval}
+                disableInfo={!pendingSignal}
+                reloadSubject={reloadSubject}
+                downloadSubject={downloadSubject}
+                onInfoClick={handleOpen}
+                sx={{ height: "calc(100dvh - 165px)" }}
+            />
+        )
+    }
+
     return (
         <Container>
             <Breadcrumbs2
@@ -87,13 +122,7 @@ export const ThirdView = ({ params }: IOutletProps) => {
                 payload={payload}
                 onAction={handleAction}
             />
-            <PriceChartWidget
-                symbol={payload.symbol}
-                interval={payload.interval}
-                reloadSubject={reloadSubject}
-                downloadSubject={downloadSubject}
-                sx={{ height: "calc(100dvh - 165px)" }}
-            />
+            {renderInner()}
         </Container>
     );
 };
