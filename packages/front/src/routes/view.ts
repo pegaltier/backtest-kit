@@ -102,6 +102,14 @@ interface LogOneRequest {
   requestId: string;
 }
 
+interface SignalPendingRequest {
+  clientId: string;
+  serviceName: string;
+  userId: string;
+  requestId: string;
+  symbol: string;
+}
+
 interface StatusListRequest {
   clientId: string;
   serviceName: string;
@@ -513,6 +521,34 @@ router.post("/api/v1/view/signal_last_update/:id", async (req, res) => {
     return await micro.send(res, 200, result);
   } catch (error) {
     ioc.loggerService.log("/api/v1/view/signal_last_update/:id error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
+router.post("/api/v1/view/signal_pending", async (req, res) => {
+  try {
+    const request = <SignalPendingRequest>await micro.json(req);
+    const { symbol, requestId, serviceName } = request;
+    const data = await ioc.signalViewService.getPendingSignal(symbol);
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/view/signal_pending ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/view/signal_pending error", {
       error: errorData(error),
     });
     return await micro.send(res, 200, {

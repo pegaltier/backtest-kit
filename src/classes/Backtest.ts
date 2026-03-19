@@ -1,5 +1,5 @@
 import backtest from "../lib";
-import { StrategyName } from "../interfaces/Strategy.interface";
+import { IPublicSignalRow, StrategyName } from "../interfaces/Strategy.interface";
 import { exitEmitter, doneBacktestSubject } from "../config/emitters";
 import { GLOBAL_CONFIG } from "../config/params";
 import {
@@ -635,7 +635,7 @@ export class BacktestUtils {
       exchangeName: ExchangeName;
       frameName: FrameName;
     },
-  ) => {
+  ): Promise<IPublicSignalRow | null>  => {
     backtest.loggerService.info(BACKTEST_METHOD_NAME_GET_PENDING_SIGNAL, {
       symbol,
       context,

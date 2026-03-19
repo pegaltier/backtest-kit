@@ -1,4 +1,5 @@
 import {
+  IPublicSignalRow,
   IStrategyTickResultClosed,
   IStrategyTickResultOpened,
   StrategyName,
@@ -606,7 +607,7 @@ export class LiveUtils {
     symbol: string,
     currentPrice: number,
     context: { strategyName: StrategyName; exchangeName: ExchangeName },
-  ) => {
+  ): Promise<IPublicSignalRow | null>  => {
     backtest.loggerService.info(LIVE_METHOD_NAME_GET_PENDING_SIGNAL, {
       symbol,
       context,
