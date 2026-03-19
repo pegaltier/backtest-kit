@@ -49,8 +49,6 @@ const toMarkdown = (data: StatusInfoModel): string => {
         `**Sharpe Ratio:** ${fmt(portfolioSharpeRatio, "")}  `,
         `**Всего сделок:** ${portfolioTotalTrades}`,
         "",
-        "---",
-        "",
     ];
 
     for (const s of symbols) {
