@@ -11,6 +11,7 @@ import {
     Stack,
 } from "@mui/material";
 import {
+    Async,
     Breadcrumbs2,
     Breadcrumbs2Type,
     Center,
@@ -18,7 +19,9 @@ import {
     IBreadcrumbs2Action,
     IBreadcrumbs2Option,
     IOutletProps,
+    LoaderView,
     One,
+    sleep,
     TypedField,
     typo,
 } from "react-declarative";
@@ -44,6 +47,8 @@ import {
 import { useMemo } from "react";
 import ioc from "../../../lib";
 import IconWrapper from "../../../components/common/IconWrapper";
+import { reloadSubject } from "../../../config/emitters";
+import StatusInfo from "../../../components/StatusInfo";
 
 const GROUP_HEADER = "trade-gpt__groupHeader";
 const GROUP_ROOT = "trade-gpt__groupRoot";
@@ -88,22 +93,6 @@ const options: IBreadcrumbs2Option[] = [
 ];
 
 const actions: IBreadcrumbs2Action[] = [
-    {
-        action: "status-action",
-        label: "Status",
-        icon: () => <IconWrapper icon={ShoppingCartCheckout} color="#4caf50" />,
-    },
-    {
-        divider: true,
-    },
-    {
-        action: "notification-action",
-        label: "Notifications",
-        icon: () => <IconWrapper icon={NotificationsActive} color="#4caf50" />,
-    },
-    {
-        divider: true,
-    },
     {
         action: "update-now",
         label: "Refresh",
@@ -271,6 +260,8 @@ const fields: TypedField[] = [
     createGroup("Other", other_routes),
 ];
 
+const StatusLoader = () => <LoaderView sx={{ width: "100%", height: "75px" }} />
+
 export const MainPage = () => {
     const { classes } = useStyles();
 
@@ -281,6 +272,10 @@ export const MainPage = () => {
         if (action === "status-action") {
             ioc.routerService.push("/status");
         }
+        if (action === "update-now") {
+            ioc.statusViewService.getStatusInfo.clear();
+            reloadSubject.next();
+        }
     };
 
     return (
@@ -290,6 +285,15 @@ export const MainPage = () => {
                 actions={actions}
                 onAction={handleAction}
             />
+            <Async Loader={StatusLoader} reloadSubject={reloadSubject}>
+                {async () => {
+                    const statusInfo = await ioc.statusViewService.getStatusInfo();
+                    if (!statusInfo) {
+                        return null;
+                    }
+                    return <StatusInfo data={statusInfo} />
+                }}
+            </Async>
             <One
                 className={classes.root}
                 fields={fields}

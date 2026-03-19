@@ -1,7 +1,14 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../../lib/core/types";
-import { Exchange, IPublicSignalRow, lib, Live } from "backtest-kit";
+import {
+  Backtest,
+  Exchange,
+  Heat,
+  IPublicSignalRow,
+  lib,
+  Live,
+} from "backtest-kit";
 import StatusMockService from "../mock/StatusMockService";
 import SignalViewService from "./SignalViewService";
 import { CC_ENABLE_MOCK } from "../../../config/params";
@@ -11,7 +18,9 @@ export class StatusViewService {
   private readonly statusMockService = inject<StatusMockService>(
     TYPES.statusMockService,
   );
-  private readonly signalViewService = inject<SignalViewService>(TYPES.signalViewService);
+  private readonly signalViewService = inject<SignalViewService>(
+    TYPES.signalViewService,
+  );
 
   public getStatusList = async () => {
     this.loggerService.log("statusViewService getStatusList");
@@ -90,7 +99,9 @@ export class StatusViewService {
       },
       false,
     );
-    const updatedAt = await this.signalViewService.getLastUpdateTimestamp(pendingSignal.id);
+    const updatedAt = await this.signalViewService.getLastUpdateTimestamp(
+      pendingSignal.id,
+    );
     return {
       signalId: pendingSignal.id,
       position: pendingSignal.position,
@@ -117,6 +128,77 @@ export class StatusViewService {
       positionLevels,
       positionPartials,
     };
+  };
+
+  public getStatusInfo = async () => {
+    this.loggerService.log("statusViewService getStatusInfo");
+
+    if (CC_ENABLE_MOCK) {
+      return this.statusMockService.getStatusInfo();
+    }
+
+    {
+      const [backtestTarget = null] = await Backtest.list();
+      if (backtestTarget) {
+        const currentHeat = await Heat.getData({
+          strategyName: backtestTarget.strategyName,
+          exchangeName: backtestTarget.exchangeName,
+          frameName: backtestTarget.frameName,
+        });
+        return {
+          context: {
+            strategyName: backtestTarget.strategyName,
+            exchangeName: backtestTarget.exchangeName,
+            frameName: backtestTarget.frameName,
+          },
+          portfolioTotalPnl: currentHeat.portfolioTotalPnl,
+          portfolioSharpeRatio: currentHeat.portfolioSharpeRatio,
+          portfolioTotalTrades: currentHeat.portfolioTotalTrades,
+          symbols: currentHeat.symbols.map(({ symbol, totalPnl, winRate, profitFactor, maxDrawdown, expectancy, totalTrades }) => ({
+            symbol,
+            totalPnl,
+            winRate,
+            profitFactor,
+            maxDrawdown,
+            expectancy,
+            totalTrades,
+          })),
+          backtest: true,
+        };
+      }
+    }
+
+    {
+      const [liveTarget = null] = await Live.list();
+      if (liveTarget) {
+        const currentHeat = await Heat.getData({
+          strategyName: liveTarget.strategyName,
+          exchangeName: liveTarget.exchangeName,
+          frameName: "",
+        });
+        return {
+          context: {
+            strategyName: liveTarget.strategyName,
+            exchangeName: liveTarget.exchangeName,
+          },
+          portfolioTotalPnl: currentHeat.portfolioTotalPnl,
+          portfolioSharpeRatio: currentHeat.portfolioSharpeRatio,
+          portfolioTotalTrades: currentHeat.portfolioTotalTrades,
+          symbols: currentHeat.symbols.map(({ symbol, totalPnl, winRate, profitFactor, maxDrawdown, expectancy, totalTrades }) => ({
+            symbol,
+            totalPnl,
+            winRate,
+            profitFactor,
+            maxDrawdown,
+            expectancy,
+            totalTrades,
+          })),
+          backtest: false,
+        };
+      }
+    }
+
+    return null;
   };
 }
 
