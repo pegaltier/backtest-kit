@@ -15,6 +15,7 @@ import { Broker } from "../classes/Broker";
 import { GLOBAL_CONFIG } from "../config/params";
 import { not } from "functools-kit";
 import { IPositionOverlapLadder, POSITION_OVERLAP_LADDER_DEFAULT } from "../config/ladder";
+import { IPublicSignalRow } from "src/interfaces/Strategy.interface";
 
 const CANCEL_SCHEDULED_METHOD_NAME = "strategy.commitCancelScheduled";
 const CLOSE_PENDING_METHOD_NAME = "strategy.commitClosePending";
@@ -1055,7 +1056,7 @@ export async function getTotalCostClosed(symbol: string): Promise<number> {
  * }
  * ```
  */
-export async function getPendingSignal(symbol: string) {
+export async function getPendingSignal(symbol: string): Promise<IPublicSignalRow | null>  {
   backtest.loggerService.info(GET_PENDING_SIGNAL_METHOD_NAME, {
     symbol,
   });

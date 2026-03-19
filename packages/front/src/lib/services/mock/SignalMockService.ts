@@ -1,4 +1,4 @@
-import { IStorageSignalRow } from "backtest-kit";
+import { IPublicSignalRow, IStorageSignalRow } from "backtest-kit";
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../../lib/core/types";
@@ -7,6 +7,7 @@ import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 
 const MOCK_PATH = "./mock/db";
+const MOCK_SIGNAL_PATH = "./mock/signal.json";
 
 const READ_SIGNAL_STORAGE_FN = singleshot(async () => {
   const dbPath = join(process.cwd(), MOCK_PATH);
@@ -25,6 +26,11 @@ const READ_SIGNAL_STORAGE_FN = singleshot(async () => {
   return signals;
 });
 
+const READ_PENDING_SIGNAL_FN = singleshot(async () => {
+  const filePath = join(process.cwd(), MOCK_SIGNAL_PATH);
+  return JSON.parse(await readFile(filePath, "utf-8")) as IPublicSignalRow;
+});
+
 export class SignalMockService {
   private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
 
@@ -36,9 +42,22 @@ export class SignalMockService {
     const signalMap = new Map(signalList.map((signal) => [signal.id, signal]));
     const signal = signalMap.get(signalId);
     if (!signal) {
-      throw new Error(`SignalMockService getLastUpdateTimestamp signal not found signalId=${signalId}`);
+      throw new Error(
+        `SignalMockService getLastUpdateTimestamp signal not found signalId=${signalId}`,
+      );
     }
     return signal.updatedAt;
+  };
+
+  public getPendingSignal = async (symbol: string) => {
+    this.loggerService.log("signalMockService getPendingSignal", {
+      symbol,
+    });
+    const signal = await READ_PENDING_SIGNAL_FN();
+    if (signal.symbol !== symbol) {
+      return null;
+    }
+    return signal;
   };
 }
 

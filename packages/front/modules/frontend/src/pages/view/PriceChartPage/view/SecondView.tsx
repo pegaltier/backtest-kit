@@ -7,47 +7,30 @@ import {
     darken,
     getContrastRatio,
     lighten,
-    Paper,
     Stack,
 } from "@mui/material";
 import {
     Breadcrumbs2,
     Breadcrumbs2Type,
-    Center,
     FieldType,
-    IBreadcrumbs2Action,
     IBreadcrumbs2Option,
     IOutletProps,
     One,
     TypedField,
     typo,
 } from "react-declarative";
-import { makeStyles } from "../../../styles";
+import { makeStyles } from "../../../../styles";
 import {
-    AccountBalanceWalletTwoTone,
-    AdfScannerTwoTone,
-    CandlestickChartTwoTone,
-    CircleNotificationsTwoTone,
-    Dashboard,
-    FilePresentTwoTone,
-    InsertChartTwoTone,
     KeyboardArrowLeft,
-    NotificationsActive,
-    PlayCircle,
-    PlayCircleFilledWhiteTwoTone,
-    PlayCircleOutline,
-    Quickreply,
-    Refresh,
-    ShoppingCartCheckout,
-    TerminalTwoTone,
+    Looks3TwoTone,
+    LooksOneTwoTone,
+    LooksTwoTwoTone,
 } from "@mui/icons-material";
 import { useMemo } from "react";
-import ioc from "../../../lib";
-import IconWrapper from "../../../components/common/IconWrapper";
+import ioc from "../../../../lib";
 
 const GROUP_HEADER = "trade-gpt__groupHeader";
 const GROUP_ROOT = "trade-gpt__groupRoot";
-
 const ICON_ROOT = "trade-gpt__symbolImage";
 
 const useStyles = makeStyles()({
@@ -66,15 +49,17 @@ interface IRoute {
 }
 
 function isLightColor(hex: string) {
-    // Compare contrast with black (#000000) and white (#FFFFFF)
     const contrastWithBlack = getContrastRatio(hex, "#000000");
     const contrastWithWhite = getContrastRatio(hex, "#FFFFFF");
-
-    // If contrast with black is higher, the color is likely light
     return contrastWithBlack > contrastWithWhite;
 }
 
 const options: IBreadcrumbs2Option[] = [
+    {
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        label: <KeyboardArrowLeft sx={{ display: "block" }} />,
+    },
     {
         type: Breadcrumbs2Type.Link,
         action: "back-action",
@@ -83,31 +68,12 @@ const options: IBreadcrumbs2Option[] = [
     {
         type: Breadcrumbs2Type.Link,
         action: "back-action",
-        label: "Navigation",
-    },
-];
-
-const actions: IBreadcrumbs2Action[] = [
-    {
-        action: "status-action",
-        label: "Status",
-        icon: () => <IconWrapper icon={ShoppingCartCheckout} color="#4caf50" />,
+        label: "Price Chart",
     },
     {
-        divider: true,
-    },
-    {
-        action: "notification-action",
-        label: "Notifications",
-        icon: () => <IconWrapper icon={NotificationsActive} color="#4caf50" />,
-    },
-    {
-        divider: true,
-    },
-    {
-        action: "update-now",
-        label: "Refresh",
-        icon: () => <IconWrapper icon={Refresh} color="#4caf50" />,
+        type: Breadcrumbs2Type.Link,
+        action: "back-action",
+        compute: (symbol) => String(symbol).toUpperCase(),
     },
 ];
 
@@ -166,9 +132,7 @@ const createButton = (
 const createGroup = (label: string, routes: IRoute[]): TypedField => ({
     type: FieldType.Group,
     className: GROUP_ROOT,
-    sx: {
-        p: 2,
-    },
+    sx: { p: 2 },
     desktopColumns: "6",
     tabletColumns: "6",
     phoneColumns: "12",
@@ -176,10 +140,7 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
         {
             type: FieldType.Component,
             className: GROUP_HEADER,
-            style: {
-                transition: "opacity 500ms",
-                opacity: 0.5,
-            },
+            style: { transition: "opacity 500ms", opacity: 0.5 },
             element: () => (
                 <Stack direction="row">
                     <Chip
@@ -208,78 +169,42 @@ const createGroup = (label: string, routes: IRoute[]): TypedField => ({
     ],
 });
 
-const application_routes: IRoute[] = [
-    {
-        label: "Portfolio Overview",
-        to: `/overview`,
-        color: "#0033AD",
-        icon: AccountBalanceWalletTwoTone,
-    },
-    {
-        label: "PNL Performance",
-        to: `/dashboard`,
-        color: "#E6007A",
-        icon: InsertChartTwoTone,
-    },
-    {
-        label: "System Logs",
-        to: `/logs`,
-        color: "#58BF00",
-        icon: TerminalTwoTone,
-    },
-];
-
-const live_routes: IRoute[] = [
-    {
-        label: "Notifications",
-        to: `/notifications`,
-        color: "#F7931A",
-        icon: CircleNotificationsTwoTone,
-    },
-    {
-        label: "Pending Status",
-        to: `/status`,
-        color: "#6F42C1",
-        icon: PlayCircleFilledWhiteTwoTone,
-    },
-    {
-        label: "Dump Explorer",
-        to: `/dump`,
-        color: "#0090FF",
-        icon: FilePresentTwoTone,
-    },
-];
-
-const other_routes: IRoute[] = [
-    {
-        label: "Markdown Reports",
-        to: `/report`,
-        color: "#009688",
-        icon: AdfScannerTwoTone,
-    },
-    {
-        label: "Price Charts",
-        to: `/price_chart`,
-        color: "#1565C0",
-        icon: CandlestickChartTwoTone,
-    },
-];
-
-const fields: TypedField[] = [
-    createGroup("Application", application_routes),
-    createGroup("Live", live_routes),
-    createGroup("Other", other_routes),
-];
-
-export const MainPage = () => {
+export const SecondView = ({ params }: IOutletProps) => {
     const { classes } = useStyles();
+    const symbol = params.symbol;
 
-    const handleAction = async (action: string) => {
-        if (action === "notification-action") {
-            ioc.routerService.push("/notifications");
-        }
-        if (action === "status-action") {
-            ioc.routerService.push("/status");
+    const candle_routes = useMemo(
+        (): IRoute[] => [
+            {
+                label: "1 minute",
+                to: `/price_chart/${symbol}/1m`,
+                color: "#2979ff",
+                icon: LooksOneTwoTone,
+            },
+            {
+                label: "15 minutes",
+                to: `/price_chart/${symbol}/15m`,
+                color: "#f3a43a",
+                icon: LooksTwoTwoTone,
+            },
+            {
+                label: "1 hour",
+                to: `/price_chart/${symbol}/1h`,
+                color: "#d500f9",
+                icon: Looks3TwoTone,
+            },
+        ],
+        [symbol],
+    );
+
+    const fields = useMemo(
+        (): TypedField[] => [createGroup("Chart", candle_routes)],
+        [candle_routes],
+    );
+
+    const handleAction = (action: string) => {
+        if (action === "back-action") {
+            ioc.routerService.push("/price_chart");
         }
     };
 
@@ -287,19 +212,13 @@ export const MainPage = () => {
         <Container>
             <Breadcrumbs2
                 items={options}
-                actions={actions}
+                payload={symbol}
                 onAction={handleAction}
             />
-            <One
-                className={classes.root}
-                fields={fields}
-                payload={() => ({
-                    history,
-                })}
-            />
+            <One className={classes.root} fields={fields} />
             <Box paddingBottom="24px" />
         </Container>
     );
 };
 
-export default MainPage;
+export default SecondView;

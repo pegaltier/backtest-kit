@@ -106,6 +106,11 @@ export const LOCALE: Record<string, string> = {
   "Signals will be displayed here after they appear": "Сигналы будут отображены здесь после появления",
   "Successful signal": "Удачный сигнал",
   "Successful signals": "Удачных сигналов",
+  // PriceChart
+  "1 minute": "1 минута",
+  "15 minutes": "15 минут",
+  "1 hour": "1 час",
+  "Chart": "График",
   // ErrorView
   "Data is outdated. Please refresh the page": "Данные устарели. Обновите страницу",
   "Disconnected from server": "Отключен от сервера",
