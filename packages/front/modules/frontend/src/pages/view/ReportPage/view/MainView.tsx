@@ -32,10 +32,10 @@ import IconPhoto from "../../../../components/common/IconPhoto";
 import IconWrapper from "../../../../components/common/IconWrapper";
 import useMarkdownReportView from "../../../../hooks/useMarkdownReportView";
 
-const GROUP_HEADER = "trade-gpt__groupHeader";
-const GROUP_ROOT = "trade-gpt__groupRoot";
+const GROUP_HEADER = "backtest-kit__groupHeader";
+const GROUP_ROOT = "backtest-kit__groupRoot";
 
-const ICON_ROOT = "trade-gpt__symbolImage";
+const ICON_ROOT = "backtest-kit__symbolImage";
 
 const useStyles = makeStyles()({
     root: {
