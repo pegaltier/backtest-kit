@@ -53,21 +53,7 @@ export class SignalViewService {
             });
         }
     }
-    {
-        const backtestList = await Backtest.list();
-        const backtestTarget = backtestList.find((backtest) => backtest.symbol === symbol);
-        if (backtestTarget) {
-            const currentPrice = await Exchange.getAveragePrice(symbol, {
-                exchangeName: backtestTarget.exchangeName,
-            });
-            return await Backtest.getPendingSignal(symbol, currentPrice, {
-                exchangeName: backtestTarget.exchangeName,
-                frameName: backtestTarget.frameName,
-                strategyName: backtestTarget.strategyName,
-            });
-        }
-        return null;
-    }
+    return null;
   }
 }
 
