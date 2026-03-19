@@ -11,6 +11,7 @@ import {
     Stack,
 } from "@mui/material";
 import {
+    Async,
     Breadcrumbs2,
     Breadcrumbs2Type,
     Center,
@@ -44,6 +45,8 @@ import {
 import { useMemo } from "react";
 import ioc from "../../../lib";
 import IconWrapper from "../../../components/common/IconWrapper";
+import { reloadSubject } from "../../../config/emitters";
+import StatusInfo from "../../../components/StatusInfo";
 
 const GROUP_HEADER = "trade-gpt__groupHeader";
 const GROUP_ROOT = "trade-gpt__groupRoot";
@@ -274,6 +277,15 @@ export const MainPage = () => {
                 actions={actions}
                 onAction={handleAction}
             />
+            <Async reloadSubject={reloadSubject}>
+                {async () => {
+                    const statusInfo = await ioc.statusViewService.getStatusInfo();
+                    if (!statusInfo) {
+                        return null;
+                    }
+                    return <StatusInfo data={statusInfo} />
+                }}
+            </Async>
             <One
                 className={classes.root}
                 fields={fields}

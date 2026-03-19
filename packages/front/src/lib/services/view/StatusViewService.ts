@@ -198,7 +198,7 @@ export class StatusViewService {
       }
     }
 
-    throw new Error("statusViewService getStatusInfo backtest and live not found");
+    return null;
   };
 }
 

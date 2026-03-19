@@ -9,6 +9,7 @@ import {
 } from "../../../config/params";
 import StatusMockService from "../mock/StatusMockService";
 import StatusModel from "../../../model/Status.model";
+import StatusInfoModel from "../../../model/StatusInfo.model";
 
 export class StatusViewService {
     private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
@@ -71,7 +72,7 @@ export class StatusViewService {
         return data;
     };
 
-    public getStatusInfo = async () => {
+    public getStatusInfo = async (): Promise<StatusInfoModel> => {
         this.loggerService.log("statusViewService getStatusInfo");
         if (CC_ENABLE_MOCK) {
             return await this.statusMockService.getStatusInfo();

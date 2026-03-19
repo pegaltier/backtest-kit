@@ -95,6 +95,7 @@ declare class LogMockService {
 declare class StatusMockService {
     private readonly loggerService;
     private readonly signalMockService;
+    getStatusInfo: () => Promise<any>;
     getStatusList: () => Promise<any>;
     getStatusMap: () => Promise<any>;
     getStatusOne: (id: string) => Promise<{
@@ -222,6 +223,7 @@ declare class StatusViewService {
         positionEntries: any;
         positionPartials: any;
     }>;
+    getStatusInfo: () => Promise<any>;
 }
 
 declare class StorageViewService {
