@@ -17,9 +17,9 @@ const colorMap: Record<string, string> = {
 };
 
 const titleMap: Record<string, string> = {
-    "1m": "1 минута",
-    "15m": "15 минут",
-    "1h": "1 час",
+    "1m": "1 minute",
+    "15m": "15 minutes",
+    "1h": "1 hour",
 };
 
 interface IPriceChartWidgetProps {

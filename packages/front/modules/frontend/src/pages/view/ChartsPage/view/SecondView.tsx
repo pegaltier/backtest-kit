@@ -176,19 +176,19 @@ export const SecondView = ({ params }: IOutletProps) => {
     const candle_routes = useMemo(
         (): IRoute[] => [
             {
-                label: "1 минута",
+                label: "1 minute",
                 to: `/price_chart/${symbol}/1m`,
                 color: "#2979ff",
                 icon: LooksOneTwoTone,
             },
             {
-                label: "15 минут",
+                label: "15 minutes",
                 to: `/price_chart/${symbol}/15m`,
                 color: "#f3a43a",
                 icon: LooksTwoTwoTone,
             },
             {
-                label: "1 час",
+                label: "1 hour",
                 to: `/price_chart/${symbol}/1h`,
                 color: "#d500f9",
                 icon: Looks3TwoTone,
@@ -198,7 +198,7 @@ export const SecondView = ({ params }: IOutletProps) => {
     );
 
     const fields = useMemo(
-        (): TypedField[] => [createGroup("График", candle_routes)],
+        (): TypedField[] => [createGroup("Chart", candle_routes)],
         [candle_routes],
     );
 
