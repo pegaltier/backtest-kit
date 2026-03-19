@@ -89,22 +89,6 @@ const options: IBreadcrumbs2Option[] = [
 
 const actions: IBreadcrumbs2Action[] = [
     {
-        action: "status-action",
-        label: "Status",
-        icon: () => <IconWrapper icon={ShoppingCartCheckout} color="#4caf50" />,
-    },
-    {
-        divider: true,
-    },
-    {
-        action: "notification-action",
-        label: "Notifications",
-        icon: () => <IconWrapper icon={NotificationsActive} color="#4caf50" />,
-    },
-    {
-        divider: true,
-    },
-    {
         action: "update-now",
         label: "Refresh",
         icon: () => <IconWrapper icon={Refresh} color="#4caf50" />,
