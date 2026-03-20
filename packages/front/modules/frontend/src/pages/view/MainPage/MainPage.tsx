@@ -33,6 +33,7 @@ import {
     CircleNotificationsTwoTone,
     Dashboard,
     FilePresentTwoTone,
+    GridViewTwoTone,
     InsertChartTwoTone,
     KeyboardArrowLeft,
     NotificationsActive,
@@ -251,6 +252,12 @@ const other_routes: IRoute[] = [
         to: `/price_chart`,
         color: "#1565C0",
         icon: CandlestickChartTwoTone,
+    },
+    {
+        label: "Heatmap",
+        to: `/heat`,
+        color: "#FF6F00",
+        icon: GridViewTwoTone,
     },
 ];
 
