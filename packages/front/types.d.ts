@@ -184,7 +184,8 @@ declare class SignalMockService {
 
 declare class HeatMockService {
     private readonly loggerService;
-    getStrategyHeat: () => Promise<any>;
+    getStrategyHeatData: () => Promise<any>;
+    getStrategyHeatReport: () => Promise<string>;
 }
 
 declare class NotificationViewService {
@@ -307,7 +308,8 @@ declare class SignalViewService {
 declare class HeatViewService {
     private readonly loggerService;
     private readonly heatMockService;
-    getStrategyHeat: () => Promise<any>;
+    getStrategyHeatData: () => Promise<any>;
+    getStrategyHeatReport: () => Promise<string>;
 }
 
 declare class SymbolConnectionService {

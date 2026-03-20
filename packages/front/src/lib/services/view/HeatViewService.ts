@@ -10,11 +10,11 @@ export class HeatViewService {
 
   private readonly heatMockService = inject<HeatMockService>(TYPES.heatMockService);
 
-  public getStrategyHeat = async () => {
-    this.loggerService.log("heatViewService getStrategyHeat");
+  public getStrategyHeatData = async () => {
+    this.loggerService.log("heatViewService getStrategyHeatData");
 
     if (CC_ENABLE_MOCK) {
-        return await this.heatMockService.getStrategyHeat();
+        return await this.heatMockService.getStrategyHeatData();
     }
 
     const [backtestItem] = await Backtest.list();
@@ -30,6 +30,35 @@ export class HeatViewService {
 
     if (liveItem) {
       return await Heat.getData({
+        strategyName: liveItem.strategyName,
+        exchangeName: liveItem.exchangeName,
+        frameName: "",
+      });
+    }
+
+    return null;
+  };
+
+  public getStrategyHeatReport = async () => {
+    this.loggerService.log("heatViewService getStrategyHeatReport");
+
+    if (CC_ENABLE_MOCK) {
+      return await this.heatMockService.getStrategyHeatReport();
+    }
+
+    const [backtestItem] = await Backtest.list();
+    const [liveItem] = await Live.list();
+
+    if (backtestItem) {
+      return await Heat.getReport({
+        strategyName: backtestItem.strategyName,
+        exchangeName: backtestItem.exchangeName,
+        frameName: backtestItem.frameName,
+      });
+    }
+
+    if (liveItem) {
+      return await Heat.getReport({
         strategyName: liveItem.strategyName,
         exchangeName: liveItem.exchangeName,
         frameName: "",

@@ -18,12 +18,34 @@ export class HeatViewService {
         TYPES.heatMockService,
     );
 
-    public getStrategyHeat = ttl(async (): Promise<HeatmapStatisticsModel> => {
-        this.loggerService.log("heatViewService getStrategyHeat");
+    public getStrategyHeatData = ttl(async (): Promise<HeatmapStatisticsModel> => {
+        this.loggerService.log("heatViewService getStrategyHeatData");
         if (CC_ENABLE_MOCK) {
-            return await this.heatMockService.getStrategyHeat();
+            return await this.heatMockService.getStrategyHeatData();
         }
-        const { data, error } = await fetchApi("/api/v1/view/heat", {
+        const { data, error } = await fetchApi("/api/v1/view/heat_data", {
+            method: "POST",
+            body: JSON.stringify({
+                clientId: CC_CLIENT_ID,
+                serviceName: CC_SERVICE_NAME,
+                userId: CC_USER_ID,
+                requestId: randomString(),
+            }),
+        });
+        if (error) {
+            throw new Error(error);
+        }
+        return data;
+    }, {
+        timeout: TTL_TIMEOUT,
+    });
+
+    public getStrategyHeatReport = ttl(async (): Promise<string> => {
+        this.loggerService.log("heatViewService getStrategyHeatReport");
+        if (CC_ENABLE_MOCK) {
+            return await this.heatMockService.getStrategyHeatReport();
+        }
+        const { data, error } = await fetchApi("/api/v1/view/heat_report", {
             method: "POST",
             body: JSON.stringify({
                 clientId: CC_CLIENT_ID,

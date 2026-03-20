@@ -94,7 +94,7 @@ const createFields = (rows: IHeatmapRow[]): TypedField[] => {
 export const MainView = () => {
     const [fields, { loading, execute }] = useAsyncValue(
         async () => {
-            const heat = await ioc.heatViewService.getStrategyHeat();
+            const heat = await ioc.heatViewService.getStrategyHeatData();
             return createFields(heat.symbols);
         },
         {

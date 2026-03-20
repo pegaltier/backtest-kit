@@ -632,11 +632,11 @@ router.post("/api/v1/mock/status_one/:id", async (req, res) => {
 });
 
 // HeatMockService endpoints
-router.post("/api/v1/mock/heat", async (req, res) => {
+router.post("/api/v1/mock/heat_data", async (req, res) => {
   try {
     const request = <HeatRequest>await micro.json(req);
     const { requestId, serviceName } = request;
-    const data = await ioc.heatMockService.getStrategyHeat();
+    const data = await ioc.heatMockService.getStrategyHeatData();
     const result = {
       data,
       status: "ok",
@@ -644,13 +644,41 @@ router.post("/api/v1/mock/heat", async (req, res) => {
       requestId,
       serviceName,
     };
-    ioc.loggerService.log("/api/v1/mock/heat ok", {
+    ioc.loggerService.log("/api/v1/mock/heat_data ok", {
       request,
       result: omit(result, "data"),
     });
     return await micro.send(res, 200, result);
   } catch (error) {
-    ioc.loggerService.log("/api/v1/mock/heat error", {
+    ioc.loggerService.log("/api/v1/mock/heat_data error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
+router.post("/api/v1/mock/heat_report", async (req, res) => {
+  try {
+    const request = <HeatRequest>await micro.json(req);
+    const { requestId, serviceName } = request;
+    const data = await ioc.heatMockService.getStrategyHeatReport();
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/mock/heat_report ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/mock/heat_report error", {
       error: errorData(error),
     });
     return await micro.send(res, 200, {
