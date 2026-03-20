@@ -44,12 +44,16 @@ import {
     Refresh,
     ShoppingCartCheckout,
     TerminalTwoTone,
+    DataObject,
+    Description,
+    PictureAsPdf,
 } from "@mui/icons-material";
 import { useMemo } from "react";
 import ioc from "../../../lib";
 import IconWrapper from "../../../components/common/IconWrapper";
 import { reloadSubject } from "../../../config/emitters";
 import StatusInfo from "../../../components/StatusInfo";
+import downloadMarkdown from "../../../utils/downloadMarkdown";
 
 const GROUP_HEADER = "backtest-kit__groupHeader";
 const GROUP_ROOT = "backtest-kit__groupRoot";
@@ -94,6 +98,24 @@ const options: IBreadcrumbs2Option[] = [
 ];
 
 const actions: IBreadcrumbs2Action[] = [
+    {
+        action: "download-json",
+        label: "Download Heatmap JSON",
+        icon: () => <IconWrapper icon={DataObject} color="#4caf50" />,
+    },
+    {
+        action: "download-markdown",
+        label: "Download Heatmap Markdown",
+        icon: () => <IconWrapper icon={Description} color="#4caf50" />,
+    },
+    {
+        action: "download-pdf",
+        label: "Download Heatmap PDF",
+        icon: () => <IconWrapper icon={PictureAsPdf} color="#4caf50" />,
+    },
+    {
+        divider: true,
+    },
     {
         action: "update-now",
         label: "Refresh",
@@ -269,19 +291,47 @@ const fields: TypedField[] = [
 
 const StatusLoader = () => <LoaderView sx={{ width: "100%", height: "75px" }} />
 
+
+const handleDownloadMarkdown = async () => {
+    const content = await ioc.heatViewService.getStrategyHeatReport();
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `heat_${Date.now()}.md`);
+};
+
+const handleDownloadPdf = async () => {
+    const content = await ioc.heatViewService.getStrategyHeatReport();
+    await downloadMarkdown(content);
+};
+
+const handleDownloadJson = async () => {
+    const data = await ioc.heatViewService.getStrategyHeatData();
+    const content = JSON.stringify(data, null, 2);
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    ioc.layoutService.downloadFile(url, `heat_${Date.now()}.md`);
+};
+
+const handleUpdate = async () => {
+    ioc.statusViewService.getStatusInfo.clear();
+    reloadSubject.next();
+};
+
 export const MainPage = () => {
     const { classes } = useStyles();
 
     const handleAction = async (action: string) => {
-        if (action === "notification-action") {
-            ioc.routerService.push("/notifications");
-        }
-        if (action === "status-action") {
-            ioc.routerService.push("/status");
-        }
         if (action === "update-now") {
-            ioc.statusViewService.getStatusInfo.clear();
-            reloadSubject.next();
+            await handleUpdate();
+        }
+        if (action === "download-markdown") {
+            await handleDownloadMarkdown();
+        }
+        if (action === "download-pdf") {
+            await handleDownloadPdf();
+        }
+        if (action === "download-json") {
+            await handleDownloadJson();
         }
     };
 

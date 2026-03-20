@@ -13,7 +13,7 @@ import {
 } from "react-declarative";
 
 import { Container } from "@mui/material";
-import { DataObject, Description, KeyboardArrowLeft, PictureAsPdf, Refresh } from "@mui/icons-material";
+import { DataObject, Description, KeyboardArrowLeft, PictureAsPdf, PictureAsPdfOutlined, Refresh } from "@mui/icons-material";
 import { IHeatmapRow } from "backtest-kit";
 import IconWrapper from "../../../../components/common/IconWrapper";
 import { reloadSubject } from "../../../../config/emitters";
@@ -41,7 +41,7 @@ const options: IBreadcrumbs2Option[] = [
         type: Breadcrumbs2Type.Button,
         action: "download-pdf",
         label: "Download PDF",
-        icon: PictureAsPdf,
+        icon: PictureAsPdfOutlined,
     },
 ];
 
