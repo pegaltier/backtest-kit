@@ -29,9 +29,9 @@ import {
 import { useMemo } from "react";
 import ioc from "../../../../lib";
 
-const GROUP_HEADER = "trade-gpt__groupHeader";
-const GROUP_ROOT = "trade-gpt__groupRoot";
-const ICON_ROOT = "trade-gpt__symbolImage";
+const GROUP_HEADER = "backtest-kit__groupHeader";
+const GROUP_ROOT = "backtest-kit__groupRoot";
+const ICON_ROOT = "backtest-kit__symbolImage";
 
 const useStyles = makeStyles()({
     root: {

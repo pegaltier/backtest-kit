@@ -131,6 +131,13 @@ interface StatusInfoRequest {
   requestId: string;
 }
 
+interface HeatRequest {
+  clientId: string;
+  serviceName: string;
+  userId: string;
+  requestId: string;
+}
+
 // ExchangeViewService endpoints
 router.post("/api/v1/view/candles_signal", async (req, res) => {
   try {
@@ -614,6 +621,63 @@ router.post("/api/v1/view/status_one/:id", async (req, res) => {
     return await micro.send(res, 200, result);
   } catch (error) {
     ioc.loggerService.log("/api/v1/view/status_one/:id error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
+// HeatViewService endpoints
+router.post("/api/v1/view/heat_data", async (req, res) => {
+  try {
+    const request = <HeatRequest>await micro.json(req);
+    const { requestId, serviceName } = request;
+    const data = await ioc.heatViewService.getStrategyHeatData();
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/view/heat_data ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/view/heat_data error", {
+      error: errorData(error),
+    });
+    return await micro.send(res, 200, {
+      status: "error",
+      error: getErrorMessage(error),
+    });
+  }
+});
+
+router.post("/api/v1/view/heat_report", async (req, res) => {
+  try {
+    const request = <HeatRequest>await micro.json(req);
+    const { requestId, serviceName } = request;
+    const data = await ioc.heatViewService.getStrategyHeatReport();
+    const result = {
+      data,
+      status: "ok",
+      error: "",
+      requestId,
+      serviceName,
+    };
+    ioc.loggerService.log("/api/v1/view/heat_report ok", {
+      request,
+      result: omit(result, "data"),
+    });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/view/heat_report error", {
       error: errorData(error),
     });
     return await micro.send(res, 200, {

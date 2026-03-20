@@ -1,7 +1,7 @@
 import React from "react";
 import { Box } from "@mui/material";
-import { Async } from "react-declarative";
-import ioc from "../../lib";
+import { fetchSymbolMap } from "../api/fetchSymbolMap";
+import { Async, useAsyncValue } from "react-declarative";
 
 interface IconPhotoProps {
   className?: string;
@@ -15,7 +15,7 @@ export const IconPhoto: React.FC<IconPhotoProps> = ({ className, symbol, style, 
     <Async>
       {async () => {
         try {
-          const symbolMap = await ioc.symbolGlobalService.getSymbolMap();
+          const symbolMap = await fetchSymbolMap();
           const symbolData = symbolMap[symbol];
 
           const iconUrl = symbolData?.logo || symbolData?.icon;
@@ -26,8 +26,8 @@ export const IconPhoto: React.FC<IconPhotoProps> = ({ className, symbol, style, 
               className={className}
               sx={{
                 position: "relative",
-                width: 24,
-                height: 24,
+                width: 128,
+                height: 128,
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
