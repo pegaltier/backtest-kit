@@ -5,6 +5,8 @@ import {
     darken,
     lighten,
     LinearProgress,
+    Tab,
+    Tabs,
     Typography,
 } from "@mui/material";
 import { makeStyles } from "../../styles";
@@ -37,6 +39,8 @@ import { ioc } from "../../lib";
 import IconWrapper from "./IconWrapper";
 import { defaultSlots } from "../OneSlotFactory";
 import NotificationView from "./NotificationView";
+import { IRouteItem, ITab } from "../../config/routes";
+import { useMemo } from "react";
 
 const LOADER_HEIGHT = 4;
 
@@ -44,12 +48,15 @@ const LOGO_SRC = "/logo/icon512_maskable.png";
 const LOGO_CLASS = "backtest-kit-logo";
 const LOGO_SIDE = 32;
 
+const HEADER_HEIGHT = "80px";
+const MARGIN_BOTTOM = "10px";
+
 const useStyles = makeStyles()((theme) => ({
     root: {
         position: "sticky",
         top: 0,
         zIndex: 9,
-        height: "80px",
+        height: HEADER_HEIGHT,
         display: "flex",
         alignItems: "stretch",
         justifyContent: "stretch",
@@ -63,7 +70,7 @@ const useStyles = makeStyles()((theme) => ({
         gap: "8px",
         paddingRight: "8px",
         position: "relative",
-        marginBottom: "10px",
+        marginBottom: MARGIN_BOTTOM,
         alignItems: "center",
         backdropFilter: "saturate(180%) blur(20px)",
         backgroundColor: alpha(darken(theme.palette.primary.main, 0.2), 0.8),
@@ -76,6 +83,7 @@ const useStyles = makeStyles()((theme) => ({
     title: {
         color: "white",
         paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(2.5),
         transition: "opacity 500ms",
         opacity: "0.8",
         cursor: "pointer",
@@ -109,9 +117,24 @@ const useStyles = makeStyles()((theme) => ({
     stretch: {
         flex: 1,
     },
+    tabsRoot: {
+        minHeight: `calc(${HEADER_HEIGHT} - ${MARGIN_BOTTOM})`,
+        height: `calc(${HEADER_HEIGHT} - ${MARGIN_BOTTOM})`,
+        color: "white",
+    },
+    tabRoot: {
+        minHeight: `calc(${HEADER_HEIGHT} - ${MARGIN_BOTTOM})`,
+        height: `calc(${HEADER_HEIGHT} - ${MARGIN_BOTTOM})`,
+        color: "white",
+    },
+    tabIndicator: {
+        height: "4px",
+        background: "white",
+    },
 }));
 
 interface IAppHeaderProps {
+    routeItem: IRouteItem;
     loading: boolean;
 }
 
@@ -123,7 +146,7 @@ const actions: IOption[] = [
     },
 ];
 
-export const AppHeader = ({ loading }: IAppHeaderProps) => {
+export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
     const { classes, cx } = useStyles();
 
     const handleAction = async (action: string) => {
@@ -132,13 +155,72 @@ export const AppHeader = ({ loading }: IAppHeaderProps) => {
         }
     };
 
+    const handleTabChange = (path: string) => {};
+
+    const { activeTabPath, tabs } = useMemo(() => {
+        if (!routeItem.tabs) {
+            return {
+                tabs: [],
+                activeTabPath: "",
+            };
+        }
+        const activeTab = routeItem.tabs.find(({ active }) => active);
+        return {
+            activeTabPath: activeTab?.path ?? "",
+            tabs: routeItem.tabs,
+        };
+    }, [routeItem]);
+
+    if (routeItem.noHeader) {
+        return null;
+    }
+
+    const renderTabs = () => {
+        if (!tabs.length) {
+            return null;
+        }
+        console.log("!!!", { activeTabPath })
+        return (
+            <Tabs
+                key={routeItem.path}
+                variant="scrollable"
+                value={activeTabPath}
+                textColor="inherit"
+                sx={{ display: { xs: "none", sm: "flex" } }}
+                classes={{
+                    root: classes.tabsRoot,
+                    indicator: classes.tabIndicator,
+                }}
+            >
+                {tabs
+                    .filter(({ visible = true }) => visible)
+                    .map(({ label, icon: Icon, disabled, path }, idx) => (
+                        <Tab
+                            sx={{
+                                minWidth: 128,
+                                fontWeight: "bold",
+                            }}
+                            key={`${path}-${idx}`}
+                            value={path}
+                            label={label}
+                            onClick={() => handleTabChange(path)}
+                            disabled={disabled}
+                            icon={Icon && <Icon />}
+                            iconPosition="start"
+                            classes={{
+                                root: classes.tabRoot,
+                            }}
+                        />
+                    ))}
+            </Tabs>
+        );
+    };
+
     return (
         <Box className={classes.root}>
             <Box className={classes.container}>
                 <Center
-                    onClick={() =>
-                        ioc.routerService.push("/main")
-                    }
+                    onClick={() => ioc.routerService.push("/main")}
                     className={cx(classes.logo, LOGO_CLASS)}
                 >
                     <Avatar
@@ -148,14 +230,13 @@ export const AppHeader = ({ loading }: IAppHeaderProps) => {
                 </Center>
                 <Typography
                     variant="h4"
-                    onClick={() =>
-                        ioc.routerService.push("/main")
-                    }
+                    onClick={() => ioc.routerService.push("/main")}
                     className={cx(classes.title, LOGO_CLASS)}
                     sx={{ display: { xs: "none", sm: "flex" } }}
                 >
                     Backtest Kit
                 </Typography>
+                {renderTabs()}
                 <div className={classes.stretch} />
                 <NotificationView />
                 <ActionMenu

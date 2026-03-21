@@ -74,10 +74,6 @@ const App = () => {
         ioc.layoutService.hasModalLoader,
     );
 
-    const hasAppHeader = useMemo(() => {
-      return !item?.noHeader;
-    }, [item]);
-
     useOnce(() =>
         ioc.routerService.reloadSubject.subscribe(() => {
             setItem(getRouteItem());
@@ -99,8 +95,8 @@ const App = () => {
 
     return (
         <>
-            {hasAppHeader && (
-              <AppHeader loading={hasAppbarLoader} />
+            {!!item && (
+              <AppHeader routeItem={item} loading={hasAppbarLoader} />
             )}
             <Switch
                 className={classes.switch}

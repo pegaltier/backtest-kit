@@ -4,9 +4,20 @@ import { createRedirect } from "../utils/createRedirect";
 import getMainRoute from "../utils/getMainRoute";
 import { ioc } from "../lib";
 import ErrorPage from "../pages/base/ErrorPage";
+import { HourglassTop, LiveTv } from "@mui/icons-material";
 
 export interface IRouteItem extends ISwitchItem {
     noHeader?: boolean;
+    tabs?: ITab[];
+}
+
+export interface ITab {
+    path: string;
+    label: string;
+    icon?: React.ComponentType<any>;
+    visible?: boolean;
+    disabled?: boolean;
+    active: boolean;
 }
 
 export const baseRoutes: IRouteItem[] = [
@@ -28,10 +39,56 @@ const dashboardRoutes: IRouteItem[] = [
     },
     {
         path: "/dashboard",
+        tabs: [
+            {
+                label: "Backtest Measures",
+                active: true,
+                icon: HourglassTop,
+                path: "/dashboard/backtest",
+            },
+            {
+                label: "Live Measures",
+                active: false,
+                icon: LiveTv,
+                path: "/dashboard/live",
+            }
+        ],
         element: heavy(() => import("../pages/view/DashboardPage")),
     },
     {
-        path: "/dashboard/:mode",
+        path: "/dashboard/backtest",
+        tabs: [
+            {
+                label: "Backtest Measures",
+                active: true,
+                icon: HourglassTop,
+                path: "/dashboard/backtest",
+            },
+            {
+                label: "Live Measures",
+                active: false,
+                icon: LiveTv,
+                path: "/dashboard/live",
+            }
+        ],
+        element: heavy(() => import("../pages/view/DashboardPage")),
+    },
+    {
+        path: "/dashboard/live",
+        tabs: [
+            {
+                label: "Backtest Measures",
+                active: false,
+                icon: HourglassTop,
+                path: "/dashboard/backtest",
+            },
+            {
+                label: "Live Measures",
+                active: true,
+                icon: LiveTv,
+                path: "/dashboard/live",
+            }
+        ],
         element: heavy(() => import("../pages/view/DashboardPage")),
     },
     {
