@@ -4,10 +4,22 @@ import { useMediaContext } from "react-declarative";
 
 interface ITooltipProps {
     description: string;
+    placement?: 'bottom-end'
+    | 'bottom-start'
+    | 'bottom'
+    | 'left-end'
+    | 'left-start'
+    | 'left'
+    | 'right-end'
+    | 'right-start'
+    | 'right'
+    | 'top-end'
+    | 'top-start'
+    | 'top';
     children: React.ReactElement;
 }
 
-export const Tooltip = ({ description, children }: ITooltipProps) => {
+export const Tooltip = ({ description, placement = "left", children }: ITooltipProps) => {
     const { isDesktop } = useMediaContext();
 
     const slotProps = useMemo(
@@ -36,8 +48,8 @@ export const Tooltip = ({ description, children }: ITooltipProps) => {
     );
 
     const props = useMemo(() => ({
-        placement: isDesktop ? "left" as const : undefined,
-    }), [isDesktop]);
+        placement: isDesktop ? placement : undefined,
+    }), [isDesktop, placement]);
 
     return (
         <MatTooltip

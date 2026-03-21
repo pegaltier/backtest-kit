@@ -9,20 +9,14 @@ import {
     Typography,
 } from "@mui/material";
 import { makeStyles } from "../../styles";
-import {
-    ActionMenu,
-    Center,
-    IOption,
-    openBlank,
-} from "react-declarative";
-import {
-    GitHub,
-} from "@mui/icons-material";
+import { ActionMenu, Center, IOption, openBlank } from "react-declarative";
+import { GitHub } from "@mui/icons-material";
 import { ioc } from "../../lib";
 import IconWrapper from "./IconWrapper";
 import NotificationView from "./NotificationView";
 import { IRouteItem } from "../../config/routes";
 import { useMemo } from "react";
+import Tooltip from "./Tooltip";
 
 const LOADER_HEIGHT = 4;
 
@@ -67,7 +61,7 @@ const useStyles = makeStyles()((theme) => ({
     title: {
         color: "white",
         paddingLeft: theme.spacing(1),
-        paddingRight: theme.spacing(2.5),
+        paddingRight: theme.spacing(3),
         transition: "opacity 500ms",
         opacity: "0.8",
         cursor: "pointer",
@@ -224,17 +218,32 @@ export const AppHeader = ({
                     .filter(({ visible = true }) => visible)
                     .map(
                         (
-                            { label, icon: Icon, disabled, path, navigate },
+                            {
+                                label,
+                                icon: Icon,
+                                disabled,
+                                path,
+                                description,
+                                navigate,
+                            },
                             idx,
+                            tabs,
                         ) => (
                             <Tab
                                 sx={{
                                     minWidth: 128,
                                     fontWeight: "bold",
+                                    mr: idx < tabs.length - 1 ? 2 : 0,
                                 }}
                                 key={`${path}-${idx}`}
                                 value={path}
-                                label={label}
+                                label={
+                                    <Tooltip description={description} placement="bottom">
+                                        <Typography variant="h6">
+                                            {label}
+                                        </Typography>
+                                    </Tooltip>
+                                }
                                 onClick={() =>
                                     navigate({
                                         routeItem,

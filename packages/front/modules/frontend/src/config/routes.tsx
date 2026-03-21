@@ -3,6 +3,7 @@ import { ISwitchItem, heavy } from "react-declarative";
 import { createRedirect } from "../utils/createRedirect";
 import getMainRoute from "../utils/getMainRoute";
 import { ioc } from "../lib";
+import str from "../utils/str";
 import ErrorPage from "../pages/base/ErrorPage";
 import { HourglassTop, LiveTv } from "@mui/icons-material";
 
@@ -14,6 +15,7 @@ export interface IRouteItem extends ISwitchItem {
 export interface ITab {
     path: string;
     label: string;
+    description: string;
     icon?: React.ComponentType<any>;
     visible?: boolean;
     disabled?: boolean;
@@ -51,6 +53,10 @@ const dashboardRoutes: IRouteItem[] = [
         tabs: [
             {
                 label: "Backtest Measures",
+                description: str.newline(
+                    "KPI metrics computed from historical backtest simulation runs.",
+                    "Includes success rate, trade performance, daily trade counts, and revenue aggregated across all symbols.",
+                ),
                 isActive: () => true,
                 icon: HourglassTop,
                 path: "/dashboard/backtest",
@@ -58,6 +64,10 @@ const dashboardRoutes: IRouteItem[] = [
             },
             {
                 label: "Live Measures",
+                description: str.newline(
+                    "KPI metrics collected from real-time live trading activity.",
+                    "Tracks live success rate, trade performance, daily trade counts, and revenue aggregated across all symbols.",
+                ),
                 isActive: () => false,
                 icon: LiveTv,
                 path: "/dashboard/live",
@@ -71,6 +81,10 @@ const dashboardRoutes: IRouteItem[] = [
         tabs: [
             {
                 label: "Backtest Measures",
+                description: str.newline(
+                    "KPI metrics computed from historical backtest simulation runs.",
+                    "Includes success rate, trade performance, daily trade counts, and revenue aggregated across all symbols.",
+                ),
                 isActive: ({ routeParams }) => routeParams.mode === "backtest",
                 icon: HourglassTop,
                 path: "/dashboard/backtest",
@@ -78,6 +92,10 @@ const dashboardRoutes: IRouteItem[] = [
             },
             {
                 label: "Live Measures",
+                description: str.newline(
+                    "KPI metrics collected from real-time live trading activity.",
+                    "Tracks live success rate, trade performance, daily trade counts, and revenue aggregated across all symbols.",
+                ),
                 isActive: ({ routeParams }) => routeParams.mode === "live",
                 icon: LiveTv,
                 path: "/dashboard/live",

@@ -54,7 +54,7 @@ import IconWrapper from "../../../components/common/IconWrapper";
 import { reloadSubject } from "../../../config/emitters";
 import StatusInfo from "../../../components/StatusInfo";
 import downloadMarkdown from "../../../utils/downloadMarkdown";
-import str from "../../../utils/src";
+import str from "../../../utils/str";
 import Tooltip from "../../../components/common/Tooltip";
 
 const GROUP_HEADER = "backtest-kit__groupHeader";
