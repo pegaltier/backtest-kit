@@ -6,6 +6,7 @@ import {
     OneTyped,
     FieldType,
     TypedField,
+    typo,
 } from "react-declarative";
 
 import { IHeatmapRow } from "backtest-kit";
@@ -115,7 +116,7 @@ export const HeatCard = ({ row }: IHeatCardProps) => {
         <Paper className={classes.root}>
             <div className={classes.header}>
                 <Typography variant="h6" sx={{ opacity: 0.8 }}>
-                    {row.symbol}
+                    {`${typo.bullet} ${row.symbol}`}
                 </Typography>
             </div>
             <div className={classes.container}>
