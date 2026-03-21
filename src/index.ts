@@ -405,6 +405,11 @@ export {
   INotificationUtils,
   TNotificationUtilsCtor,
 } from "./classes/Notification";
+export { 
+  Memory,
+  IMemoryInstance,
+  TMemoryInstanceCtor
+} from "./classes/Memory";
 export { Exchange } from "./classes/Exchange";
 export { Cache } from "./classes/Cache";
 export { Breakeven } from "./classes/Breakeven";
