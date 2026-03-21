@@ -44,6 +44,8 @@ import { useMemo } from "react";
 
 const LOADER_HEIGHT = 4;
 
+const TAB_ACTION_PREFIX = "tab-action-";
+
 const LOGO_SRC = "/logo/icon512_maskable.png";
 const LOGO_CLASS = "backtest-kit-logo";
 const LOGO_SIDE = 32;
@@ -140,7 +142,7 @@ interface IAppHeaderProps {
     loading: boolean;
 }
 
-const actions: IOption[] = [
+const default_actions: IOption[] = [
     {
         action: "github-action",
         icon: () => <IconWrapper icon={GitHub} color="#6A1B9A " />,
@@ -155,12 +157,6 @@ export const AppHeader = ({
     loading,
 }: IAppHeaderProps) => {
     const { classes, cx } = useStyles();
-
-    const handleAction = async (action: string) => {
-        if (action === "github-action") {
-            openBlank("https://github.com/tripolskypetr/backtest-kit");
-        }
-    };
 
     const { activeTabPath, tabs } = useMemo(() => {
         if (!routeItem.tabs) {
@@ -177,6 +173,50 @@ export const AppHeader = ({
             tabs: routeItem.tabs,
         };
     }, [routeItem, routeParams, pathname]);
+
+    const actions = useMemo((): IOption[] => {
+        if (!activeTabPath) {
+            return default_actions;
+        }
+        return tabs
+            .filter(
+                ({ isActive }) =>
+                    !isActive({ pathname, routeItem, routeParams }),
+            )
+            .map(({ label, icon: Icon }, idx) => ({
+                label,
+                action: `${TAB_ACTION_PREFIX}${idx}`,
+                icon: Icon
+                    ? () => <IconWrapper icon={Icon} color="#4caf50" />
+                    : undefined,
+            }));
+    }, [activeTabPath, tabs]);
+
+    const handleTabNavigate = (action: string) => {
+        const index = parseInt(action.slice(TAB_ACTION_PREFIX.length));
+        const targetTab = tabs
+            .filter(
+                ({ isActive }) =>
+                    !isActive({ pathname, routeItem, routeParams }),
+            )
+            .find((_, idx) => idx === index);
+        if (targetTab) {
+            targetTab.navigate({
+                routeItem,
+                routeParams,
+                pathname,
+            });
+        }
+    };
+
+    const handleAction = async (action: string) => {
+        if (action === "github-action") {
+            openBlank("https://github.com/tripolskypetr/backtest-kit");
+        }
+        if (action.startsWith(TAB_ACTION_PREFIX)) {
+            handleTabNavigate(action);
+        }
+    };
 
     if (routeItem.noHeader) {
         return null;
@@ -200,24 +240,35 @@ export const AppHeader = ({
             >
                 {tabs
                     .filter(({ visible = true }) => visible)
-                    .map(({ label, icon: Icon, disabled, path, navigate }, idx) => (
-                        <Tab
-                            sx={{
-                                minWidth: 128,
-                                fontWeight: "bold",
-                            }}
-                            key={`${path}-${idx}`}
-                            value={path}
-                            label={label}
-                            onClick={() => navigate({ routeItem, routeParams, pathname })}
-                            disabled={disabled}
-                            icon={Icon && <Icon />}
-                            iconPosition="start"
-                            classes={{
-                                root: classes.tabRoot,
-                            }}
-                        />
-                    ))}
+                    .map(
+                        (
+                            { label, icon: Icon, disabled, path, navigate },
+                            idx,
+                        ) => (
+                            <Tab
+                                sx={{
+                                    minWidth: 128,
+                                    fontWeight: "bold",
+                                }}
+                                key={`${path}-${idx}`}
+                                value={path}
+                                label={label}
+                                onClick={() =>
+                                    navigate({
+                                        routeItem,
+                                        routeParams,
+                                        pathname,
+                                    })
+                                }
+                                disabled={disabled}
+                                icon={Icon && <Icon />}
+                                iconPosition="start"
+                                classes={{
+                                    root: classes.tabRoot,
+                                }}
+                            />
+                        ),
+                    )}
             </Tabs>
         );
     };
