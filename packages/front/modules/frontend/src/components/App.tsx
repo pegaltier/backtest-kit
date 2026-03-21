@@ -1,11 +1,13 @@
 import {
     Spinner,
     Switch,
+    getRouteParams,
     serviceManager,
     singleshot,
     useOnce,
 } from "react-declarative";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { flushSync } from 'react-dom';
 import Box from "@mui/material/Box";
 import routes from "../config/routes";
 
@@ -42,7 +44,7 @@ const useStyles = makeStyles()((theme) => ({
     switch: {
         paddingLeft: theme.spacing(1),
         paddingRight: theme.spacing(1),
-    }
+    },
 }));
 
 const handleInit = singleshot(async () => {
@@ -59,10 +61,12 @@ const handleLoadEnd = () => {
 };
 
 const App = () => {
-
     const { classes } = useStyles();
 
-    const [item, setItem] = useState(getRouteItem);
+    const [item, setItem] = useState(() => getRouteItem());
+    const [params, setParams] = useState(() =>
+        getRouteParams(routes, ioc.routerService.location.pathname),
+    );
 
     const [pathname, setPathname] = useState(
         ioc.routerService.location.pathname,
@@ -76,8 +80,13 @@ const App = () => {
 
     useOnce(() =>
         ioc.routerService.reloadSubject.subscribe(() => {
-            setItem(getRouteItem());
-            setPathname(ioc.routerService.location.pathname);
+            flushSync(() => {
+                setItem(getRouteItem());
+                setParams(
+                    getRouteParams(routes, ioc.routerService.location.pathname),
+                );
+                setPathname(ioc.routerService.location.pathname);
+            })
         }),
     );
 
@@ -96,7 +105,12 @@ const App = () => {
     return (
         <>
             {!!item && (
-              <AppHeader routeItem={item} loading={hasAppbarLoader} />
+                <AppHeader
+                    pathname={pathname}
+                    routeItem={item}
+                    routeParams={params!}
+                    loading={hasAppbarLoader}
+                />
             )}
             <Switch
                 className={classes.switch}

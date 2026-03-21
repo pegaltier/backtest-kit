@@ -135,6 +135,8 @@ const useStyles = makeStyles()((theme) => ({
 
 interface IAppHeaderProps {
     routeItem: IRouteItem;
+    routeParams: Record<string, string>;
+    pathname: string;
     loading: boolean;
 }
 
@@ -146,7 +148,12 @@ const actions: IOption[] = [
     },
 ];
 
-export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
+export const AppHeader = ({
+    routeItem,
+    routeParams,
+    pathname,
+    loading,
+}: IAppHeaderProps) => {
     const { classes, cx } = useStyles();
 
     const handleAction = async (action: string) => {
@@ -155,8 +162,6 @@ export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
         }
     };
 
-    const handleTabChange = (path: string) => {};
-
     const { activeTabPath, tabs } = useMemo(() => {
         if (!routeItem.tabs) {
             return {
@@ -164,12 +169,14 @@ export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
                 activeTabPath: "",
             };
         }
-        const activeTab = routeItem.tabs.find(({ active }) => active);
+        const activeTab = routeItem.tabs.find(({ isActive }) =>
+            isActive({ routeItem, routeParams, pathname }),
+        );
         return {
             activeTabPath: activeTab?.path ?? "",
             tabs: routeItem.tabs,
         };
-    }, [routeItem]);
+    }, [routeItem, routeParams, pathname]);
 
     if (routeItem.noHeader) {
         return null;
@@ -179,7 +186,6 @@ export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
         if (!tabs.length) {
             return null;
         }
-        console.log("!!!", { activeTabPath })
         return (
             <Tabs
                 key={routeItem.path}
@@ -194,7 +200,7 @@ export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
             >
                 {tabs
                     .filter(({ visible = true }) => visible)
-                    .map(({ label, icon: Icon, disabled, path }, idx) => (
+                    .map(({ label, icon: Icon, disabled, path, navigate }, idx) => (
                         <Tab
                             sx={{
                                 minWidth: 128,
@@ -203,7 +209,7 @@ export const AppHeader = ({ routeItem, loading }: IAppHeaderProps) => {
                             key={`${path}-${idx}`}
                             value={path}
                             label={label}
-                            onClick={() => handleTabChange(path)}
+                            onClick={() => navigate({ routeItem, routeParams, pathname })}
                             disabled={disabled}
                             icon={Icon && <Icon />}
                             iconPosition="start"

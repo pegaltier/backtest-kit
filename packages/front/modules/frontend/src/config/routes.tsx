@@ -17,7 +17,16 @@ export interface ITab {
     icon?: React.ComponentType<any>;
     visible?: boolean;
     disabled?: boolean;
-    active: boolean;
+    isActive: (dto: {
+        routeItem: IRouteItem;
+        routeParams: Record<string, string>;
+        pathname: string;
+    }) => boolean;
+    navigate: (dto: {
+        routeItem: IRouteItem;
+        routeParams: Record<string, string>;
+        pathname: string;
+    }) => void;
 }
 
 export const baseRoutes: IRouteItem[] = [
@@ -42,51 +51,37 @@ const dashboardRoutes: IRouteItem[] = [
         tabs: [
             {
                 label: "Backtest Measures",
-                active: true,
+                isActive: () => true,
                 icon: HourglassTop,
                 path: "/dashboard/backtest",
+                navigate: () => ioc.routerService.push("/dashboard/backtest"),
             },
             {
                 label: "Live Measures",
-                active: false,
+                isActive: () => false,
                 icon: LiveTv,
                 path: "/dashboard/live",
+                navigate: () => ioc.routerService.push("/dashboard/live"),
             }
         ],
         element: heavy(() => import("../pages/view/DashboardPage")),
     },
     {
-        path: "/dashboard/backtest",
+        path: "/dashboard/:mode",
         tabs: [
             {
                 label: "Backtest Measures",
-                active: true,
+                isActive: ({ routeParams }) => routeParams.mode === "backtest",
                 icon: HourglassTop,
                 path: "/dashboard/backtest",
+                navigate: () => ioc.routerService.push("/dashboard/backtest"),
             },
             {
                 label: "Live Measures",
-                active: false,
+                isActive: ({ routeParams }) => routeParams.mode === "live",
                 icon: LiveTv,
                 path: "/dashboard/live",
-            }
-        ],
-        element: heavy(() => import("../pages/view/DashboardPage")),
-    },
-    {
-        path: "/dashboard/live",
-        tabs: [
-            {
-                label: "Backtest Measures",
-                active: false,
-                icon: HourglassTop,
-                path: "/dashboard/backtest",
-            },
-            {
-                label: "Live Measures",
-                active: true,
-                icon: LiveTv,
-                path: "/dashboard/live",
+                navigate: () => ioc.routerService.push("/dashboard/live"),
             }
         ],
         element: heavy(() => import("../pages/view/DashboardPage")),
