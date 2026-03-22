@@ -15,7 +15,7 @@ export const createSearchIndex = () => {
   const df = new Map<string, number>();
   const docs = new Map<
     string,
-    { tf: Map<string, number>; len: number; content: string }
+    { tf: Map<string, number>; len: number; content: object; priority: number }
   >();
   const k1 = 1.5,
     b = 0.75;
@@ -26,27 +26,39 @@ export const createSearchIndex = () => {
       doc.tf.forEach((_, term) => df.set(term, (df.get(term) ?? 0) + 1));
   };
 
-  const upsert = (id: string, content: string, index?: string) => {
-    const tokens = tokenize(index ?? content);
+  const upsert = ({
+    id,
+    content,
+    index = JSON.stringify(content),
+    priority = Date.now(),
+  }: {
+    id: string;
+    content: object;
+    index?: string;
+    priority?: number;
+  }) => {
+    const tokens = tokenize(index);
     const tf = new Map<string, number>();
     for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
-    docs.set(id, { tf, len: tokens.length, content });
+    docs.set(id, { tf, len: tokens.length, content, priority });
     recomputeDf();
   };
 
-  const read = (id: string): string | undefined => docs.get(id)?.content;
+  const read = (id: string): object | undefined => docs.get(id)?.content;
 
   const remove = (id: string) => {
     docs.delete(id);
     recomputeDf();
   };
 
-  const list = (): Array<{ id: string; content: string }> =>
-    Array.from(docs.entries()).map(([id, { content }]) => ({ id, content }));
+  const list = (): Array<{ id: string; content: object }> =>
+    Array.from(docs.entries())
+      .sort(([, a], [, b]) => a.priority - b.priority)
+      .map(([id, { content }]) => ({ id, content }));
 
   const search = (
     query: string,
-  ): Array<{ id: string; score: number; content: string }> => {
+  ): Array<{ id: string; score: number; content: object }> => {
     const terms = tokenize(query);
     if (!terms.length || !docs.size) return [];
 

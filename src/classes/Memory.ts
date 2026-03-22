@@ -160,11 +160,12 @@ export class MemoryLocalInstance implements IMemoryInstance {
       bucketName: this.bucketName,
       memoryId,
     });
-    this._index.upsert(
-      memoryId,
-      JSON.stringify(value),
-      Object.values(value).join(","),
-    );
+    this._index.upsert({
+      id: memoryId,
+      content: value,
+      index: JSON.stringify(value),
+      priority: Date.now(),
+    });
   }
 
   /**
@@ -181,11 +182,11 @@ export class MemoryLocalInstance implements IMemoryInstance {
       bucketName: this.bucketName,
       memoryId,
     });
-    const valueRaw = this._index.read(memoryId);
-    if (!valueRaw) {
+    const value = this._index.read(memoryId);
+    if (!value) {
       throw new Error(`MemoryLocalInstance value not found memoryId=${memoryId}`);
     }
-    return JSON.parse(valueRaw);
+    return <T>value;
   }
 
   /**
@@ -267,12 +268,13 @@ export class MemoryPersistInstance implements IMemoryInstance {
       initial,
     });
     await PersistMemoryAdapter.waitForInit(this.signalId, this.bucketName, initial);
-    for await (const { memoryId, data } of PersistMemoryAdapter.listMemoryData(this.signalId, this.bucketName)) {
-      this._index.upsert(
-        memoryId,
-        JSON.stringify(data),
-        Object.values(data).join(","),
-      );
+    for await (const { memoryId, data: { data, priority } } of PersistMemoryAdapter.listMemoryData(this.signalId, this.bucketName)) {
+      this._index.upsert({
+        id: memoryId,
+        content: data,
+        index: JSON.stringify(data),
+        priority,
+      });
     }
   }
 
@@ -290,12 +292,19 @@ export class MemoryPersistInstance implements IMemoryInstance {
       bucketName: this.bucketName,
       memoryId,
     });
-    await PersistMemoryAdapter.writeMemoryData(value, this.signalId, this.bucketName, memoryId);
-    this._index.upsert(
+    const priority = Date.now();
+    await PersistMemoryAdapter.writeMemoryData(
+      { data: value, priority },
+      this.signalId,
+      this.bucketName,
       memoryId,
-      JSON.stringify(value),
-      Object.values(value).join(","),
     );
+    this._index.upsert({
+      id: memoryId,
+      content: value,
+      index: JSON.stringify(value),
+      priority,
+    });
   }
 
   /**
@@ -316,7 +325,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
     if (!data) {
       throw new Error(`MemoryPersistInstance value not found memoryId=${memoryId}`);
     }
-    return data as T;
+    return <T>data.data;
   }
 
   /**
