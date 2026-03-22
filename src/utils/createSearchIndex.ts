@@ -125,11 +125,11 @@ export const createSearchIndex = () => {
             score += idf * tf;
           }
         }
-        return { id, score };
+        return { id, score, content: doc.content };
       })
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
-      .map(({ id, score }) => ({ id, content: docs.get(id).content, score }));
+      .map(({ id, content, score }) => ({ id, content, score }));
   };
 
   return { upsert, remove, list, search, read };
