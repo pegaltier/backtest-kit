@@ -1,3 +1,6 @@
+const BM25_K1 = 1.5;
+const BM25_B = 0.75;
+
 const normalize = (s: string): string =>
   s
     .normalize("NFC")
@@ -17,9 +20,6 @@ export const createSearchIndex = () => {
     string,
     { tf: Map<string, number>; len: number; content: object; priority: number }
   >();
-  const k1 = 1.5,
-    b = 0.75;
-
   const recomputeDf = () => {
     df.clear();
     for (const doc of docs.values())
@@ -79,8 +79,8 @@ export const createSearchIndex = () => {
               (N - docsWithTerm + 0.5) / (docsWithTerm + 0.5) + 1,
             );
             const tf =
-              (freq * (k1 + 1)) /
-              (freq + k1 * (1 - b + (b * doc.len) / avgLen));
+              (freq * (BM25_K1 + 1)) /
+              (freq + BM25_K1 * (1 - BM25_B + (BM25_B * doc.len) / avgLen));
             score += idf * tf;
           }
         }
