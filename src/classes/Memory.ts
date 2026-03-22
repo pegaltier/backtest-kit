@@ -295,7 +295,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
     });
     const priority = Date.now();
     await PersistMemoryAdapter.writeMemoryData(
-      { data: value, priority },
+      { data: value, priority, removed: false },
       this.signalId,
       this.bucketName,
       memoryId,
@@ -443,7 +443,7 @@ export class MemoryDummyInstance implements IMemoryInstance {
  * Features:
  * - Memoized instances per (signalId, bucketName) pair
  * - Swappable backend via useLocal(), usePersist(), useDummy()
- * - Default backend: MemoryLocalInstance (in-memory BM25)
+ * - Default backend: MemoryPersistInstance (in-memory BM25 + persist storage)
  */
 export class MemoryAdapter implements TMemoryIntance {
   private MemoryFactory: TMemoryInstanceCtor = MemoryPersistInstance;

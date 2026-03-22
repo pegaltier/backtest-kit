@@ -2067,6 +2067,7 @@ export const PersistMeasureAdapter = new PersistMeasureUtils();
 export type MemoryData = {
   priority: number;
   data: object;
+  removed: boolean;
 };
 
 /**
@@ -2161,7 +2162,8 @@ export class PersistMemoryUtils {
     const stateStorage = this.getMemoryStorage(signalId, bucketName);
     await stateStorage.waitForInit(isInitial);
     if (await stateStorage.hasValue(memoryId)) {
-      return await stateStorage.readValue(memoryId);
+      const data = await stateStorage.readValue(memoryId);
+      return data.removed ? null : data;
     }
     return null;
   };
@@ -2219,7 +2221,7 @@ export class PersistMemoryUtils {
   };
 
   /**
-   * Removes a memory entry from disk.
+   * Marks a memory entry as removed (soft delete — file is kept on disk).
    *
    * @param signalId - Signal identifier
    * @param bucketName - Bucket name
@@ -2240,7 +2242,10 @@ export class PersistMemoryUtils {
     const isInitial = !this.getMemoryStorage.has(key);
     const stateStorage = this.getMemoryStorage(signalId, bucketName);
     await stateStorage.waitForInit(isInitial);
-    await stateStorage.writeValue(memoryId, null as any);
+    const data = await stateStorage.readValue(memoryId);
+    if (data) {
+      await stateStorage.writeValue(memoryId, Object.assign({}, data, { removed: true }));
+    }
   };
 
   /**
@@ -2251,7 +2256,7 @@ export class PersistMemoryUtils {
    * @param bucketName - Bucket name
    * @returns AsyncGenerator yielding memory entry IDs
    */
-  public listMemoryData = async function* (
+  public async *listMemoryData(
     signalId: string,
     bucketName: string
   ): AsyncGenerator<{ memoryId: string; data: MemoryData }> {
@@ -2265,7 +2270,7 @@ export class PersistMemoryUtils {
     await stateStorage.waitForInit(isInitial);
     for await (const memoryId of stateStorage.keys()) {
       const data = await stateStorage.readValue(String(memoryId));
-      if (data === null) {
+      if (data === null || data.removed) {
         continue;
       }
       yield { memoryId: String(memoryId), data };
