@@ -1,5 +1,15 @@
-const BM25_K1 = 1.5;
-const BM25_B = 0.75;
+const DEFAULT_BM25_K1 = 1.5;
+const DEFAULT_BM25_B = 0.75;
+
+export type SearchSettings = {
+  BM25_K1: number;
+  BM25_B: number;
+}
+
+const DEFAULT_SETTINGS: SearchSettings = {
+  BM25_K1: DEFAULT_BM25_K1,
+  BM25_B: DEFAULT_BM25_B,
+}
 
 const normalize = (s: string): string =>
   s
@@ -58,6 +68,7 @@ export const createSearchIndex = () => {
 
   const search = (
     query: string,
+    settings: SearchSettings = DEFAULT_SETTINGS,
   ): Array<{ id: string; score: number; content: object }> => {
     const terms = tokenize(query);
     if (!terms.length || !docs.size) return [];
@@ -79,8 +90,8 @@ export const createSearchIndex = () => {
               (N - docsWithTerm + 0.5) / (docsWithTerm + 0.5) + 1,
             );
             const tf =
-              (freq * (BM25_K1 + 1)) /
-              (freq + BM25_K1 * (1 - BM25_B + (BM25_B * doc.len) / avgLen));
+              (freq * (settings.BM25_K1 + 1)) /
+              (freq + settings.BM25_K1 * (1 - settings.BM25_B + (settings.BM25_B * doc.len) / avgLen));
             score += idf * tf;
           }
         }

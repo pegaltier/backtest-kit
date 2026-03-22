@@ -1,5 +1,5 @@
 import { memoize, singleshot } from "functools-kit";
-import createSearchIndex from "../utils/createSearchIndex";
+import createSearchIndex, { SearchSettings } from "../utils/createSearchIndex";
 import swarm from "../lib";
 import { PersistMemoryAdapter } from "./Persist";
 
@@ -8,7 +8,7 @@ const CREATE_KEY_FN = (signalId: string, bucketName: string) =>
 
 const LIST_MEMORY_FN = <T extends object = object>({ id, content }) => ({
   memoryId: id,
-  content: <T>JSON.parse(content),
+  content: <T>content,
 });
 
 const SEARCH_MEMORY_FN = <T extends object = object>({
@@ -17,7 +17,7 @@ const SEARCH_MEMORY_FN = <T extends object = object>({
   score,
 }) => ({
   memoryId: id,
-  content: <T>JSON.parse(content),
+  content: <T>content,
   score,
 });
 
@@ -66,6 +66,7 @@ export interface IMemoryInstance {
    */
   searchMemory<T extends object = object>(
     query: string,
+    settings?: SearchSettings,
   ): Promise<
     Array<{
       memoryId: string;
@@ -194,13 +195,13 @@ export class MemoryLocalInstance implements IMemoryInstance {
    * @param query - Search query string
    * @returns Matching entries sorted by relevance score
    */
-  public async searchMemory<T extends object = object>(query: string) {
+  public async searchMemory<T extends object = object>(query: string, settings?: SearchSettings) {
     swarm.loggerService.debug(MEMORY_LOCAL_INSTANCE_METHOD_NAME_SEARCH, {
       signalId: this.signalId,
       bucketName: this.bucketName,
       query,
     });
-    return this._index.search(query).map<{
+    return this._index.search(query, settings).map<{
       memoryId: string;
       score: number;
       content: T;
@@ -333,13 +334,13 @@ export class MemoryPersistInstance implements IMemoryInstance {
    * @param query - Search query string
    * @returns Matching entries sorted by relevance score
    */
-  public async searchMemory<T extends object = object>(query: string) {
+  public async searchMemory<T extends object = object>(query: string, settings?: SearchSettings) {
     swarm.loggerService.debug(MEMORY_PERSIST_INSTANCE_METHOD_NAME_SEARCH, {
       signalId: this.signalId,
       bucketName: this.bucketName,
       query,
     });
-    return this._index.search(query).map<{
+    return this._index.search(query, settings).map<{
       memoryId: string;
       score: number;
       content: T;
@@ -484,12 +485,13 @@ export class MemoryAdapter implements TMemoryIntance {
     query: string;
     signalId: string;
     bucketName: string;
+    settings?: SearchSettings;
   }) => {
     const key = CREATE_KEY_FN(dto.signalId, dto.bucketName);
     const isInitial = !this.getInstance.has(key);
     const instance = this.getInstance(dto.signalId, dto.bucketName);
     await instance.waitForInit(isInitial);
-    return await instance.searchMemory<T>(dto.query);
+    return await instance.searchMemory<T>(dto.query, dto.settings);
   };
 
   /**
