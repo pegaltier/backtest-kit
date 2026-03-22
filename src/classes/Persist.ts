@@ -27,6 +27,7 @@ import { NotificationModel } from "../model/Notification.model";
 import { ILogEntry } from "../interfaces/Logger.interface";
 
 
+/** Symbol key for the singleshot waitForInit function on PersistBase instances. */
 const BASE_WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 
 // Calculate step in milliseconds for candle close time validation
