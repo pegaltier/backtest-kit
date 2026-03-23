@@ -377,23 +377,57 @@ export type BrokerAverageBuyPayload = {
   backtest: boolean;
 };
 
+/**
+ * Broker adapter interface for live order execution.
+ *
+ * Implement this interface to connect the framework to a real exchange or broker.
+ * All methods are called BEFORE the corresponding DI-core state mutation, so if any
+ * method throws, the internal state remains unchanged (transaction semantics).
+ *
+ * In backtest mode all calls are silently skipped by BrokerAdapter — the adapter
+ * never receives backtest traffic.
+ *
+ * @example
+ * ```typescript
+ * class MyBroker implements IBroker {
+ *   async waitForInit() {
+ *     await this.exchange.connect();
+ *   }
+ *   async onSignalOpenCommit(payload) {
+ *     await this.exchange.placeOrder({ symbol: payload.symbol, side: payload.position });
+ *   }
+ *   // ... other methods
+ * }
+ *
+ * Broker.useBrokerAdapter(MyBroker);
+ * ```
+ */
 export interface IBroker {
+  /** Called once before first use. Connect to exchange, load credentials, etc. */
   waitForInit(): Promise<void>;
 
+  /** Called when a new signal is closed (take-profit, stop-loss, or manual close). */
   onSignalCloseCommit(payload: BrokerSignalClosePayload): Promise<void>;
 
+  /** Called when a new signal is opened (position entry confirmed). */
   onSignalOpenCommit(payload: BrokerSignalOpenPayload): Promise<void>;
 
+  /** Called when a partial profit close is committed. */
   onPartialProfitCommit(payload: BrokerPartialProfitPayload): Promise<void>;
 
+  /** Called when a partial loss close is committed. */
   onPartialLossCommit(payload: BrokerPartialLossPayload): Promise<void>;
 
+  /** Called when a trailing stop update is committed. */
   onTrailingStopCommit(payload: BrokerTrailingStopPayload): Promise<void>;
 
+  /** Called when a trailing take-profit update is committed. */
   onTrailingTakeCommit(payload: BrokerTrailingTakePayload): Promise<void>;
 
+  /** Called when a breakeven stop is committed (stop loss moved to entry price). */
   onBreakevenCommit(payload: BrokerBreakevenPayload): Promise<void>;
 
+  /** Called when a DCA (average-buy) entry is committed. */
   onAverageBuyCommit(payload: BrokerAverageBuyPayload): Promise<void>;
 }
 

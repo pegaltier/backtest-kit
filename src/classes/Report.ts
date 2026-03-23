@@ -26,7 +26,9 @@ const REPORT_UTILS_METHOD_NAME_DISABLE = "ReportUtils.disable";
 const REPORT_UTILS_METHOD_NAME_USE_DUMMY = "ReportUtils.useDummy";
 const REPORT_UTILS_METHOD_NAME_USE_JSONL = "ReportUtils.useJsonl";
 
+/** Symbol key for the singleshot waitForInit function on ReportBase instances. */
 const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
+/** Symbol key for the timeout-protected write function on ReportBase instances. */
 const WRITE_SAFE_SYMBOL = Symbol("write-safe");
 
 /**

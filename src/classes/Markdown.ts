@@ -55,7 +55,9 @@ interface IMarkdownTarget {
   highest_profit: boolean;
 }
 
+/** Symbol key for the singleshot waitForInit function on MarkdownFileBase instances. */
 const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
+/** Symbol key for the timeout-protected write function on MarkdownFileBase instances. */
 const WRITE_SAFE_SYMBOL = Symbol("write-safe");
 
 /**
