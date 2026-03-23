@@ -152,6 +152,11 @@ export {
   writeMemory,
 } from "./function/memory";
 export {
+  dumpAgentAnswer,
+  dumpRecord,
+  dumpTable,
+} from "./function/dump";
+export {
   CandleInterval,
   ICandleData,
   IPublicCandleData,
