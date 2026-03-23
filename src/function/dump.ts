@@ -21,6 +21,7 @@ const DUMP_JSON_METHOD_NAME = "dump.dumpJson";
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this agent invocation
  * @param dto.messages - Full chat history (system, user, assistant, tool)
+ * @param dto.description - Human-readable label describing the agent invocation context; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpAgentAnswer with manual signalId argument
@@ -29,15 +30,16 @@ const DUMP_JSON_METHOD_NAME = "dump.dumpJson";
  * ```typescript
  * import { dumpAgentAnswer } from "backtest-kit";
  *
- * await dumpAgentAnswer({ bucketName: "my-strategy", dumpId: "reasoning-1", messages });
+ * await dumpAgentAnswer({ bucketName: "my-strategy", dumpId: "reasoning-1", messages, description: "BTC long signal reasoning" });
  * ```
  */
 export async function dumpAgentAnswer(dto: {
   bucketName: string;
   dumpId: string;
   messages: MessageModel[];
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, messages } = dto;
+  const { bucketName, dumpId, messages, description } = dto;
   backtest.loggerService.info(DUMP_AGENT_ANSWER_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -68,6 +70,7 @@ export async function dumpAgentAnswer(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
 
@@ -80,6 +83,7 @@ export async function dumpAgentAnswer(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.record - Arbitrary flat object to persist
+ * @param dto.description - Human-readable label describing the record contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpRecord with manual signalId argument
@@ -88,15 +92,16 @@ export async function dumpAgentAnswer(dto: {
  * ```typescript
  * import { dumpRecord } from "backtest-kit";
  *
- * await dumpRecord({ bucketName: "my-strategy", dumpId: "context", record: { price: 42000, signal: "long" } });
+ * await dumpRecord({ bucketName: "my-strategy", dumpId: "context", record: { price: 42000, signal: "long" }, description: "Signal context at entry" });
  * ```
  */
 export async function dumpRecord(dto: {
   bucketName: string;
   dumpId: string;
   record: Record<string, unknown>;
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, record } = dto;
+  const { bucketName, dumpId, record, description } = dto;
   backtest.loggerService.info(DUMP_RECORD_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -126,6 +131,7 @@ export async function dumpRecord(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
 
@@ -140,6 +146,7 @@ export async function dumpRecord(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.rows - Array of arbitrary objects to render as a table
+ * @param dto.description - Human-readable label describing the table contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpTable with manual signalId argument
@@ -148,15 +155,16 @@ export async function dumpRecord(dto: {
  * ```typescript
  * import { dumpTable } from "backtest-kit";
  *
- * await dumpTable({ bucketName: "my-strategy", dumpId: "candles", rows: [{ time: 1234, close: 42000 }] });
+ * await dumpTable({ bucketName: "my-strategy", dumpId: "candles", rows: [{ time: 1234, close: 42000 }], description: "Recent candle history" });
  * ```
  */
 export async function dumpTable(dto: {
   bucketName: string;
   dumpId: string;
   rows: Record<string, unknown>[];
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, rows } = dto;
+  const { bucketName, dumpId, rows, description } = dto;
   backtest.loggerService.info(DUMP_TABLE_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -187,6 +195,7 @@ export async function dumpTable(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
 
@@ -199,6 +208,7 @@ export async function dumpTable(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.content - Arbitrary text content to persist
+ * @param dto.description - Human-readable label describing the content; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpText with manual signalId argument
@@ -207,15 +217,16 @@ export async function dumpTable(dto: {
  * ```typescript
  * import { dumpText } from "backtest-kit";
  *
- * await dumpText({ bucketName: "my-strategy", dumpId: "summary", content: "Agent concluded: bullish" });
+ * await dumpText({ bucketName: "my-strategy", dumpId: "summary", content: "Agent concluded: bullish", description: "Agent final summary" });
  * ```
  */
 export async function dumpText(dto: {
   bucketName: string;
   dumpId: string;
   content: string;
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, content } = dto;
+  const { bucketName, dumpId, content, description } = dto;
   backtest.loggerService.info(DUMP_TEXT_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -245,6 +256,7 @@ export async function dumpText(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
 
@@ -257,6 +269,7 @@ export async function dumpText(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.content - Error message or description to persist
+ * @param dto.description - Human-readable label describing the error context; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpError with manual signalId argument
@@ -265,15 +278,16 @@ export async function dumpText(dto: {
  * ```typescript
  * import { dumpError } from "backtest-kit";
  *
- * await dumpError({ bucketName: "my-strategy", dumpId: "error-1", content: "Tool call failed: timeout" });
+ * await dumpError({ bucketName: "my-strategy", dumpId: "error-1", content: "Tool call failed: timeout", description: "Tool execution error" });
  * ```
  */
 export async function dumpError(dto: {
   bucketName: string;
   dumpId: string;
   content: string;
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, content } = dto;
+  const { bucketName, dumpId, content, description } = dto;
   backtest.loggerService.info(DUMP_ERROR_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -303,6 +317,7 @@ export async function dumpError(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
 
@@ -315,6 +330,7 @@ export async function dumpError(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.json - Arbitrary nested object to serialize with JSON.stringify
+ * @param dto.description - Human-readable label describing the object contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
@@ -323,15 +339,16 @@ export async function dumpError(dto: {
  * ```typescript
  * import { dumpJson } from "backtest-kit";
  *
- * await dumpJson({ bucketName: "my-strategy", dumpId: "signal-state", json: { entries: [], partials: [] } });
+ * await dumpJson({ bucketName: "my-strategy", dumpId: "signal-state", json: { entries: [], partials: [] }, description: "Signal state snapshot" });
  * ```
  */
 export async function dumpJson(dto: {
   bucketName: string;
   dumpId: string;
   json: object;
+  description: string;
 }): Promise<void> {
-  const { bucketName, dumpId, json } = dto;
+  const { bucketName, dumpId, json, description } = dto;
   backtest.loggerService.info(DUMP_JSON_METHOD_NAME, {
     bucketName,
     dumpId,
@@ -361,5 +378,6 @@ export async function dumpJson(dto: {
     dumpId,
     bucketName,
     signalId: signal.id,
+    description,
   });
 }
