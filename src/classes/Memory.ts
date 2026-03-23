@@ -568,7 +568,7 @@ export class MemoryAdapter implements TMemoryInstance {
 
   /**
    * Switches to file-system backed adapter.
-   * Data is persisted to ./dump/memory/<bucketName>/<signalId>/.
+   * Data is persisted to ./dump/memory/<signalId>/<bucketName>/.
    */
   public usePersist = (): void => {
     swarm.loggerService.info(MEMORY_ADAPTER_METHOD_NAME_USE_PERSIST);

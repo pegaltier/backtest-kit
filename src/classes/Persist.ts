@@ -2084,7 +2084,7 @@ export type MemoryData = {
  * - Atomic read/write/remove operations
  * - Async iteration over stored keys for index rebuilding
  *
- * Storage layout: ./dump/memory/<bucketName>/<signalId>/<memoryId>.json
+ * Storage layout: ./dump/memory/<signalId>/<bucketName>/<memoryId>.json
  *
  * Used by MemoryPersistInstance for crash-safe memory persistence.
  */
@@ -2097,8 +2097,8 @@ export class PersistMemoryUtils {
       `${signalId}:${bucketName}`,
     (signalId: string, bucketName: string): IPersistBase<MemoryData> =>
       Reflect.construct(this.PersistMemoryFactory, [
-        signalId,
-        `./dump/memory/${bucketName}/`,
+        bucketName,
+        `./dump/memory/${signalId}/`,
       ])
   );
 
