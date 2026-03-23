@@ -8555,6 +8555,8 @@ interface MessageModel<Role extends MessageRole = MessageRole> {
     role: Role;
     /** Text content of the message. Empty string for assistant messages that only contain tool_calls. */
     content: string;
+    /** Chain-of-thought / reasoning exposed by some providers (e.g. DeepSeek). */
+    reasoning_content?: string | null;
     /** Tool calls emitted by the assistant. Present only on assistant messages. */
     tool_calls?: MessageToolCall[];
     /** Images attached to the message. Supported as Blob, raw bytes, or base64 strings. */
@@ -11354,7 +11356,7 @@ type StorageData = IStorageSignalRow[];
  */
 declare class PersistStorageUtils {
     private PersistStorageFactory;
-    private getStorageStorage;
+    private getStorage;
     /**
      * Registers a custom persistence adapter.
      *
@@ -11600,7 +11602,7 @@ type MemoryData = {
  * - Atomic read/write/remove operations
  * - Async iteration over stored keys for index rebuilding
  *
- * Storage layout: ./dump/memory/<bucketName>/<signalId>/<memoryId>.json
+ * Storage layout: ./dump/memory/<signalId>/<bucketName>/<memoryId>.json
  *
  * Used by MemoryPersistInstance for crash-safe memory persistence.
  */
@@ -11680,6 +11682,13 @@ declare class PersistMemoryUtils {
         memoryId: string;
         data: MemoryData;
     }>;
+    /**
+     * Dispose persist adapter to prevent memory leak
+     *
+     * @param signalId - Signal identifier
+     * @param bucketName - Bucket name
+     */
+    clear: (signalId: string, bucketName: string) => void;
 }
 /**
  * Global singleton instance of PersistMemoryUtils.
@@ -18453,6 +18462,10 @@ interface IMemoryInstance {
      * @throws Error if entry not found
      */
     readMemory<T extends object = object>(memoryId: string): Promise<T>;
+    /**
+     * Releases any resources held by this instance.
+     */
+    dispose(): void;
 }
 /**
  * Constructor type for memory instance implementations.
@@ -18460,7 +18473,7 @@ interface IMemoryInstance {
  */
 type TMemoryInstanceCtor = new (signalId: string, bucketName: string) => IMemoryInstance;
 /**
- * Public surface of MemoryAdapter — IMemoryInstance minus waitForInit.
+ * Public surface of MemoryAdapter - IMemoryInstance minus waitForInit.
  * waitForInit is managed internally by the adapter.
  */
 type TMemoryInstance = Omit<{
@@ -18480,6 +18493,19 @@ type TMemoryInstance = Omit<{
 declare class MemoryAdapter implements TMemoryInstance {
     private MemoryFactory;
     private getInstance;
+    /**
+     * Activates the adapter by subscribing to signal lifecycle events.
+     * Clears memoized instances for a signalId when it is cancelled or closed,
+     * preventing stale instances from accumulating in memory.
+     * Idempotent — subsequent calls return the same subscription handle.
+     * Must be called before any memory method is used.
+     */
+    enable: (() => (...args: any[]) => any) & functools_kit.ISingleshotClearable;
+    /**
+     * Deactivates the adapter by unsubscribing from signal lifecycle events.
+     * No-op if enable() was never called.
+     */
+    disable: () => void;
     /**
      * Write a value to memory.
      * @param dto.memoryId - Unique entry identifier
@@ -18556,24 +18582,29 @@ declare class MemoryAdapter implements TMemoryInstance {
     useLocal: () => void;
     /**
      * Switches to file-system backed adapter.
-     * Data is persisted to ./dump/memory/<bucketName>/<signalId>/.
+     * Data is persisted to ./dump/memory/<signalId>/<bucketName>/.
      */
     usePersist: () => void;
     /**
      * Switches to dummy adapter that discards all writes.
      */
     useDummy: () => void;
+    /**
+     * Releases resources held by this adapter.
+     * Delegates to disable() to unsubscribe from signal lifecycle events.
+     */
+    dispose: () => void;
 }
 declare const Memory: MemoryAdapter;
 
 /**
  * Context required to identify a dump entry.
- * Passed only through DumpAdapter — instances receive signalId and bucketName via constructor.
+ * Passed only through DumpAdapter - instances receive signalId and bucketName via constructor.
  */
 interface IDumpContext {
-    /** Signal identifier — scopes the dump to a specific trade */
+    /** Signal identifier - scopes the dump to a specific trade */
     signalId: string;
-    /** Bucket name — groups dumps by strategy or agent name */
+    /** Bucket name - groups dumps by strategy or agent name */
     bucketName: string;
     /** Unique identifier for this dump entry */
     dumpId: string;
@@ -18627,9 +18658,13 @@ interface IDumpInstance {
      * @param json - Arbitrary object to serialize with JSON.stringify
      * @param dumpId - Unique identifier for this dump entry
      * @param description - Human-readable label describing the object contents; included in the BM25 index for Memory search
-     * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+     * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
      */
     dumpJson(json: object, dumpId: string, description: string): Promise<void>;
+    /**
+     * Releases any resources held by this instance.
+     */
+    dispose(): void;
 }
 /**
  * Constructor type for dump instance implementations.
@@ -18644,14 +18679,27 @@ type TDumpInstanceCtor = new (signalId: string, bucketName: string) => IDumpInst
  * and delegates with only the dumpId.
  *
  * Switch backends via:
- * - useMarkdown() — write one .md file per call (default)
- * - useMemory()   — store data in Memory
- * - useDummy()    — no-op, discard all writes
- * - useDumpAdapter(Ctor) — inject a custom implementation
+ * - useMarkdown() - write one .md file per call (default)
+ * - useMemory()   - store data in Memory
+ * - useDummy()    - no-op, discard all writes
+ * - useDumpAdapter(Ctor) - inject a custom implementation
  */
 declare class DumpAdapter {
     private DumpFactory;
     private getInstance;
+    /**
+     * Activates the adapter by subscribing to signal lifecycle events.
+     * Clears memoized instances for a signalId when it is cancelled or closed,
+     * preventing stale instances from accumulating in memory.
+     * Idempotent — subsequent calls return the same subscription handle.
+     * Must be called before any dump method is used.
+     */
+    enable: (() => (...args: any[]) => any) & functools_kit.ISingleshotClearable;
+    /**
+     * Deactivates the adapter by unsubscribing from signal lifecycle events.
+     * No-op if enable() was never called.
+     */
+    disable: () => void;
     /**
      * Persist the full message history of one agent invocation.
      */
@@ -18674,7 +18722,7 @@ declare class DumpAdapter {
     dumpError: (content: string, context: IDumpContext) => Promise<void>;
     /**
      * Persist an arbitrary nested object as a fenced JSON block.
-     * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+     * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
      */
     dumpJson: (json: object, context: IDumpContext) => Promise<void>;
     /**

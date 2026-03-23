@@ -1,9 +1,10 @@
 import fs from "fs/promises";
 import { join, dirname } from "path";
-import { memoize } from "functools-kit";
+import { compose, memoize, singleshot } from "functools-kit";
 import backtest from "../lib";
 import { Memory } from "./Memory";
 import MessageModel from "../model/Message.model";
+import { signalEmitter } from "../config/emitters";
 
 const CREATE_KEY_FN = (signalId: string, bucketName: string) =>
   `${signalId}-${bucketName}`;
@@ -26,6 +27,15 @@ const DUMP_BOTH_INSTANCE_METHOD_NAME_TABLE = "DumpBothInstance.dumpTable";
 const DUMP_BOTH_INSTANCE_METHOD_NAME_TEXT = "DumpBothInstance.dumpText";
 const DUMP_BOTH_INSTANCE_METHOD_NAME_ERROR = "DumpBothInstance.dumpError";
 const DUMP_BOTH_INSTANCE_METHOD_NAME_JSON = "DumpBothInstance.dumpJson";
+const DUMP_ADAPTER_METHOD_NAME_ENABLE = "DumpAdapter.enable";
+const DUMP_ADAPTER_METHOD_NAME_DISABLE = "DumpAdapter.disable";
+const DUMP_ADAPTER_METHOD_NAME_DISPOSE = "DumpAdapter.dispose";
+const DUMP_ADAPTER_METHOD_NAME_AGENT = "DumpAdapter.dumpAgentAnswer";
+const DUMP_ADAPTER_METHOD_NAME_RECORD = "DumpAdapter.dumpRecord";
+const DUMP_ADAPTER_METHOD_NAME_TABLE = "DumpAdapter.dumpTable";
+const DUMP_ADAPTER_METHOD_NAME_TEXT = "DumpAdapter.dumpText";
+const DUMP_ADAPTER_METHOD_NAME_ERROR = "DumpAdapter.dumpError";
+const DUMP_ADAPTER_METHOD_NAME_JSON = "DumpAdapter.dumpJson";
 const DUMP_ADAPTER_METHOD_NAME_USE_MARKDOWN = "DumpAdapter.useMarkdown";
 const DUMP_ADAPTER_METHOD_NAME_USE_MEMORY = "DumpAdapter.useMemory";
 const DUMP_ADAPTER_METHOD_NAME_USE_DUMMY = "DumpAdapter.useDummy";
@@ -87,12 +97,12 @@ const RENDER_TABLE_FN = (rows: Record<string, unknown>[]): string => {
 
 /**
  * Context required to identify a dump entry.
- * Passed only through DumpAdapter — instances receive signalId and bucketName via constructor.
+ * Passed only through DumpAdapter - instances receive signalId and bucketName via constructor.
  */
 export interface IDumpContext {
-  /** Signal identifier — scopes the dump to a specific trade */
+  /** Signal identifier - scopes the dump to a specific trade */
   signalId: string;
-  /** Bucket name — groups dumps by strategy or agent name */
+  /** Bucket name - groups dumps by strategy or agent name */
   bucketName: string;
   /** Unique identifier for this dump entry */
   dumpId: string;
@@ -147,9 +157,13 @@ export interface IDumpInstance {
    * @param json - Arbitrary object to serialize with JSON.stringify
    * @param dumpId - Unique identifier for this dump entry
    * @param description - Human-readable label describing the object contents; included in the BM25 index for Memory search
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   dumpJson(json: object, dumpId: string, description: string): Promise<void>;
+  /**
+   * Releases any resources held by this instance.
+   */
+  dispose(): void;
 }
 
 /**
@@ -176,6 +190,12 @@ export class DumpBothInstance implements IDumpInstance {
   ) {
     this._memory = new DumpMemoryInstance(signalId, bucketName);
     this._markdown = new DumpMarkdownInstance(signalId, bucketName);
+  }
+
+  /** Releases resources held by both backends. */
+  public dispose(): void {
+    this._memory.dispose();
+    this._markdown.dispose();
   }
 
   /**
@@ -243,7 +263,7 @@ export class DumpBothInstance implements IDumpInstance {
   /**
    * Persists raw text to both backends simultaneously.
    * Memory: stored as `{ description, content }` object, text searchable via BM25.
-   * Markdown: written as-is to the .md file — suitable for agent summaries or reasoning traces.
+   * Markdown: written as-is to the .md file - suitable for agent summaries or reasoning traces.
    * @param content - Arbitrary text content to dump
    * @param dumpId - Unique identifier for this dump entry
    * @param description - Human-readable label describing the content; included in the BM25 index for Memory search
@@ -287,7 +307,7 @@ export class DumpBothInstance implements IDumpInstance {
    * @param json - Arbitrary nested object to serialize
    * @param dumpId - Unique identifier for this dump entry
    * @param description - Human-readable label describing the object contents; included in the BM25 index for Memory search
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(json: object, dumpId: string, description: string): Promise<void> {
     backtest.loggerService.info(DUMP_BOTH_INSTANCE_METHOD_NAME_JSON, {
@@ -436,7 +456,7 @@ export class DumpMemoryInstance implements IDumpInstance {
    * @param json - Arbitrary nested object to persist
    * @param dumpId - Unique identifier for this dump entry
    * @param description - BM25 index string for contextual search
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(json: object, dumpId: string, description: string): Promise<void> {
     backtest.loggerService.info(DUMP_MEMORY_INSTANCE_METHOD_NAME_JSON, {
@@ -450,6 +470,14 @@ export class DumpMemoryInstance implements IDumpInstance {
       signalId: this.signalId,
       value: json,
       index: description,
+    });
+  }
+
+  /** Releases resources held by this instance. */
+  public dispose(): void {
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_DISPOSE, {
+      signalId: this.signalId,
+      bucketName: this.bucketName,
     });
   }
 }
@@ -503,7 +531,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let content = `# Agent Reasoning — ${dumpId}\n\n`;
+    let content = `# Agent Reasoning - ${dumpId}\n\n`;
     content += `**signalId**: ${this.signalId}  \n`;
     content += `**bucketName**: ${this.bucketName}  \n`;
     content += `**description**: ${description}\n\n`;
@@ -532,7 +560,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let content = `# Record Dump — ${dumpId}\n\n`;
+    let content = `# Record Dump - ${dumpId}\n\n`;
     content += `**signalId**: ${this.signalId}  \n`;
     content += `**bucketName**: ${this.bucketName}  \n`;
     content += `**description**: ${description}\n\n`;
@@ -560,7 +588,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let content = `# Table Dump — ${dumpId}\n\n`;
+    let content = `# Table Dump - ${dumpId}\n\n`;
     content += `**signalId**: ${this.signalId}  \n`;
     content += `**bucketName**: ${this.bucketName}  \n`;
     content += `**description**: ${description}\n\n`;
@@ -586,7 +614,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let output = `# Text Dump — ${dumpId}\n\n`;
+    let output = `# Text Dump - ${dumpId}\n\n`;
     output += `**signalId**: ${this.signalId}  \n`;
     output += `**bucketName**: ${this.bucketName}  \n`;
     output += `**description**: ${description}\n\n`;
@@ -613,7 +641,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let output = `# Error Dump — ${dumpId}\n\n`;
+    let output = `# Error Dump - ${dumpId}\n\n`;
     output += `**signalId**: ${this.signalId}  \n`;
     output += `**bucketName**: ${this.bucketName}  \n`;
     output += `**description**: ${description}\n\n`;
@@ -629,7 +657,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
    * @param json - Arbitrary nested object to serialize
    * @param dumpId - Unique identifier for this dump entry
    * @param description - Human-readable label describing the object contents; rendered as a header line in the markdown file
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(json: object, dumpId: string, description: string): Promise<void> {
     backtest.loggerService.info(DUMP_MARKDOWN_INSTANCE_METHOD_NAME_JSON, {
@@ -641,7 +669,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
     if (!await this.ensureFile(filePath)) {
       return;
     }
-    let output = `# JSON Dump — ${dumpId}\n\n`;
+    let output = `# JSON Dump - ${dumpId}\n\n`;
     output += `**signalId**: ${this.signalId}  \n`;
     output += `**bucketName**: ${this.bucketName}  \n`;
     output += `**description**: ${description}\n\n`;
@@ -649,6 +677,14 @@ export class DumpMarkdownInstance implements IDumpInstance {
     output += JSON.stringify(json, null, 2);
     output += "\n```\n";
     await fs.writeFile(filePath, output, "utf8");
+  }
+
+  /** Releases resources held by this instance. */
+  public dispose(): void {
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_DISPOSE, {
+      signalId: this.signalId,
+      bucketName: this.bucketName,
+    });
   }
 }
 
@@ -689,9 +725,14 @@ export class DumpDummyInstance implements IDumpInstance {
 
   /**
    * No-op.
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(): Promise<void> {
+    void 0;
+  }
+
+  /** No-op. */
+  public dispose(): void {
     void 0;
   }
 }
@@ -704,10 +745,10 @@ export class DumpDummyInstance implements IDumpInstance {
  * and delegates with only the dumpId.
  *
  * Switch backends via:
- * - useMarkdown() — write one .md file per call (default)
- * - useMemory()   — store data in Memory
- * - useDummy()    — no-op, discard all writes
- * - useDumpAdapter(Ctor) — inject a custom implementation
+ * - useMarkdown() - write one .md file per call (default)
+ * - useMemory()   - store data in Memory
+ * - useDummy()    - no-op, discard all writes
+ * - useDumpAdapter(Ctor) - inject a custom implementation
  */
 export class DumpAdapter {
   private DumpFactory: TDumpInstanceCtor = DumpMarkdownInstance;
@@ -719,12 +760,67 @@ export class DumpAdapter {
   );
 
   /**
+   * Activates the adapter by subscribing to signal lifecycle events.
+   * Clears memoized instances for a signalId when it is cancelled or closed,
+   * preventing stale instances from accumulating in memory.
+   * Idempotent — subsequent calls return the same subscription handle.
+   * Must be called before any dump method is used.
+   */
+  public enable = singleshot(() => {
+    backtest.loggerService.info(DUMP_ADAPTER_METHOD_NAME_ENABLE);
+
+    const handleDispose = (signalId: string) => {
+      const prefix = CREATE_KEY_FN(signalId, "");
+      for (const key of this.getInstance.keys()) {
+        if (key.startsWith(prefix)) {
+          const instance = this.getInstance.get(key);
+          instance && instance.dispose();
+          this.getInstance.clear(key);
+        }
+      }
+    };
+
+    const unCancel = signalEmitter
+      .filter(({ action }) => action === "cancelled")
+      .connect(({ signal }) => handleDispose(signal.id))
+
+    const unClose = signalEmitter
+      .filter(({ action }) => action === "closed")
+      .connect(({ signal }) => handleDispose(signal.id))
+
+    return compose(
+      () => unCancel(),
+      () => unClose(),
+    );
+  });
+
+  /**
+   * Deactivates the adapter by unsubscribing from signal lifecycle events.
+   * No-op if enable() was never called.
+   */
+  public disable = () => {
+    backtest.loggerService.info(DUMP_ADAPTER_METHOD_NAME_DISABLE);
+    if (this.enable.hasValue()) {
+      const lastSubscription = this.enable();
+      lastSubscription();
+    }
+  };
+
+  /**
    * Persist the full message history of one agent invocation.
    */
   public dumpAgentAnswer = async (
     messages: MessageModel[],
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_AGENT, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpAgentAnswer(messages, context.dumpId, context.description);
   };
@@ -736,6 +832,14 @@ export class DumpAdapter {
     record: Record<string, unknown>,
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_RECORD, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpRecord(record, context.dumpId, context.description);
   };
@@ -747,6 +851,14 @@ export class DumpAdapter {
     rows: Record<string, unknown>[],
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_TABLE, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpTable(rows, context.dumpId, context.description);
   };
@@ -758,6 +870,14 @@ export class DumpAdapter {
     content: string,
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_TEXT, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpText(content, context.dumpId, context.description);
   };
@@ -769,18 +889,34 @@ export class DumpAdapter {
     content: string,
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_ERROR, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpError(content, context.dumpId, context.description);
   };
 
   /**
    * Persist an arbitrary nested object as a fenced JSON block.
-   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   * @deprecated Prefer dumpRecord - flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public dumpJson = async (
     json: object,
     context: IDumpContext,
   ): Promise<void> => {
+    if (!this.enable.hasValue()) {
+      throw new Error("DumpAdapter is not enabled. Call enable() first.");
+    }
+    backtest.loggerService.debug(DUMP_ADAPTER_METHOD_NAME_JSON, {
+      signalId: context.signalId,
+      bucketName: context.bucketName,
+      dumpId: context.dumpId,
+    });
     const instance = this.getInstance(context.signalId, context.bucketName);
     return await instance.dumpJson(json, context.dumpId, context.description);
   };

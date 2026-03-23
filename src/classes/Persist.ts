@@ -161,6 +161,8 @@ const PERSIST_MEMORY_UTILS_METHOD_NAME_LIST_DATA =
   "PersistMemoryUtils.listMemoryData";
 const PERSIST_MEMORY_UTILS_METHOD_NAME_HAS_DATA =
   "PersistMemoryUtils.hasMemoryData";
+const PERSIST_MEMORY_UTILS_METHOD_NAME_CLEAR =
+  "PersistMemoryUtils.clear";
 
 const BASE_WAIT_FOR_INIT_FN_METHOD_NAME = "PersistBase.waitForInitFn";
 
@@ -1599,7 +1601,7 @@ export class PersistStorageUtils {
   private PersistStorageFactory: TPersistBaseCtor<string, IStorageSignalRow> =
     PersistBase;
 
-  private getStorageStorage = memoize(
+  private getStorage = memoize(
     ([backtest]): string => backtest ? `backtest` : `live`,
     (backtest: boolean): IPersistBase<IStorageSignalRow> =>
       Reflect.construct(this.PersistStorageFactory, [
@@ -1636,8 +1638,8 @@ export class PersistStorageUtils {
     swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_READ_DATA);
 
     const key = backtest ? `backtest` : `live`;
-    const isInitial = !this.getStorageStorage.has(key);
-    const stateStorage = this.getStorageStorage(backtest);
+    const isInitial = !this.getStorage.has(key);
+    const stateStorage = this.getStorage(backtest);
     await stateStorage.waitForInit(isInitial);
 
     const signals: IStorageSignalRow[] = [];
@@ -1668,8 +1670,8 @@ export class PersistStorageUtils {
     swarm.loggerService.info(PERSIST_STORAGE_UTILS_METHOD_NAME_WRITE_DATA);
 
     const key = backtest ? `backtest` : `live`;
-    const isInitial = !this.getStorageStorage.has(key);
-    const stateStorage = this.getStorageStorage(backtest);
+    const isInitial = !this.getStorage.has(key);
+    const stateStorage = this.getStorage(backtest);
     await stateStorage.waitForInit(isInitial);
 
     for (const signal of signalData) {
@@ -2084,7 +2086,7 @@ export type MemoryData = {
  * - Atomic read/write/remove operations
  * - Async iteration over stored keys for index rebuilding
  *
- * Storage layout: ./dump/memory/<bucketName>/<signalId>/<memoryId>.json
+ * Storage layout: ./dump/memory/<signalId>/<bucketName>/<memoryId>.json
  *
  * Used by MemoryPersistInstance for crash-safe memory persistence.
  */
@@ -2097,8 +2099,8 @@ export class PersistMemoryUtils {
       `${signalId}:${bucketName}`,
     (signalId: string, bucketName: string): IPersistBase<MemoryData> =>
       Reflect.construct(this.PersistMemoryFactory, [
-        signalId,
-        `./dump/memory/${bucketName}/`,
+        bucketName,
+        `./dump/memory/${signalId}/`,
       ])
   );
 
@@ -2281,6 +2283,21 @@ export class PersistMemoryUtils {
       yield { memoryId: String(memoryId), data };
     }
   };
+
+  /**
+   * Dispose persist adapter to prevent memory leak
+   *
+   * @param signalId - Signal identifier
+   * @param bucketName - Bucket name
+   */
+  public clear = (signalId: string, bucketName: string) => {
+    swarm.loggerService.info(PERSIST_MEMORY_UTILS_METHOD_NAME_CLEAR, {
+      signalId,
+      bucketName,
+    });
+    const key = `${signalId}:${bucketName}`;
+    this.getMemoryStorage.clear(key);
+  }
 
 }
 
