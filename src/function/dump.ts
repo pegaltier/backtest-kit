@@ -317,7 +317,7 @@ export async function dumpError(dto: {
  * @param dto.json - Arbitrary nested object to serialize with JSON.stringify
  * @returns Promise that resolves when the dump is complete
  *
- * @deprecated Better use Dump.dumpJson with manual signalId argument
+ * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
  *
  * @example
  * ```typescript

@@ -128,6 +128,7 @@ export interface IDumpInstance {
    * Persist an arbitrary nested object as a fenced JSON block.
    * @param json - Arbitrary object to serialize with JSON.stringify
    * @param context - Scope identifiers for the dump entry
+   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
    */
   dumpJson(json: object, context: IDumpContext): Promise<void>;
 }
@@ -260,6 +261,7 @@ export class DumpMemoryInstance implements IDumpInstance {
    * Uses dumpId as memoryId, scoped by signalId and bucketName.
    * @param json - Arbitrary nested object to persist
    * @param context - Scope identifiers for the memory entry
+   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(
     json: object,
@@ -461,6 +463,7 @@ export class DumpMarkdownInstance implements IDumpInstance {
    * If the file already exists, the call is skipped (idempotent).
    * @param json - Arbitrary nested object to serialize
    * @param context - Scope identifiers used to construct the file path
+   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public async dumpJson(
     json: object,
@@ -521,7 +524,10 @@ export class DumpDummyInstance implements IDumpInstance {
     void 0;
   }
 
-  /** No-op. */
+  /**
+   * No-op.
+   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
+   */
   public async dumpJson(): Promise<void> {
     void 0;
   }
@@ -598,6 +604,7 @@ export class DumpAdapter implements IDumpInstance {
   /**
    * Persist an arbitrary nested object as a fenced JSON block.
    * Delegates to the active backend instance.
+   * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
    */
   public dumpJson = async (
     json: object,
