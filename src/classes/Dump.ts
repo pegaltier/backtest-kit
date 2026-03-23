@@ -1,8 +1,12 @@
 import fs from "fs/promises";
 import { join, dirname } from "path";
+import { memoize } from "functools-kit";
 import backtest from "../lib";
 import { Memory } from "./Memory";
 import MessageModel from "../model/Message.model";
+
+const CREATE_KEY_FN = (signalId: string, bucketName: string) =>
+  `${signalId}-${bucketName}`;
 
 const DUMP_MEMORY_INSTANCE_METHOD_NAME_AGENT = "DumpMemoryInstance.dumpAgentAnswer";
 const DUMP_MEMORY_INSTANCE_METHOD_NAME_RECORD = "DumpMemoryInstance.dumpRecord";
@@ -514,9 +518,11 @@ export class DumpDummyInstance implements IDumpInstance {
 export class DumpAdapter {
   private DumpFactory: TDumpInstanceCtor = DumpMarkdownInstance;
 
-  private getInstance(signalId: string, bucketName: string): IDumpInstance {
-    return Reflect.construct(this.DumpFactory, [signalId, bucketName]);
-  }
+  private getInstance = memoize(
+    ([signalId, bucketName]) => CREATE_KEY_FN(signalId, bucketName),
+    (signalId: string, bucketName: string): IDumpInstance =>
+      Reflect.construct(this.DumpFactory, [signalId, bucketName]),
+  );
 
   /**
    * Persist the full message history of one agent invocation.
@@ -525,8 +531,8 @@ export class DumpAdapter {
     messages: MessageModel[],
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpAgentAnswer(messages, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpAgentAnswer(messages, context.dumpId);
   };
 
   /**
@@ -536,8 +542,8 @@ export class DumpAdapter {
     record: Record<string, unknown>,
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpRecord(record, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpRecord(record, context.dumpId);
   };
 
   /**
@@ -547,8 +553,8 @@ export class DumpAdapter {
     rows: Record<string, unknown>[],
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpTable(rows, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpTable(rows, context.dumpId);
   };
 
   /**
@@ -558,8 +564,8 @@ export class DumpAdapter {
     content: string,
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpText(content, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpText(content, context.dumpId);
   };
 
   /**
@@ -569,8 +575,8 @@ export class DumpAdapter {
     content: string,
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpError(content, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpError(content, context.dumpId);
   };
 
   /**
@@ -581,8 +587,8 @@ export class DumpAdapter {
     json: object,
     context: IDumpContext,
   ): Promise<void> => {
-    return await this.getInstance(context.signalId, context.bucketName)
-      .dumpJson(json, context.dumpId);
+    const instance = this.getInstance(context.signalId, context.bucketName)
+    return await instance.dumpJson(json, context.dumpId);
   };
 
   /**
