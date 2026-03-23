@@ -176,7 +176,10 @@ export type SignalData = ISignalRow | null;
 /**
  * Cache.file data type stored in persistence layer.
  */
-export type MeasureData = unknown;
+export type MeasureData = {
+  id: string;
+  data: unknown;
+};
 
 /**
  * Type helper for PersistBase instance.
