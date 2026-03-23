@@ -11690,9 +11690,9 @@ declare class PersistMemoryUtils {
      */
     clear: (signalId: string, bucketName: string) => void;
     /**
-    * Switches to the default JSON persist adapter.
-    * All future persistence writes will use JSON storage.
-    */
+     * Switches to the default JSON persist adapter.
+     * All future persistence writes will use JSON storage.
+     */
     useJson(): void;
     /**
      * Switches to a dummy persist adapter that discards all writes.

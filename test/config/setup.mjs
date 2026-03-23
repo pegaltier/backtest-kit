@@ -13,6 +13,7 @@ import {
   Report,
   Markdown,
   Dump,
+  Memory,
 } from "../../build/index.mjs";
 
 // setLogger(console)
@@ -23,8 +24,14 @@ import {
 }
 
 {
+  Dump.enable();
+  Memory.enable();
+}
+
+{
   Dump.useDummy();
   Report.useDummy();
+  Memory.useDummy();
   Markdown.useDummy();
 }
 
