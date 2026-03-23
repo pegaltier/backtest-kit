@@ -113,7 +113,7 @@ export type TMemoryInstanceCtor = new (
 ) => IMemoryInstance;
 
 /**
- * Public surface of MemoryAdapter — IMemoryInstance minus waitForInit.
+ * Public surface of MemoryAdapter - IMemoryInstance minus waitForInit.
  * waitForInit is managed internally by the adapter.
  */
 export type TMemoryInstance = Omit<
@@ -127,7 +127,7 @@ export type TMemoryInstance = Omit<
 
 /**
  * In-memory BM25 search index backed instance.
- * All data lives in the process memory only — no disk persistence.
+ * All data lives in the process memory only - no disk persistence.
  *
  * Features:
  * - Full-text BM25 search via createSearchIndex
@@ -142,7 +142,7 @@ export class MemoryLocalInstance implements IMemoryInstance {
   ) {}
 
   /**
-   * No-op initialization — local index needs no setup.
+   * No-op initialization - local index needs no setup.
    * @returns Promise that resolves immediately
    */
   public waitForInit = singleshot(async (_initial: boolean) => {
@@ -402,7 +402,7 @@ export class MemoryDummyInstance implements IMemoryInstance {
   }
 
   /**
-   * No-op write — discards the value.
+   * No-op write - discards the value.
    * @returns Promise that resolves immediately
    */
   public async writeMemory(): Promise<void> {
@@ -410,7 +410,7 @@ export class MemoryDummyInstance implements IMemoryInstance {
   }
 
   /**
-   * No-op read — always throws.
+   * No-op read - always throws.
    * @throws Error always
    */
   public async readMemory<T extends object = object>(_memoryId: string): Promise<T> {
@@ -418,7 +418,7 @@ export class MemoryDummyInstance implements IMemoryInstance {
   }
 
   /**
-   * No-op search — returns empty array.
+   * No-op search - returns empty array.
    * @returns Empty array
    */
   public async searchMemory<T extends object = object>(): Promise<Array<{ memoryId: string; score: number; content: T }>> {
@@ -426,7 +426,7 @@ export class MemoryDummyInstance implements IMemoryInstance {
   }
 
   /**
-   * No-op list — returns empty array.
+   * No-op list - returns empty array.
    * @returns Empty array
    */
   public async listMemory<T extends object = object>(): Promise<Array<{ memoryId: string; content: T }>> {
