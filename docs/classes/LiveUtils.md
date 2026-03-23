@@ -92,6 +92,26 @@ getScheduledSignal: (symbol: string, currentPrice: number, context: { strategyNa
 Retrieves the currently active scheduled signal for the strategy.
 If no scheduled signal exists, returns null.
 
+### hasNoPendingSignal
+
+```ts
+hasNoPendingSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Returns true if there is NO active pending signal for the given symbol.
+
+Inverse of strategyCoreService.hasPendingSignal. Use to guard signal generation logic.
+
+### hasNoScheduledSignal
+
+```ts
+hasNoScheduledSignal: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<boolean>
+```
+
+Returns true if there is NO active scheduled signal for the given symbol.
+
+Inverse of strategyCoreService.hasScheduledSignal. Use to guard signal generation logic.
+
 ### getBreakeven
 
 ```ts

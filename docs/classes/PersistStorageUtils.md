@@ -30,10 +30,10 @@ constructor();
 PersistStorageFactory: any
 ```
 
-### getStorageStorage
+### getStorage
 
 ```ts
-getStorageStorage: any
+getStorage: any
 ```
 
 ### readStorageData

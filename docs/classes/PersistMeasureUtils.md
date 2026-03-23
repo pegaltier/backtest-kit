@@ -38,7 +38,7 @@ getMeasureStorage: any
 ### readMeasureData
 
 ```ts
-readMeasureData: (bucket: string, key: string) => Promise<unknown>
+readMeasureData: (bucket: string, key: string) => Promise<MeasureData>
 ```
 
 Reads cached measure data for a given bucket and key.
@@ -46,7 +46,7 @@ Reads cached measure data for a given bucket and key.
 ### writeMeasureData
 
 ```ts
-writeMeasureData: (data: unknown, bucket: string, key: string) => Promise<void>
+writeMeasureData: (data: MeasureData, bucket: string, key: string) => Promise<void>
 ```
 
 Writes measure data to disk with atomic file writes.
@@ -56,7 +56,7 @@ Writes measure data to disk with atomic file writes.
 ### usePersistMeasureAdapter
 
 ```ts
-usePersistMeasureAdapter(Ctor: TPersistBaseCtor<string, unknown>): void;
+usePersistMeasureAdapter(Ctor: TPersistBaseCtor<string, MeasureData>): void;
 ```
 
 Registers a custom persistence adapter.

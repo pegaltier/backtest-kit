@@ -1,3 +1,109 @@
+# Agent Trading Memory System (v5.9, 23/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.9)
+
+## Backend: Memory Subsystem
+
+A new `Memory` class has been added providing per-signal, per-bucket key-value storage with built-in BM25 full-text search. Two backends are available:
+
+| Class | Storage | BM25 Index |
+|---|---|---|
+| `MemoryLocalInstance` | In-process only (no persistence) | In-memory, rebuilt on each run |
+| `MemoryPersistInstance` | Disk-backed via `PersistMemoryAdapter` (crash-safe atomic writes) | Rebuilt from disk on `waitForInit` |
+
+Storage layout for `MemoryPersistInstance`: `./dump/memory/<signalId>/<bucketName>/<memoryId>.json`
+
+The backend can be swapped via `Memory.useLocal()`, `Memory.usePersist()`, or a custom `TMemoryInstanceCtor` via `Memory.useMemoryAdapter()`.
+
+### Public API (static methods on `Memory`)
+
+| Method | Description |
+|---|---|
+| `Memory.writeMemory({ signalId, bucketName, memoryId, value, index? })` | Write a value; `index` overrides the BM25 index string |
+| `Memory.readMemory({ signalId, bucketName, memoryId })` | Read a single entry; throws if not found |
+| `Memory.searchMemory({ signalId, bucketName, query, settings? })` | BM25 search; returns `{ memoryId, score, content }[]` |
+| `Memory.listMemory({ signalId, bucketName })` | List all entries; returns `{ memoryId, content }[]` |
+| `Memory.removeMemory({ signalId, bucketName, memoryId })` | Remove a single entry |
+
+### Context-bound helpers (auto-resolve signalId from execution context)
+
+```typescript
+import { writeMemory, readMemory, searchMemory, listMemory, removeMemory } from "backtest-kit";
+
+await writeMemory({ bucketName: "my-strategy", memoryId: "context", value: { trend: "up" } });
+const ctx = await readMemory<{ trend: string }>({ bucketName: "my-strategy", memoryId: "context" });
+const hits = await searchMemory({ bucketName: "my-strategy", query: "bullish trend" });
+const all = await listMemory({ bucketName: "my-strategy" });
+await removeMemory({ bucketName: "my-strategy", memoryId: "context" });
+```
+
+> These helpers are marked `@deprecated` — prefer the static `Memory.*` methods with an explicit `signalId` for clarity.
+
+### BM25 search engine (`createSearchIndex`)
+
+A standalone BM25 index utility is now exported. Supports incremental `upsert`/`remove` with O(1) DF updates (no full recompute), configurable `k1`, `b`, and minimum score threshold.
+
+## Backend: Dump Subsystem Refactor
+
+The dump API has been fully redesigned. The old `dumpMessages` function is replaced by a class-based system with pluggable backends.
+
+### New `Dump` class
+
+| Method | Description |
+|---|---|
+| `Dump.dumpAgentAnswer(messages, ctx)` | Persist full LLM chat history |
+| `Dump.dumpRecord(record, ctx)` | Persist a flat key-value object |
+| `Dump.dumpTable(rows, ctx)` | Persist an array of objects as a table |
+| `Dump.dumpText(content, ctx)` | Persist raw text or markdown |
+| `Dump.dumpError(content, ctx)` | Persist an error description |
+| `Dump.dumpJson(json, ctx)` | Persist an arbitrary nested object as fenced JSON *(deprecated — prefer `dumpRecord`)* |
+
+### Dump backends
+
+| Class | Description |
+|---|---|
+| `DumpMarkdownInstance` | Writes `.md` files to `./dump/agent/{signalId}/{bucketName}/{dumpId}.md`; idempotent (skips if file exists) |
+| `DumpMemoryInstance` | Writes to `Memory` (BM25-indexed, searchable via `Memory.searchMemory`) |
+| `DumpBothInstance` | Dual-writes to both backends in parallel via `Promise.all` |
+
+The backend is swapped via `Dump.useMarkdown()`, `Dump.useMemory()`, `Dump.useBoth()`, or a custom `TDumpInstanceCtor` via `Dump.useDumpAdapter()`.
+
+### Context-bound helpers
+
+```typescript
+import { dumpAgentAnswer, dumpRecord, dumpTable, dumpText, dumpError, dumpJson } from "backtest-kit";
+
+await dumpAgentAnswer({ bucketName: "my-strategy", dumpId: "reasoning-1", messages, description: "BTC long signal reasoning" });
+await dumpRecord({ bucketName: "my-strategy", dumpId: "ctx", record: { price: 42000 }, description: "Signal context" });
+await dumpTable({ bucketName: "my-strategy", dumpId: "candles", rows: [...], description: "Recent candles" });
+```
+
+> These helpers are marked `@deprecated` — prefer `Dump.*` with an explicit `signalId`.
+
+### `MessageModel` type
+
+A new `MessageModel` interface is exported covering all LLM message roles (`system`, `user`, `assistant`, `tool`) including `tool_calls`, `tool_call_id`, `reasoning_content`, and `images` fields.
+
+## Backend: Persist — `PersistMemoryAdapter`
+
+A new `PersistMemoryUtils` / `PersistMemoryAdapter` has been added for crash-safe memory entry persistence.
+Storage layout: `./dump/memory/<signalId>/<bucketName>/<memoryId>.json`
+
+Custom adapters can be registered via `PersistMemoryAdapter.usePersistMemoryAdapter(Ctor)`.
+
+`MeasureData` type is now explicitly typed as `{ id: string; data: unknown }` instead of `unknown`.
+
+## Backend: API surface
+
+New exports in `backtest-kit`:
+
+- Classes: `Memory`, `Dump`
+- Types: `IMemoryInstance`, `TMemoryInstanceCtor`, `IDumpInstance`, `IDumpContext`, `TDumpInstanceCtor`, `MessageModel`, `MessageRole`, `MessageToolCall`, `MemoryData`, `PersistMemoryAdapter`
+- Functions: `writeMemory`, `readMemory`, `searchMemory`, `listMemory`, `removeMemory`, `dumpAgentAnswer`, `dumpRecord`, `dumpTable`, `dumpText`, `dumpError`, `dumpJson`
+
+
+
+
 # Price Charts, Heatmap Page & Status Banner (v5.8, 20/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.8)

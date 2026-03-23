@@ -85,6 +85,24 @@ list: () => Promise<IStorageSignalRow[]>
 Lists all stored signals.
 Proxies call to the underlying storage adapter.
 
+### handleActivePing
+
+```ts
+handleActivePing: (event: ActivePingContract) => Promise<void>
+```
+
+Handles active ping event for opened signals.
+Updates updatedAt for the signal if it is currently opened.
+
+### handleSchedulePing
+
+```ts
+handleSchedulePing: (event: SchedulePingContract) => Promise<void>
+```
+
+Handles schedule ping event for scheduled signals.
+Updates updatedAt for the signal if it is currently scheduled.
+
 ### useStorageAdapter
 
 ```ts

@@ -233,7 +233,7 @@ and backtest mode flag.
 ### backtest
 
 ```ts
-backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>
+backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled>
 ```
 
 Runs fast backtest against candle array.
@@ -444,6 +444,17 @@ hasPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: s
 Checks if there is an active pending signal for the symbol.
 Validates strategy existence and delegates to connection service
 to check if a pending signal exists for the symbol.
+Does not require execution context as this is a state query operation.
+
+### hasScheduledSignal
+
+```ts
+hasScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks if there is a waiting scheduled signal for the symbol.
+Validates strategy existence and delegates to connection service
+to check if a scheduled signal exists for the symbol.
 Does not require execution context as this is a state query operation.
 
 ### getPositionEstimateMinutes

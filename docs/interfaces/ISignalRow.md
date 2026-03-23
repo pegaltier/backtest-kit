@@ -34,6 +34,14 @@ priceOpen: number
 
 Entry price for the position
 
+### minuteEstimatedTime
+
+```ts
+minuteEstimatedTime: number
+```
+
+Expected duration in minutes before time_expired (required in row, defaults applied in ClientStrategy)
+
 ### exchangeName
 
 ```ts

@@ -48,7 +48,7 @@ Identifies which exchange this ping event belongs to.
 ### data
 
 ```ts
-data: ISignalRow
+data: IPublicSignalRow
 ```
 
 Complete pending signal row data.

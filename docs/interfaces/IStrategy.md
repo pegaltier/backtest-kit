@@ -524,6 +524,16 @@ Checks if there is an active pending signal for the symbol.
 
 Used internally to determine if TP/SL monitoring should occur on tick.
 
+### hasScheduledSignal
+
+```ts
+hasScheduledSignal: (symbol: string) => Promise<boolean>
+```
+
+Checks if there is an active scheduled signal for the symbol.
+
+Used internally to determine if TP/SL monitoring should occur on tick.
+
 ### getPositionEstimateMinutes
 
 ```ts

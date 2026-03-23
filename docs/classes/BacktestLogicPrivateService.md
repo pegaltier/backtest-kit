@@ -28,37 +28,37 @@ constructor();
 ### loggerService
 
 ```ts
-loggerService: any
+loggerService: LoggerService
 ```
 
 ### strategyCoreService
 
 ```ts
-strategyCoreService: any
+strategyCoreService: StrategyCoreService
 ```
 
 ### exchangeCoreService
 
 ```ts
-exchangeCoreService: any
+exchangeCoreService: ExchangeCoreService
 ```
 
 ### frameCoreService
 
 ```ts
-frameCoreService: any
+frameCoreService: FrameCoreService
 ```
 
 ### methodContextService
 
 ```ts
-methodContextService: any
+methodContextService: { readonly context: IMethodContext; }
 ```
 
 ### actionCoreService
 
 ```ts
-actionCoreService: any
+actionCoreService: ActionCoreService
 ```
 
 ## Methods
@@ -66,7 +66,7 @@ actionCoreService: any
 ### run
 
 ```ts
-run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>;
+run(symbol: string): AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, any>;
 ```
 
 Runs backtest for a symbol, streaming closed signals as async generator.

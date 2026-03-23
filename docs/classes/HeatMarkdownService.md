@@ -69,10 +69,12 @@ If not subscribed, does nothing.
 tick: any
 ```
 
-Processes tick events and accumulates closed signals.
-Should be called from signal emitter subscription.
+Handles a single tick event emitted by `signalEmitter`.
 
-Only processes closed signals - opened signals are ignored.
+Filters out every action except `"closed"` — idle, scheduled, waiting,
+opened, active, and cancelled ticks are silently ignored.
+For closed signals, routes the payload to the appropriate `HeatmapStorage`
+via `getStorage(exchangeName, frameName, backtest)` and calls `addSignal`.
 
 ### getData
 
@@ -80,7 +82,12 @@ Only processes closed signals - opened signals are ignored.
 getData: (exchangeName: string, frameName: string, backtest: boolean) => Promise<HeatmapStatisticsModel>
 ```
 
-Gets aggregated portfolio heatmap statistics.
+Returns aggregated portfolio heatmap statistics for the given context.
+
+Delegates to the `HeatmapStorage` instance identified by
+`(exchangeName, frameName, backtest)`. If no signals have been accumulated
+yet for that combination, the returned `symbols` array will be empty and
+portfolio-level fields will be `null` / `0`.
 
 ### getReport
 
@@ -88,7 +95,11 @@ Gets aggregated portfolio heatmap statistics.
 getReport: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$6[]) => Promise<string>
 ```
 
-Generates markdown report with portfolio heatmap table.
+Generates a markdown heatmap report for the given context.
+
+Delegates to `HeatmapStorage.getReport`. The resulting string includes a
+portfolio summary line followed by a markdown table with one row per
+symbol, ordered by `sharpeRatio` descending.
 
 ### dump
 
@@ -96,10 +107,11 @@ Generates markdown report with portfolio heatmap table.
 dump: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>
 ```
 
-Saves heatmap report to disk.
+Generates the heatmap report and writes it to disk.
 
-Creates directory if it doesn't exist.
-Default filename: {strategyName}.md
+Delegates to `HeatmapStorage.dump`. The filename follows the pattern:
+- Backtest: `{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
+- Live:     `{strategyName}_{exchangeName}_live-{timestamp}.md`
 
 ### clear
 
@@ -107,6 +119,13 @@ Default filename: {strategyName}.md
 clear: (payload?: { exchangeName: string; frameName: string; backtest: boolean; }) => Promise<void>
 ```
 
-Clears accumulated heatmap data from storage.
-If payload is provided, clears only that exchangeName+frameName+backtest combination's data.
-If payload is omitted, clears all data.
+Evicts memoized `HeatmapStorage` instances, releasing all accumulated signal data.
+
+- With `payload` — clears only the storage bucket identified by
+  `(payload.exchangeName, payload.frameName, payload.backtest)`;
+  subsequent calls to `getData` / `getReport` / `dump` for that combination
+  will start from an empty state.
+- Without `payload` — clears **all** storage buckets across every
+  exchange / frame / mode combination.
+
+Also called internally by the unsubscribe closure returned from `subscribe()`.

@@ -6,7 +6,10 @@ group: docs
 # MeasureData
 
 ```ts
-type MeasureData = unknown;
+type MeasureData = {
+    id: string;
+    data: unknown;
+};
 ```
 
 Cache.file data type stored in persistence layer.

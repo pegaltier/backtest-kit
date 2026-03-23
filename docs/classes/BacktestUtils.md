@@ -30,7 +30,7 @@ Each symbol-strategy combination gets its own isolated instance.
 ### run
 
 ```ts
-run: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, unknown>
+run: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => AsyncGenerator<IStrategyTickResultScheduled | IStrategyTickResultOpened | IStrategyTickResultClosed | IStrategyTickResultCancelled, void, any>
 ```
 
 Runs backtest for a symbol with context propagation.
@@ -82,6 +82,26 @@ getScheduledSignal: (symbol: string, currentPrice: number, context: { strategyNa
 
 Retrieves the currently active scheduled signal for the strategy.
 If no scheduled signal exists, returns null.
+
+### hasNoPendingSignal
+
+```ts
+hasNoPendingSignal: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Returns true if there is NO active pending signal for the given symbol.
+
+Inverse of strategyCoreService.hasPendingSignal. Use to guard signal generation logic.
+
+### hasNoScheduledSignal
+
+```ts
+hasNoScheduledSignal: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Returns true if there is NO active scheduled signal for the given symbol.
+
+Inverse of strategyCoreService.hasScheduledSignal. Use to guard signal generation logic.
 
 ### getBreakeven
 

@@ -64,7 +64,9 @@ Stop loss exit price (must be &lt; priceOpen for long, &gt; priceOpen for short)
 minuteEstimatedTime: number
 ```
 
-Expected duration in minutes before time_expired
+Expected duration in minutes before time_expired.
+Use `Infinity` for no timeout — position stays open until TP/SL or explicit closePending().
+Default: GLOBAL_CONFIG.CC_MAX_SIGNAL_LIFETIME_MINUTES
 
 ### cost
 

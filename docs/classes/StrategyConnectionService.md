@@ -290,7 +290,7 @@ Evaluates current market conditions and returns signal state.
 ### backtest
 
 ```ts
-backtest: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, candles: ICandleData[]) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled>
+backtest: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, candles: ICandleData[]) => Promise<IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled>
 ```
 
 Executes backtest for current strategy with provided candles.
@@ -318,6 +318,15 @@ hasPendingSignal: (backtest: boolean, symbol: string, context: { strategyName: s
 Checks if there is an active pending signal for the strategy.
 Delegates to ClientStrategy.hasPendingSignal() which checks if there is an active position
 that has not been fully closed.
+
+### hasScheduledSignal
+
+```ts
+hasScheduledSignal: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<boolean>
+```
+
+Checks if there is an active scheduled signal for the strategy.
+Delegates to ClientStrategy.hasScheduledSignal() which checks if there is a waiting position signal
 
 ### getPositionEstimateMinutes
 
