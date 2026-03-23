@@ -8,6 +8,8 @@ import MessageModel from "../model/Message.model";
 const DUMP_AGENT_ANSWER_METHOD_NAME = "dump.dumpAgentAnswer";
 const DUMP_RECORD_METHOD_NAME = "dump.dumpRecord";
 const DUMP_TABLE_METHOD_NAME = "dump.dumpTable";
+const DUMP_TEXT_METHOD_NAME = "dump.dumpText";
+const DUMP_ERROR_METHOD_NAME = "dump.dumpError";
 
 /**
  * Dumps the full agent message history scoped to the current signal.
@@ -181,6 +183,122 @@ export async function dumpTable(dto: {
     return;
   }
   await Dump.dumpTable(rows, {
+    dumpId,
+    bucketName,
+    signalId: signal.id,
+  });
+}
+
+/**
+ * Dumps raw text content scoped to the current signal.
+ *
+ * Reads signalId from the active pending signal via execution and method context.
+ * If no pending signal exists, logs a warning and returns without writing.
+ *
+ * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
+ * @param dto.dumpId - Unique identifier for this dump entry
+ * @param dto.content - Arbitrary text content to persist
+ * @returns Promise that resolves when the dump is complete
+ *
+ * @deprecated Better use Dump.dumpText with manual signalId argument
+ *
+ * @example
+ * ```typescript
+ * import { dumpText } from "backtest-kit";
+ *
+ * await dumpText({ bucketName: "my-strategy", dumpId: "summary", content: "Agent concluded: bullish" });
+ * ```
+ */
+export async function dumpText(dto: {
+  bucketName: string;
+  dumpId: string;
+  content: string;
+}): Promise<void> {
+  const { bucketName, dumpId, content } = dto;
+  backtest.loggerService.info(DUMP_TEXT_METHOD_NAME, {
+    bucketName,
+    dumpId,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("dumpText requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("dumpText requires a method context");
+  }
+  const { backtest: isBacktest, symbol } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  const currentPrice =
+    await backtest.exchangeConnectionService.getAveragePrice(symbol);
+  const signal = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signal) {
+    console.warn(`backtest-kit dumpText no pending signal for symbol=${symbol} dumpId=${dumpId}`);
+    return;
+  }
+  await Dump.dumpText(content, {
+    dumpId,
+    bucketName,
+    signalId: signal.id,
+  });
+}
+
+/**
+ * Dumps an error description scoped to the current signal.
+ *
+ * Reads signalId from the active pending signal via execution and method context.
+ * If no pending signal exists, logs a warning and returns without writing.
+ *
+ * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
+ * @param dto.dumpId - Unique identifier for this dump entry
+ * @param dto.content - Error message or description to persist
+ * @returns Promise that resolves when the dump is complete
+ *
+ * @deprecated Better use Dump.dumpError with manual signalId argument
+ *
+ * @example
+ * ```typescript
+ * import { dumpError } from "backtest-kit";
+ *
+ * await dumpError({ bucketName: "my-strategy", dumpId: "error-1", content: "Tool call failed: timeout" });
+ * ```
+ */
+export async function dumpError(dto: {
+  bucketName: string;
+  dumpId: string;
+  content: string;
+}): Promise<void> {
+  const { bucketName, dumpId, content } = dto;
+  backtest.loggerService.info(DUMP_ERROR_METHOD_NAME, {
+    bucketName,
+    dumpId,
+  });
+  if (!ExecutionContextService.hasContext()) {
+    throw new Error("dumpError requires an execution context");
+  }
+  if (!MethodContextService.hasContext()) {
+    throw new Error("dumpError requires a method context");
+  }
+  const { backtest: isBacktest, symbol } = backtest.executionContextService.context;
+  const { exchangeName, frameName, strategyName } =
+    backtest.methodContextService.context;
+  const currentPrice =
+    await backtest.exchangeConnectionService.getAveragePrice(symbol);
+  const signal = await backtest.strategyCoreService.getPendingSignal(
+    isBacktest,
+    symbol,
+    currentPrice,
+    { exchangeName, frameName, strategyName },
+  );
+  if (!signal) {
+    console.warn(`backtest-kit dumpError no pending signal for symbol=${symbol} dumpId=${dumpId}`);
+    return;
+  }
+  await Dump.dumpError(content, {
     dumpId,
     bucketName,
     signalId: signal.id,

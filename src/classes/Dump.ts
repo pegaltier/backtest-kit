@@ -10,6 +10,10 @@ const DUMP_MEMORY_INSTANCE_METHOD_NAME_TABLE = "DumpMemoryInstance.dumpTable";
 const DUMP_MARKDOWN_INSTANCE_METHOD_NAME_AGENT = "DumpMarkdownInstance.dumpAgentAnswer";
 const DUMP_MARKDOWN_INSTANCE_METHOD_NAME_RECORD = "DumpMarkdownInstance.dumpRecord";
 const DUMP_MARKDOWN_INSTANCE_METHOD_NAME_TABLE = "DumpMarkdownInstance.dumpTable";
+const DUMP_MEMORY_INSTANCE_METHOD_NAME_TEXT = "DumpMemoryInstance.dumpText";
+const DUMP_MEMORY_INSTANCE_METHOD_NAME_ERROR = "DumpMemoryInstance.dumpError";
+const DUMP_MARKDOWN_INSTANCE_METHOD_NAME_TEXT = "DumpMarkdownInstance.dumpText";
+const DUMP_MARKDOWN_INSTANCE_METHOD_NAME_ERROR = "DumpMarkdownInstance.dumpError";
 const DUMP_ADAPTER_METHOD_NAME_USE_MARKDOWN = "DumpAdapter.useMarkdown";
 const DUMP_ADAPTER_METHOD_NAME_USE_MEMORY = "DumpAdapter.useMemory";
 const DUMP_ADAPTER_METHOD_NAME_USE_DUMMY = "DumpAdapter.useDummy";
@@ -106,6 +110,18 @@ export interface IDumpInstance {
    * @param context - Scope identifiers for the dump entry
    */
   dumpTable(rows: Record<string, unknown>[], context: IDumpContext): Promise<void>;
+  /**
+   * Persist a raw text or markdown string.
+   * @param content - Arbitrary text content to dump
+   * @param context - Scope identifiers for the dump entry
+   */
+  dumpText(content: string, context: IDumpContext): Promise<void>;
+  /**
+   * Persist an error description.
+   * @param content - Error message or description to dump
+   * @param context - Scope identifiers for the dump entry
+   */
+  dumpError(content: string, context: IDumpContext): Promise<void>;
 }
 
 /**
@@ -187,6 +203,48 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: context.bucketName,
       signalId: context.signalId,
       value: { rows },
+    });
+  }
+
+  /**
+   * Stores the text content in Memory as a plain object with a `content` field.
+   * Uses dumpId as memoryId, scoped by signalId and bucketName.
+   * @param content - Arbitrary text to persist
+   * @param context - Scope identifiers for the memory entry
+   */
+  public async dumpText(
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> {
+    backtest.loggerService.info(DUMP_MEMORY_INSTANCE_METHOD_NAME_TEXT, {
+      context,
+    });
+    await Memory.writeMemory({
+      memoryId: context.dumpId,
+      bucketName: context.bucketName,
+      signalId: context.signalId,
+      value: { content },
+    });
+  }
+
+  /**
+   * Stores the error content in Memory as a plain object with a `content` field.
+   * Uses dumpId as memoryId, scoped by signalId and bucketName.
+   * @param content - Error message or description to persist
+   * @param context - Scope identifiers for the memory entry
+   */
+  public async dumpError(
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> {
+    backtest.loggerService.info(DUMP_MEMORY_INSTANCE_METHOD_NAME_ERROR, {
+      context,
+    });
+    await Memory.writeMemory({
+      memoryId: context.dumpId,
+      bucketName: context.bucketName,
+      signalId: context.signalId,
+      value: { content },
     });
   }
 }
@@ -305,6 +363,69 @@ export class DumpMarkdownInstance implements IDumpInstance {
     content += RENDER_TABLE_FN(rows);
     await fs.writeFile(filePath, content, "utf8");
   }
+
+  /**
+   * Writes raw text content to a markdown file as-is.
+   * Path: ./dump/agent/{signalId}/{bucketName}/{dumpId}.md
+   * If the file already exists, the call is skipped (idempotent).
+   * @param content - Arbitrary text to write
+   * @param context - Scope identifiers used to construct the file path
+   */
+  public async dumpText(
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> {
+    backtest.loggerService.info(DUMP_MARKDOWN_INSTANCE_METHOD_NAME_TEXT, {
+      context,
+    });
+    const filePath = join(
+      "./dump/agent",
+      context.signalId,
+      context.bucketName,
+      `${context.dumpId}.md`,
+    );
+    try {
+      await fs.access(filePath);
+      return;
+    } catch {
+      await fs.mkdir(dirname(filePath), { recursive: true });
+    }
+    await fs.writeFile(filePath, content, "utf8");
+  }
+
+  /**
+   * Writes an error description to a markdown file.
+   * Path: ./dump/agent/{signalId}/{bucketName}/{dumpId}.md
+   * If the file already exists, the call is skipped (idempotent).
+   * @param content - Error message or description to write
+   * @param context - Scope identifiers used to construct the file path
+   */
+  public async dumpError(
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> {
+    backtest.loggerService.info(DUMP_MARKDOWN_INSTANCE_METHOD_NAME_ERROR, {
+      context,
+    });
+    const filePath = join(
+      "./dump/agent",
+      context.signalId,
+      context.bucketName,
+      `${context.dumpId}.md`,
+    );
+    try {
+      await fs.access(filePath);
+      return;
+    } catch {
+      await fs.mkdir(dirname(filePath), { recursive: true });
+    }
+    let output = `# Error Dump — ${context.dumpId}\n\n`;
+    output += `**signalId**: ${context.signalId}  \n`;
+    output += `**bucketName**: ${context.bucketName}\n\n`;
+    output += content;
+    output += "\n";
+    await fs.writeFile(filePath, output, "utf8");
+  }
 }
 
 /**
@@ -324,6 +445,16 @@ export class DumpDummyInstance implements IDumpInstance {
 
   /** No-op. */
   public async dumpTable(): Promise<void> {
+    void 0;
+  }
+
+  /** No-op. */
+  public async dumpText(): Promise<void> {
+    void 0;
+  }
+
+  /** No-op. */
+  public async dumpError(): Promise<void> {
     void 0;
   }
 }
@@ -372,6 +503,28 @@ export class DumpAdapter implements IDumpInstance {
     context: IDumpContext,
   ): Promise<void> => {
     return await this._instance.dumpTable(rows, context);
+  };
+
+  /**
+   * Persist raw text content.
+   * Delegates to the active backend instance.
+   */
+  public dumpText = async (
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> => {
+    return await this._instance.dumpText(content, context);
+  };
+
+  /**
+   * Persist an error description.
+   * Delegates to the active backend instance.
+   */
+  public dumpError = async (
+    content: string,
+    context: IDumpContext,
+  ): Promise<void> => {
+    return await this._instance.dumpError(content, context);
   };
 
   /**

@@ -155,6 +155,8 @@ export {
   dumpAgentAnswer,
   dumpRecord,
   dumpTable,
+  dumpText,
+  dumpError,
 } from "./function/dump";
 export {
   CandleInterval,
