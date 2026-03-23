@@ -30,6 +30,8 @@ export interface MessageModel<Role extends MessageRole = MessageRole> {
   role: Role;
   /** Text content of the message. Empty string for assistant messages that only contain tool_calls. */
   content: string;
+  /** Chain-of-thought / reasoning exposed by some providers (e.g. DeepSeek). */
+  reasoning_content?: string | null;
   /** Tool calls emitted by the assistant. Present only on assistant messages. */
   tool_calls?: MessageToolCall[];
   /** Images attached to the message. Supported as Blob, raw bytes, or base64 strings. */
