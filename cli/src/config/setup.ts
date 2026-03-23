@@ -21,6 +21,8 @@ import {
 {
   Markdown.enable();
   Report.enable();
+  Dump.enable();
+  Memory.enable();
 }
 
 {
