@@ -2069,6 +2069,7 @@ export type MemoryData = {
   priority: number;
   data: object;
   removed: boolean;
+  index: string;
 };
 
 /**

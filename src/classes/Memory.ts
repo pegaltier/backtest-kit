@@ -273,11 +273,11 @@ export class MemoryPersistInstance implements IMemoryInstance {
       initial,
     });
     await PersistMemoryAdapter.waitForInit(this.signalId, this.bucketName, initial);
-    for await (const { memoryId, data: { data, priority } } of PersistMemoryAdapter.listMemoryData(this.signalId, this.bucketName)) {
+    for await (const { memoryId, data: { data, index, priority } } of PersistMemoryAdapter.listMemoryData(this.signalId, this.bucketName)) {
       this._index.upsert({
         id: memoryId,
         content: data,
-        index: JSON.stringify(data),
+        index,
         priority,
       });
     }
@@ -292,7 +292,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
   public async writeMemory<T extends object = object>(
     memoryId: string,
     value: T,
-    index?: string,
+    index = JSON.stringify(value),
   ): Promise<void> {
     swarm.loggerService.debug(MEMORY_PERSIST_INSTANCE_METHOD_NAME_WRITE, {
       signalId: this.signalId,
@@ -301,7 +301,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
     });
     const priority = Date.now();
     await PersistMemoryAdapter.writeMemoryData(
-      { data: value, priority, removed: false },
+      { data: value, priority, removed: false, index },
       this.signalId,
       this.bucketName,
       memoryId,
@@ -309,7 +309,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
     this._index.upsert({
       id: memoryId,
       content: value,
-      index: index ?? JSON.stringify(value),
+      index,
       priority,
     });
   }

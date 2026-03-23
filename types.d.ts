@@ -8572,6 +8572,7 @@ interface MessageModel<Role extends MessageRole = MessageRole> {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this agent invocation
  * @param dto.messages - Full chat history (system, user, assistant, tool)
+ * @param dto.description - Human-readable label describing the agent invocation context; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpAgentAnswer with manual signalId argument
@@ -8580,13 +8581,14 @@ interface MessageModel<Role extends MessageRole = MessageRole> {
  * ```typescript
  * import { dumpAgentAnswer } from "backtest-kit";
  *
- * await dumpAgentAnswer({ bucketName: "my-strategy", dumpId: "reasoning-1", messages });
+ * await dumpAgentAnswer({ bucketName: "my-strategy", dumpId: "reasoning-1", messages, description: "BTC long signal reasoning" });
  * ```
  */
 declare function dumpAgentAnswer(dto: {
     bucketName: string;
     dumpId: string;
     messages: MessageModel[];
+    description: string;
 }): Promise<void>;
 /**
  * Dumps a flat key-value record scoped to the current signal.
@@ -8597,6 +8599,7 @@ declare function dumpAgentAnswer(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.record - Arbitrary flat object to persist
+ * @param dto.description - Human-readable label describing the record contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpRecord with manual signalId argument
@@ -8605,13 +8608,14 @@ declare function dumpAgentAnswer(dto: {
  * ```typescript
  * import { dumpRecord } from "backtest-kit";
  *
- * await dumpRecord({ bucketName: "my-strategy", dumpId: "context", record: { price: 42000, signal: "long" } });
+ * await dumpRecord({ bucketName: "my-strategy", dumpId: "context", record: { price: 42000, signal: "long" }, description: "Signal context at entry" });
  * ```
  */
 declare function dumpRecord(dto: {
     bucketName: string;
     dumpId: string;
     record: Record<string, unknown>;
+    description: string;
 }): Promise<void>;
 /**
  * Dumps an array of objects as a table scoped to the current signal.
@@ -8624,6 +8628,7 @@ declare function dumpRecord(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.rows - Array of arbitrary objects to render as a table
+ * @param dto.description - Human-readable label describing the table contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpTable with manual signalId argument
@@ -8632,13 +8637,14 @@ declare function dumpRecord(dto: {
  * ```typescript
  * import { dumpTable } from "backtest-kit";
  *
- * await dumpTable({ bucketName: "my-strategy", dumpId: "candles", rows: [{ time: 1234, close: 42000 }] });
+ * await dumpTable({ bucketName: "my-strategy", dumpId: "candles", rows: [{ time: 1234, close: 42000 }], description: "Recent candle history" });
  * ```
  */
 declare function dumpTable(dto: {
     bucketName: string;
     dumpId: string;
     rows: Record<string, unknown>[];
+    description: string;
 }): Promise<void>;
 /**
  * Dumps raw text content scoped to the current signal.
@@ -8649,6 +8655,7 @@ declare function dumpTable(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.content - Arbitrary text content to persist
+ * @param dto.description - Human-readable label describing the content; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpText with manual signalId argument
@@ -8657,13 +8664,14 @@ declare function dumpTable(dto: {
  * ```typescript
  * import { dumpText } from "backtest-kit";
  *
- * await dumpText({ bucketName: "my-strategy", dumpId: "summary", content: "Agent concluded: bullish" });
+ * await dumpText({ bucketName: "my-strategy", dumpId: "summary", content: "Agent concluded: bullish", description: "Agent final summary" });
  * ```
  */
 declare function dumpText(dto: {
     bucketName: string;
     dumpId: string;
     content: string;
+    description: string;
 }): Promise<void>;
 /**
  * Dumps an error description scoped to the current signal.
@@ -8674,6 +8682,7 @@ declare function dumpText(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.content - Error message or description to persist
+ * @param dto.description - Human-readable label describing the error context; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Better use Dump.dumpError with manual signalId argument
@@ -8682,13 +8691,14 @@ declare function dumpText(dto: {
  * ```typescript
  * import { dumpError } from "backtest-kit";
  *
- * await dumpError({ bucketName: "my-strategy", dumpId: "error-1", content: "Tool call failed: timeout" });
+ * await dumpError({ bucketName: "my-strategy", dumpId: "error-1", content: "Tool call failed: timeout", description: "Tool execution error" });
  * ```
  */
 declare function dumpError(dto: {
     bucketName: string;
     dumpId: string;
     content: string;
+    description: string;
 }): Promise<void>;
 /**
  * Dumps an arbitrary nested object as a fenced JSON block scoped to the current signal.
@@ -8699,6 +8709,7 @@ declare function dumpError(dto: {
  * @param dto.bucketName - Bucket name grouping dumps by strategy or agent name
  * @param dto.dumpId - Unique identifier for this dump entry
  * @param dto.json - Arbitrary nested object to serialize with JSON.stringify
+ * @param dto.description - Human-readable label describing the object contents; included in the BM25 index for Memory search
  * @returns Promise that resolves when the dump is complete
  *
  * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
@@ -8707,13 +8718,14 @@ declare function dumpError(dto: {
  * ```typescript
  * import { dumpJson } from "backtest-kit";
  *
- * await dumpJson({ bucketName: "my-strategy", dumpId: "signal-state", json: { entries: [], partials: [] } });
+ * await dumpJson({ bucketName: "my-strategy", dumpId: "signal-state", json: { entries: [], partials: [] }, description: "Signal state snapshot" });
  * ```
  */
 declare function dumpJson(dto: {
     bucketName: string;
     dumpId: string;
     json: object;
+    description: string;
 }): Promise<void>;
 
 /**
@@ -11574,6 +11586,7 @@ type MemoryData = {
     priority: number;
     data: object;
     removed: boolean;
+    index: string;
 };
 /**
  * Utility class for managing memory entry persistence.
@@ -18387,6 +18400,7 @@ declare const NotificationBacktest: NotificationBacktestAdapter;
 type SearchSettings = {
     BM25_K1: number;
     BM25_B: number;
+    BM25_SCORE: number;
 };
 
 /**
@@ -18403,8 +18417,9 @@ interface IMemoryInstance {
      * Write a value to memory.
      * @param memoryId - Unique entry identifier
      * @param value - Value to store
+     * @param index - Optional BM25 index string; defaults to JSON.stringify(value)
      */
-    writeMemory<T extends object = object>(memoryId: string, value: T): Promise<void>;
+    writeMemory<T extends object = object>(memoryId: string, value: T, index?: string): Promise<void>;
     /**
      * Search memory using BM25 full-text scoring.
      * @param query - Search query string
@@ -18468,12 +18483,14 @@ declare class MemoryAdapter implements TMemoryInstance {
      * @param dto.value - Value to store
      * @param dto.signalId - Signal identifier
      * @param dto.bucketName - Bucket name
+     * @param dto.index - Optional BM25 index string; defaults to JSON.stringify(value)
      */
     writeMemory: <T extends object = object>(dto: {
         memoryId: string;
         value: T;
         signalId: string;
         bucketName: string;
+        index?: string;
     }) => Promise<void>;
     /**
      * Search memory using BM25 full-text scoring.
@@ -18557,6 +18574,8 @@ interface IDumpContext {
     bucketName: string;
     /** Unique identifier for this dump entry */
     dumpId: string;
+    /** Human-readable label describing the dump contents; included in the BM25 index for Memory search and rendered in Markdown output */
+    description: string;
 }
 /**
  * Interface for dump instance implementations.
@@ -18568,40 +18587,46 @@ interface IDumpInstance {
      * Persist the full message history of one agent invocation.
      * @param messages - Full chat history (system, user, assistant, tool)
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the agent invocation context; included in the BM25 index for Memory search
      */
-    dumpAgentAnswer(messages: MessageModel[], dumpId: string): Promise<void>;
+    dumpAgentAnswer(messages: MessageModel[], dumpId: string, description: string): Promise<void>;
     /**
      * Persist a flat key-value record.
      * @param record - Arbitrary flat object to dump
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the record contents; included in the BM25 index for Memory search
      */
-    dumpRecord(record: Record<string, unknown>, dumpId: string): Promise<void>;
+    dumpRecord(record: Record<string, unknown>, dumpId: string, description: string): Promise<void>;
     /**
      * Persist an array of objects as a table.
      * Column headers are derived from the union of all keys across all rows.
      * @param rows - Array of arbitrary objects to dump
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the table contents; included in the BM25 index for Memory search
      */
-    dumpTable(rows: Record<string, unknown>[], dumpId: string): Promise<void>;
+    dumpTable(rows: Record<string, unknown>[], dumpId: string, description: string): Promise<void>;
     /**
      * Persist a raw text or markdown string.
      * @param content - Arbitrary text content to dump
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the content; included in the BM25 index for Memory search
      */
-    dumpText(content: string, dumpId: string): Promise<void>;
+    dumpText(content: string, dumpId: string, description: string): Promise<void>;
     /**
      * Persist an error description.
      * @param content - Error message or description to dump
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the error context; included in the BM25 index for Memory search
      */
-    dumpError(content: string, dumpId: string): Promise<void>;
+    dumpError(content: string, dumpId: string, description: string): Promise<void>;
     /**
      * Persist an arbitrary nested object as a fenced JSON block.
      * @param json - Arbitrary object to serialize with JSON.stringify
      * @param dumpId - Unique identifier for this dump entry
+     * @param description - Human-readable label describing the object contents; included in the BM25 index for Memory search
      * @deprecated Prefer dumpRecord — flat key-value structure maps naturally to markdown tables and SQL storage
      */
-    dumpJson(json: object, dumpId: string): Promise<void>;
+    dumpJson(json: object, dumpId: string, description: string): Promise<void>;
 }
 /**
  * Constructor type for dump instance implementations.
