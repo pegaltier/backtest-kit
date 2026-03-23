@@ -25,9 +25,9 @@ export type MessageToolCall = {
  * A single message in an LLM chat history.
  * Covers all roles: system instructions, user input, assistant responses, and tool results.
  */
-export interface MessageModel {
+export interface MessageModel<Role extends MessageRole = MessageRole> {
   /** Sender role — determines how the message is interpreted by the model. */
-  role: MessageRole;
+  role: Role;
   /** Text content of the message. Empty string for assistant messages that only contain tool_calls. */
   content: string;
   /** Tool calls emitted by the assistant. Present only on assistant messages. */
