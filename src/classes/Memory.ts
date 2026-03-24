@@ -62,12 +62,12 @@ export interface IMemoryInstance {
    * Write a value to memory.
    * @param memoryId - Unique entry identifier
    * @param value - Value to store
-   * @param index - Optional BM25 index string; defaults to JSON.stringify(value)
+   * @param description - Optional BM25 index string; defaults to JSON.stringify(value)
    */
   writeMemory<T extends object = object>(
     memoryId: string,
     value: T,
-    index?: string,
+    description: string,
   ): Promise<void>;
 
   /**
@@ -171,7 +171,7 @@ export class MemoryLocalInstance implements IMemoryInstance {
   public async writeMemory<T extends object = object>(
     memoryId: string,
     value: T,
-    index?: string,
+    description: string,
   ) {
     swarm.loggerService.debug(MEMORY_LOCAL_INSTANCE_METHOD_NAME_WRITE, {
       signalId: this.signalId,
@@ -181,7 +181,7 @@ export class MemoryLocalInstance implements IMemoryInstance {
     this._index.upsert({
       id: memoryId,
       content: value,
-      index: index ?? JSON.stringify(value),
+      index: description,
       priority: Date.now(),
     });
   }
@@ -551,14 +551,14 @@ export class MemoryAdapter implements TMemoryInstance {
    * @param dto.value - Value to store
    * @param dto.signalId - Signal identifier
    * @param dto.bucketName - Bucket name
-   * @param dto.index - Optional BM25 index string; defaults to JSON.stringify(value)
+   * @param dto.description - Optional BM25 index string; defaults to JSON.stringify(value)
    */
   public writeMemory = async <T extends object = object>(dto: {
     memoryId: string;
     value: T;
     signalId: string;
     bucketName: string;
-    index?: string;
+    description: string;
   }) => {
     if (!this.enable.hasValue()) {
       throw new Error("MemoryAdapter is not enabled. Call enable() first.");
@@ -572,7 +572,7 @@ export class MemoryAdapter implements TMemoryInstance {
     const isInitial = !this.getInstance.has(key);
     const instance = this.getInstance(dto.signalId, dto.bucketName);
     await instance.waitForInit(isInitial);
-    return await instance.writeMemory<T>(dto.memoryId, dto.value, dto.index);
+    return await instance.writeMemory<T>(dto.memoryId, dto.value, dto.description);
   };
 
   /**

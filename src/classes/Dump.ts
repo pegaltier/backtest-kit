@@ -357,7 +357,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: { messages },
-      index: description,
+      description,
     });
   }
 
@@ -379,7 +379,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: record,
-      index: description,
+      description,
     });
   }
 
@@ -402,7 +402,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: { rows },
-      index: description,
+      description,
     });
   }
 
@@ -424,7 +424,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: { content },
-      index: description,
+      description,
     });
   }
 
@@ -446,7 +446,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: { content },
-      index: description,
+      description,
     });
   }
 
@@ -469,7 +469,7 @@ export class DumpMemoryInstance implements IDumpInstance {
       bucketName: this.bucketName,
       signalId: this.signalId,
       value: json,
-      index: description,
+      description,
     });
   }
 

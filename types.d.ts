@@ -8417,6 +8417,7 @@ declare function writeMemory<T extends object = object>(dto: {
     bucketName: string;
     memoryId: string;
     value: T;
+    description: string;
 }): Promise<void>;
 /**
  * Reads a value from memory scoped to the current signal.
@@ -18458,9 +18459,9 @@ interface IMemoryInstance {
      * Write a value to memory.
      * @param memoryId - Unique entry identifier
      * @param value - Value to store
-     * @param index - Optional BM25 index string; defaults to JSON.stringify(value)
+     * @param description - Optional BM25 index string; defaults to JSON.stringify(value)
      */
-    writeMemory<T extends object = object>(memoryId: string, value: T, index?: string): Promise<void>;
+    writeMemory<T extends object = object>(memoryId: string, value: T, description: string): Promise<void>;
     /**
      * Search memory using BM25 full-text scoring.
      * @param query - Search query string
@@ -18541,14 +18542,14 @@ declare class MemoryAdapter implements TMemoryInstance {
      * @param dto.value - Value to store
      * @param dto.signalId - Signal identifier
      * @param dto.bucketName - Bucket name
-     * @param dto.index - Optional BM25 index string; defaults to JSON.stringify(value)
+     * @param dto.description - Optional BM25 index string; defaults to JSON.stringify(value)
      */
     writeMemory: <T extends object = object>(dto: {
         memoryId: string;
         value: T;
         signalId: string;
         bucketName: string;
-        index?: string;
+        description: string;
     }) => Promise<void>;
     /**
      * Search memory using BM25 full-text scoring.

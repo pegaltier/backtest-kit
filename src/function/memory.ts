@@ -36,8 +36,9 @@ export async function writeMemory<T extends object = object>(dto: {
   bucketName: string;
   memoryId: string;
   value: T;
+  description: string;
 }): Promise<void> {
-  const { bucketName, memoryId, value } = dto;
+  const { bucketName, memoryId, value, description } = dto;
   backtest.loggerService.info(WRITE_MEMORY_METHOD_NAME, {
     bucketName,
     memoryId,
@@ -68,6 +69,7 @@ export async function writeMemory<T extends object = object>(dto: {
     value,
     signalId: signal.id,
     bucketName,
+    description,
   });
 }
 
