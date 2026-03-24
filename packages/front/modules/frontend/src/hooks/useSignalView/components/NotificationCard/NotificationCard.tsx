@@ -472,7 +472,7 @@ export const NotificationCard = forwardRef(
         >
           <Box sx={{
             flex: 1,
-            position: "relative", overflow: "hidden", height: "100%", width: "100%", borderRadius: "12px"
+            position: "relative", overflow: "clip", height: "100%", width: "100%", borderRadius: "12px"
           }}>
             <Stack direction="row" spacing={2} sx={{ p: 2 }}>
               <Avatar

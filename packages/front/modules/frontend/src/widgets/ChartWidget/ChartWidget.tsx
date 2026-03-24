@@ -18,7 +18,7 @@ const useStyles = makeStyles()({
     position: "relative",
     margin: 0,
     padding: 0,
-    overflow: "hidden",
+    overflow: "clip",
   },
   editor: {
     position: "absolute",

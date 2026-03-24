@@ -119,7 +119,7 @@ export const PriceChartWidget = ({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "stretch",
-                overflow: "hidden",
+                overflow: "clip",
             }}
         >
             <Box

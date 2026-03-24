@@ -24,7 +24,7 @@ const useStyles = makeStyles()((theme) => ({
   },
   container: {
     position: "relative",
-    overflow: "hidden",
+    overflow: "clip",
     minWidth: 375,
     maxWidth: 375,
     padding: 15,

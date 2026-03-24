@@ -426,7 +426,7 @@ export const SignalGridWidget = ({
           justifyContent: "stretch",
           flexDirection: "column",
           background: "whitesmote",
-          overflow: "hidden",
+          overflow: "clip",
           ...sx,
         }}
       >

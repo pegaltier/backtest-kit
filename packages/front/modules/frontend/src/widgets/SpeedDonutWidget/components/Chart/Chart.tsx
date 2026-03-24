@@ -25,7 +25,7 @@ const useStyles = makeStyles()({
     display: "flex",
     alignItems: "stretch",
     justifyContent: "stretch",
-    overflow: "hidden"
+    overflow: "clip"
   },
   container: {
     flex: 1,

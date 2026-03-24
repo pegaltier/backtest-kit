@@ -16,7 +16,7 @@ const useStyles = makeStyles()({
     justifyContent: "stretch",
     paddingLeft: "20px",
     paddingRight: "20px",
-    overflow: "hidden"
+    overflow: "clip"
   },
   container: {
     flex: 1,

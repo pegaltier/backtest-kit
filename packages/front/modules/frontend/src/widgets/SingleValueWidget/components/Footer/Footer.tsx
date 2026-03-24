@@ -20,7 +20,7 @@ const useStyles = makeStyles()((theme) => ({
     justifyContent: "stretch",
     whiteSpace: "nowrap",
     gap: "8px",
-    overflow: "hidden",
+    overflow: "clip",
     padding: "10px",
     borderTop: `1px solid ${theme.palette.divider}`,
     "& > *": { flex: 1 }

@@ -27,7 +27,7 @@ const useStyles = makeStyles()((theme) => ({
         height: "100%",
         width: "100%",
         background: "#eee",
-        overflow: "hidden",
+        overflow: "clip",
     },
     header: {
         position: "absolute",
@@ -72,7 +72,7 @@ const useStyles = makeStyles()((theme) => ({
         padding: 5,
         width: "100%",
         background: "white",
-        overflow: "hidden",
+        overflow: "clip",
         display: "flex",
         alignItems: "stretch",
         justifyContent: "stretch",

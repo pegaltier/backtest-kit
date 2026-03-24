@@ -22,7 +22,7 @@ const useStyles = makeStyles()((theme) => ({
     fontSize: "18px",
     paddingLeft: "8px",
     gap: "8px",
-    overflow: "hidden",
+    overflow: "clip",
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
   solidBackground: {

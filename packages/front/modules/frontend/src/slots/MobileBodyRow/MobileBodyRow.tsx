@@ -33,12 +33,12 @@ const useStyles = makeStyles()((theme) => ({
     "& > .MuiTableCell-root": {
       borderBottom: `1px solid ${theme.palette.divider}`,
     },
-    overflow: "hidden",
+    overflow: "clip",
   },
   row: {
     "& .MuiTableCell-root": {
       padding: "6px",
-      overflow: "hidden",
+      overflow: "clip",
     },
     marginBottom: 16,
   },

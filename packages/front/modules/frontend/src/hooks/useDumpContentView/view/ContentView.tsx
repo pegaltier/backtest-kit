@@ -15,7 +15,7 @@ const useStyles = makeStyles()({
     container: {
         flex: 1,
         position: "relative",
-        overflow: "hidden",
+        overflow: "clip",
     },
     content: {
         position: "absolute",

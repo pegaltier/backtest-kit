@@ -71,7 +71,7 @@ export const LogCard = VirtualView.virtualize<ILogCardProps>(
           sx={{
             flex: 1,
             position: "relative",
-            overflow: "hidden",
+            overflow: "clip",
             height: "100%",
             width: "100%",
             borderRadius: "12px",

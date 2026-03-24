@@ -17,7 +17,7 @@ const useStyles = makeStyles()((theme) => ({
     root: {
         position: "relative",
         background: "#0001",
-        overflow: "hidden",
+        overflow: "clip",
     },
     header: {
         position: "absolute",

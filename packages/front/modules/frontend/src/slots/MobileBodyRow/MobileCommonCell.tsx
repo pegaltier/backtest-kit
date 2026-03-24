@@ -42,7 +42,7 @@ const useStyles = makeStyles()({
   },
   content: {
     position: "relative",
-    overflow: "hidden",
+    overflow: "clip",
     overflowWrap: "break-word",
     fontWeight: "bold",
     flex: 1,

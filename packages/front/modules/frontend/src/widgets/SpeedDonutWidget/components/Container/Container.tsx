@@ -16,7 +16,7 @@ interface IContainerProps {
 const useStyles = makeStyles()((theme) => ({
   root: {
     position: "relative",
-    overflow: "hidden",
+    overflow: "clip",
     height: "100%",
     width: "100%",
     background: theme.palette.background.paper,
