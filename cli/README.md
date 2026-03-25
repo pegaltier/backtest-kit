@@ -471,7 +471,7 @@ my-project/
 Inside `pine.module.ts` call `addExchangeSchema` from `backtest-kit` and give the exchange a name:
 
 ```typescript
-// math/pine.module.ts
+// /modules/pine.module.ts
 import { addExchangeSchema } from "backtest-kit";
 import ccxt from "ccxt";
 
