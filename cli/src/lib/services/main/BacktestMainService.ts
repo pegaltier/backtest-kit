@@ -84,7 +84,7 @@ export class BacktestMainService {
         this.telegramProviderService.connect();
       }
 
-      await this.resolveService.attachEntryPoint(payload.entryPoint);
+      await this.resolveService.attachJavascript(payload.entryPoint);
 
       {
         this.exchangeSchemaService.addSchema();

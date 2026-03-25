@@ -457,21 +457,28 @@ For projects that compile to or use CommonJS. Loaded via `require()`:
 
 ### Exchange via `pine.module`
 
-By default the CLI registers CCXT Binance automatically. To use a different exchange — or to configure API keys, custom rate limits, or a non-spot market — drop a `pine.module` file next to your `.pine` file. The CLI loads it as a side-effect import before running the script.
+By default the CLI registers CCXT Binance automatically. To use a different exchange — or to configure API keys, custom rate limits, or a non-spot market — create a `modules/pine.module.ts` file. The CLI loads it automatically before running the script.
+
+The CLI looks for `modules/pine.module` in two locations (first match wins):
+
+1. **Next to the `.pine` file** — `<pine-file-dir>/modules/pine.module.ts`
+2. **Project root** — `<cwd>/modules/pine.module.ts`
 
 ```
 my-project/
 ├── math/
-│   └── master_trend_15m.pine       ← indicator
+│   ├── master_trend_15m.pine         ← indicator
+│   └── modules/
+│       └── pine.module.ts            ← loaded first (next to .pine file)
 ├── modules/
-│   └── pine.module.ts              ← exchange registration (loaded automatically)
+│   └── pine.module.ts                ← fallback (project root)
 └── package.json
 ```
 
 Inside `pine.module.ts` call `addExchangeSchema` from `backtest-kit` and give the exchange a name:
 
 ```typescript
-// /modules/pine.module.ts
+// modules/pine.module.ts
 import { addExchangeSchema } from "backtest-kit";
 import ccxt from "ccxt";
 
@@ -486,6 +493,42 @@ addExchangeSchema({
   },
   formatPrice: (symbol, price) => price.toFixed(2),
   formatQuantity: (symbol, quantity) => quantity.toFixed(8),
+});
+```
+
+### Environment variables (`.env`)
+
+Before loading `pine.module`, the CLI loads `.env` files in the same order as for strategy modules — project root first, then the `.pine` file directory (overrides root):
+
+```
+my-project/
+├── math/
+│   ├── .env                          ← loaded second (overrides root)
+│   └── master_trend_15m.pine
+├── .env                              ← loaded first
+└── package.json
+```
+
+Use this to store API keys without hardcoding them:
+
+```env
+# .env
+BYBIT_API_KEY=xxx
+BYBIT_API_SECRET=yyy
+```
+
+```typescript
+// modules/pine.module.ts
+addExchangeSchema({
+  exchangeName: "my-exchange",
+  getCandles: async (symbol, interval, since, limit) => {
+    const exchange = new ccxt.bybit({
+      apiKey: process.env.BYBIT_API_KEY,
+      secret: process.env.BYBIT_API_SECRET,
+      enableRateLimit: true,
+    });
+    // ...
+  },
 });
 ```
 

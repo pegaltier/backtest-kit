@@ -103,7 +103,8 @@ declare class ResolveService {
     readonly OVERRIDE_TEMPLATE_DIR: string;
     readonly OVERRIDE_MODULES_DIR: string;
     getIsLaunched: () => boolean;
-    attachEntryPoint: (entryPoint: string) => Promise<void>;
+    attachPine: (pinePath: string) => void;
+    attachJavascript: (jsPath: string) => Promise<void>;
 }
 
 declare class ErrorService {

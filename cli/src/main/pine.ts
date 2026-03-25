@@ -21,6 +21,8 @@ export const main = async () => {
     return;
   }
 
+  cli.resolveService.attachPine(entryPoint);
+
   await cli.moduleConnectionService.loadModule("./pine.module")
 
   await cli.exchangeSchemaService.addSchema();
