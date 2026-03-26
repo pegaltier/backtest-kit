@@ -3730,7 +3730,8 @@ type ScheduledProcessResult =
 const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
   self: ClientStrategy,
   scheduled: IScheduledSignalRow,
-  candles: ICandleData[]
+  candles: ICandleData[],
+  frameEndTime: number
 ): Promise<ScheduledProcessResult> => {
   const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
   const maxTimeToWait = GLOBAL_CONFIG.CC_SCHEDULE_AWAIT_MINUTES * 60 * 1000;
@@ -3747,6 +3748,18 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
 
     const recentCandles = candles.slice(Math.max(0, i - (candlesCount - 1)), i + 1);
     const averagePrice = GET_AVG_PRICE_FN(recentCandles);
+
+    // Если timestamp свечи вышел за frameEndTime — отменяем scheduled сигнал
+    if (candle.timestamp > frameEndTime) {
+      const result = await CANCEL_SCHEDULED_SIGNAL_IN_BACKTEST_FN(
+        self,
+        scheduled,
+        averagePrice,
+        candle.timestamp,
+        "timeout"
+      );
+      return { outcome: "cancelled", result };
+    }
 
     // КРИТИЧНО: Проверяем был ли сигнал отменен пользователем через cancel()
     if (self._cancelledSignal) {
@@ -3975,7 +3988,8 @@ const PROCESS_SCHEDULED_SIGNAL_CANDLES_FN = async (
 const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
   self: ClientStrategy,
   signal: ISignalRow,
-  candles: ICandleData[]
+  candles: ICandleData[],
+  frameEndTime: number
 ): Promise<IStrategyTickResultClosed | IStrategyTickResultActive> => {
   const candlesCount = GLOBAL_CONFIG.CC_AVG_PRICE_CANDLES_COUNT;
   const bufferCandlesCount = candlesCount - 1;
@@ -3996,6 +4010,23 @@ const PROCESS_PENDING_SIGNAL_CANDLES_FN = async (
     const startIndex = Math.max(0, i - (candlesCount - 1));
     const recentCandles = candles.slice(startIndex, i + 1);
     const averagePrice = GET_AVG_PRICE_FN(recentCandles);
+
+    // Если timestamp свечи вышел за frameEndTime — закрываем pending сигнал по time_expired
+    if (currentCandleTimestamp > frameEndTime) {
+      const result = await CLOSE_PENDING_SIGNAL_IN_BACKTEST_FN(
+        self,
+        signal,
+        averagePrice,
+        "time_expired",
+        currentCandleTimestamp
+      );
+      if (!result) {
+        throw new Error(
+          `ClientStrategy backtest: frameEndTime time_expired close rejected by sync (signalId=${signal.id}).`
+        );
+      }
+      return result;
+    }
 
     // КРИТИЧНО: Проверяем был ли сигнал закрыт пользователем через closePending()
     if (self._closedSignal) {
@@ -5502,7 +5533,8 @@ export class ClientStrategy implements IStrategy {
   public async backtest(
     symbol: string,
     strategyName: StrategyName,
-    candles: ICandleData[]
+    candles: ICandleData[],
+    frameEndTime: number,
   ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive> {
     this.params.logger.debug("ClientStrategy backtest", {
       symbol,
@@ -5511,6 +5543,7 @@ export class ClientStrategy implements IStrategy {
       candlesCount: candles.length,
       hasScheduled: !!this._scheduledSignal,
       hasPending: !!this._pendingSignal,
+      frameEndTime,
     });
 
     if (!this.params.execution.context.backtest) {
@@ -5715,7 +5748,7 @@ export class ClientStrategy implements IStrategy {
       });
 
       const scheduledResult =
-        await PROCESS_SCHEDULED_SIGNAL_CANDLES_FN(this, scheduled, candles);
+        await PROCESS_SCHEDULED_SIGNAL_CANDLES_FN(this, scheduled, candles, frameEndTime);
 
       if (scheduledResult.outcome === "cancelled") {
         return scheduledResult.result;
@@ -5839,7 +5872,8 @@ export class ClientStrategy implements IStrategy {
     return await PROCESS_PENDING_SIGNAL_CANDLES_FN(
       this,
       signal,
-      candles
+      candles,
+      frameEndTime
     );
   }
 

@@ -1022,18 +1022,20 @@ export class StrategyConnectionService implements TStrategy {
   public backtest = async (
     symbol: string,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName },
-    candles: ICandleData[]
+    candles: ICandleData[],
+    frameEndTime: number,
   ): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive> => {
     const backtest = this.executionContextService.context.backtest;
     this.loggerService.log("strategyConnectionService backtest", {
       symbol,
       context,
       candleCount: candles.length,
+      frameEndTime,
       backtest,
     });
     const strategy = this.getStrategy(symbol, context.strategyName, context.exchangeName, context.frameName, backtest);
     await strategy.waitForInit();
-    const tick = await strategy.backtest(symbol, context.strategyName, candles);
+    const tick = await strategy.backtest(symbol, context.strategyName, candles, frameEndTime);
     {
       await CALL_SIGNAL_EMIT_FN(this, tick, context, backtest, symbol);
     }

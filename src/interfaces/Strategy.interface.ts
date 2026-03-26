@@ -974,7 +974,7 @@ export interface IStrategy {
    * @param candles - Array of historical candle data
    * @returns Promise resolving to closed result (always completes signal)
    */
-  backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+  backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[], frameEndTime: number) => Promise<IStrategyBacktestResult>;
 
   /**
    * Stops the strategy from generating new signals.
