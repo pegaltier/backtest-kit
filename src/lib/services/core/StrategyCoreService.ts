@@ -429,6 +429,7 @@ export class StrategyCoreService implements TStrategy {
   public backtest = async (
     symbol: string,
     candles: ICandleData[],
+    frameEndTime: number,
     when: Date,
     backtest: boolean,
     context: { strategyName: StrategyName; exchangeName: ExchangeName; frameName: FrameName }
@@ -439,11 +440,12 @@ export class StrategyCoreService implements TStrategy {
       when,
       backtest,
       context,
+      frameEndTime,
     });
     await this.validate(context);
     return await ExecutionContextService.runInContext(
       async () => {
-        return await this.strategyConnectionService.backtest(symbol, context, candles);
+        return await this.strategyConnectionService.backtest(symbol, context, candles, frameEndTime);
       },
       {
         symbol,

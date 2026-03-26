@@ -2938,7 +2938,7 @@ interface IStrategy {
      * @param candles - Array of historical candle data
      * @returns Promise resolving to closed result (always completes signal)
      */
-    backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[]) => Promise<IStrategyBacktestResult>;
+    backtest: (symbol: string, strategyName: StrategyName, candles: ICandleData[], frameEndTime: number) => Promise<IStrategyBacktestResult>;
     /**
      * Stops the strategy from generating new signals.
      *
@@ -23666,7 +23666,7 @@ declare class StrategyConnectionService implements TStrategy$1 {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, candles: ICandleData[]) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive>;
+    }, candles: ICandleData[], frameEndTime: number) => Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | IStrategyTickResultActive>;
     /**
      * Stops the specified strategy from generating new signals.
      *
@@ -25062,7 +25062,7 @@ declare class StrategyCoreService implements TStrategy {
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @returns Closed signal result with PNL
      */
-    backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: {
+    backtest: (symbol: string, candles: ICandleData[], frameEndTime: number, when: Date, backtest: boolean, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
