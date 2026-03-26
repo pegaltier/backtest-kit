@@ -1779,3 +1779,131 @@ test("HOLD: candle count mismatch after deduplication of duplicate timestamps", 
 
   fail(`Unexpected error (expected candle count mismatch after dedup): ${errMsg}`);
 });
+
+/**
+ * ТЕСТ #16: Первая свеча возвращается с timestamp !== sinceTimestamp
+ *
+ * Сценарий:
+ * - Адаптер возвращает 1000 свечей, но первая смещена на +60s от запрошенного since
+ * - ClientExchange.getNextCandles: uniqueData[0].timestamp !== sinceTimestamp
+ * - Бросает "first candle timestamp mismatch"
+ * - Ошибка всплывает через errorEmitter, TFnError → _fatalError → process.exit(-1)
+ */
+test("HOLD: first candle timestamp mismatch error surfaced when adapter returns wrong openTime", async ({ pass, fail }) => {
+
+  setConfig({
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: Infinity,
+  }, true);
+
+  const startTime = new Date("2024-01-01T14:00:00Z").getTime();
+  const intervalMs = 60_000;
+
+  // Scheduled batch since=startTime-4min → не попадает (−4 < 1100)
+  // Первый чанк в RUN_INFINITY_CHUNK_LOOP_FN since≈minute 1116 → попадает (1116 > 1100)
+  const mismatchBoundaryMs = startTime + 1100 * intervalMs;
+
+  let signalGenerated = false;
+  let errorCaught = null;
+  let mismatchTriggered = false;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-ts-mismatch",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+
+      // Первый чанк infinity loop: первая свеча сдвинута на +1 минуту от запрошенного since
+      if (alignedSince >= mismatchBoundaryMs) {
+        mismatchTriggered = true;
+        const result = [];
+        for (let i = 0; i < limit; i++) {
+          const timestamp = alignedSince + (i + 1) * intervalMs; // +1 — первая свеча не совпадает с since
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        }
+        return result;
+      }
+
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-ts-mismatch",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+    callbacks: {},
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-ts-mismatch",
+    interval: "1m",
+    startDate: new Date("2024-01-01T14:00:00Z"),
+    endDate: new Date("2024-01-01T14:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  const originalProcessExit = process.exit;
+  process.exit = () => {
+    process.exit = originalProcessExit;
+    awaitSubject.next();
+  };
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-ts-mismatch",
+    exchangeName: "binance-hold-ts-mismatch",
+    frameName: "5m-hold-ts-mismatch",
+  });
+
+  await awaitSubject.toPromise();
+  process.exit = originalProcessExit;
+  unsubscribeError();
+
+  if (!mismatchTriggered) {
+    fail("Timestamp mismatch boundary was never reached — chunk loop did not start. Check mismatchBoundaryMs.");
+    return;
+  }
+
+  if (!errorCaught) {
+    fail("No error was caught! Expected 'first candle timestamp mismatch' error from ClientExchange.");
+    return;
+  }
+
+  const errMsg = errorCaught.message || String(errorCaught);
+  if (errMsg.includes("timestamp mismatch") || errMsg.includes("openTime")) {
+    pass(`HOLD TS MISMATCH: first candle timestamp mismatch correctly surfaced — "${errMsg.substring(0, 120)}"`);
+    return;
+  }
+
+  fail(`Unexpected error (expected timestamp mismatch): ${errMsg}`);
+});
