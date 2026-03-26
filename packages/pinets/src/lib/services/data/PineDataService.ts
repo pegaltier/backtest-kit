@@ -72,9 +72,9 @@ export class PineDataService {
     const plotNames = entries.map(([, config]) =>
       typeof config === "string" ? config : config.plot,
     );
-    const dataLength = Math.max(
-      ...plotNames.map((name) => plots[name]?.data?.length ?? 0),
-    );
+    const dataLength = plotNames
+      .map((name) => plots[name]?.data?.length ?? 0)
+      .reduce((acm, cur) => Math.max(acm, cur), 0);
     const rows: ExtractedDataRow<M>[] = [];
     for (let i = 0; i < dataLength; i++) {
       const row = {} as ExtractedDataRow<M>;

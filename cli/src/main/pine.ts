@@ -7,7 +7,9 @@ import { CandleInterval, listExchangeSchema } from "backtest-kit";
 
 const EXTRACT_ROWS_FN = (plots: Record<string, { data: { value: unknown; time: number }[] }>, schema: Record<string, string>) => {
   const keys = Object.keys(schema);
-  const dataLength = Math.max(...keys.map((k) => plots[k]?.data?.length ?? 0));
+  const dataLength = keys
+    .map((k) => plots[k]?.data?.length ?? 0)
+    .reduce((acm, cur) => Math.max(acm, cur), 0);
   const rows: Record<string, unknown>[] = [];
   for (let i = 0; i < dataLength; i++) {
     const row: Record<string, unknown> = {};
