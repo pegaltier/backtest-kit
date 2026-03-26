@@ -1646,3 +1646,136 @@ test("HOLD: candle count mismatch error surfaced when adapter returns fewer cand
 
   fail(`Unexpected error (expected candle count mismatch): ${errMsg}`);
 });
+
+/**
+ * ТЕСТ #15: Дубликаты по timestamp — после дедупликации остаётся меньше limit свечей
+ *
+ * Сценарий:
+ * - Адаптер возвращает 1000 свечей, но последние 500 имеют одинаковый timestamp
+ * - ClientExchange дедуплицирует → остаётся 500 уникальных свечей
+ * - 500 !== 1000 → "candle count mismatch"
+ * - Ошибка всплывает через errorEmitter, TFnError → _fatalError → process.exit(-1)
+ */
+test("HOLD: candle count mismatch after deduplication of duplicate timestamps", async ({ pass, fail }) => {
+
+  setConfig({
+    CC_MAX_SIGNAL_LIFETIME_MINUTES: Infinity,
+  }, true);
+
+  const startTime = new Date("2024-01-01T13:00:00Z").getTime();
+  const intervalMs = 60_000;
+
+  // Scheduled batch since=startTime-4min → не попадает под дубликаты (−4 < 1100)
+  // Первый чанк в RUN_INFINITY_CHUNK_LOOP_FN since≈minute 1116 → попадает (1116 > 1100)
+  const dupBoundaryMs = startTime + 1100 * intervalMs;
+
+  let signalGenerated = false;
+  let errorCaught = null;
+  let dupTriggered = false;
+
+  addExchangeSchema({
+    exchangeName: "binance-hold-dup-timestamps",
+    getCandles: async (_symbol, _interval, since, limit) => {
+      const alignedSince = alignTimestamp(since.getTime(), 1);
+
+      // Первый чанк infinity loop: первые 500 нормальные, последние 500 — дубликаты последнего timestamp
+      if (alignedSince >= dupBoundaryMs) {
+        dupTriggered = true;
+        const result = [];
+        const half = Math.floor(limit / 2);
+        for (let i = 0; i < half; i++) {
+          result.push({ timestamp: alignedSince + i * intervalMs, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        }
+        // Последние 500 — дубликаты timestamp последней нормальной свечи
+        const dupTimestamp = alignedSince + (half - 1) * intervalMs;
+        for (let i = 0; i < limit - half; i++) {
+          result.push({ timestamp: dupTimestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        }
+        return result;
+      }
+
+      const result = [];
+      for (let i = 0; i < limit; i++) {
+        const timestamp = alignedSince + i * intervalMs;
+        const m = (timestamp - startTime) / intervalMs;
+        if (timestamp < startTime) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m < 5) {
+          result.push({ timestamp, open: 43000, high: 43100, low: 42100, close: 43000, volume: 100 });
+        } else if (m === 5) {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42000, close: 42100, volume: 100 });
+        } else {
+          result.push({ timestamp, open: 42100, high: 42200, low: 42050, close: 42100, volume: 100 });
+        }
+      }
+      return result;
+    },
+    formatPrice: async (_symbol, price) => price.toFixed(8),
+    formatQuantity: async (_symbol, qty) => qty.toFixed(8),
+  });
+
+  addStrategySchema({
+    strategyName: "test-hold-dup-timestamps",
+    interval: "1m",
+    getSignal: async () => {
+      if (signalGenerated) return null;
+      signalGenerated = true;
+      return {
+        position: "long",
+        priceOpen: 42000,
+        priceTakeProfit: 43000,
+        priceStopLoss: 41000,
+        minuteEstimatedTime: Infinity,
+      };
+    },
+    callbacks: {},
+  });
+
+  addFrameSchema({
+    frameName: "5m-hold-dup-timestamps",
+    interval: "1m",
+    startDate: new Date("2024-01-01T13:00:00Z"),
+    endDate: new Date("2024-01-01T13:05:00Z"),
+  });
+
+  const awaitSubject = new Subject();
+  listenDoneBacktest(() => awaitSubject.next());
+  const unsubscribeError = listenError((error) => {
+    errorCaught = error;
+    awaitSubject.next();
+  });
+
+  const originalProcessExit = process.exit;
+  process.exit = () => {
+    process.exit = originalProcessExit;
+    awaitSubject.next();
+  };
+
+  Backtest.background("BTCUSDT", {
+    strategyName: "test-hold-dup-timestamps",
+    exchangeName: "binance-hold-dup-timestamps",
+    frameName: "5m-hold-dup-timestamps",
+  });
+
+  await awaitSubject.toPromise();
+  process.exit = originalProcessExit;
+  unsubscribeError();
+
+  if (!dupTriggered) {
+    fail("Duplicate timestamp boundary was never reached — chunk loop did not start. Check dupBoundaryMs.");
+    return;
+  }
+
+  if (!errorCaught) {
+    fail("No error was caught! Expected 'candle count mismatch' after deduplication.");
+    return;
+  }
+
+  const errMsg = errorCaught.message || String(errorCaught);
+  if (errMsg.includes("candle count mismatch") || errMsg.includes("Adapter must return exact number")) {
+    pass(`HOLD DUP TIMESTAMPS: candle count mismatch after deduplication correctly surfaced — "${errMsg.substring(0, 120)}"`);
+    return;
+  }
+
+  fail(`Unexpected error (expected candle count mismatch after dedup): ${errMsg}`);
+});
