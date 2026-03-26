@@ -21070,6 +21070,21 @@ interface IBroker {
     /** Called when a DCA (average-buy) entry is committed. */
     onAverageBuyCommit(payload: BrokerAverageBuyPayload): Promise<void>;
 }
+/**
+ * Constructor type for a broker adapter class.
+ *
+ * Used by `BrokerAdapter.useBrokerAdapter` to accept a class (not an instance).
+ * All `IBroker` methods are optional — implement only what the adapter needs.
+ *
+ * @example
+ * ```typescript
+ * class MyBroker implements Partial<IBroker> {
+ *   async onSignalOpenCommit(payload: BrokerSignalOpenPayload) { ... }
+ * }
+ *
+ * Broker.useBrokerAdapter(MyBroker); // MyBroker satisfies TBrokerCtor
+ * ```
+ */
 type TBrokerCtor = new () => Partial<IBroker>;
 /**
  * Facade for broker integration — intercepts all commit* operations before DI-core mutations.
