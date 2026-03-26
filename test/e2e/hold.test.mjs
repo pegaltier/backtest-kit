@@ -215,7 +215,7 @@ test("HOLD: Infinity LONG closes by take_profit within first chunk", async ({ pa
     frameName: "5m-hold-tp",
     interval: "1m",
     startDate: new Date("2024-01-01T01:00:00Z"),
-    endDate: new Date("2024-01-01T01:12:00Z"),
+    endDate: new Date("2024-01-01T01:22:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -338,7 +338,7 @@ test("HOLD: Infinity LONG closes by take_profit after 1200 minutes (cross-chunk)
     frameName: "5m-hold-cross-chunk",
     interval: "1m",
     startDate: new Date("2024-01-01T02:00:00Z"),
-    endDate: new Date("2024-01-01T22:02:00Z"),
+    endDate: new Date("2024-01-02T18:02:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -459,7 +459,7 @@ test("HOLD: Infinity LONG — 2nd chunk request triggered (TP at minute 1200)", 
     frameName: "5m-hold-2chunk",
     interval: "1m",
     startDate: new Date("2024-01-01T03:00:00Z"),
-    endDate: new Date("2024-01-01T23:02:00Z"),
+    endDate: new Date("2024-01-02T19:02:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -579,7 +579,7 @@ test("HOLD: Infinity LONG — 3rd chunk request triggered (TP at minute 2300)", 
     frameName: "5m-hold-3chunk",
     interval: "1m",
     startDate: new Date("2024-01-01T04:00:00Z"),
-    endDate: new Date("2024-01-02T18:22:00Z"),
+    endDate: new Date("2024-01-04T08:42:00Z"),
   });
 
   const awaitSubject = new Subject();
@@ -699,7 +699,7 @@ test("HOLD: Infinity LONG — 10 calendar days processed, closes by stop_loss", 
     frameName: "5m-hold-10days-sl",
     interval: "1m",
     startDate: new Date("2024-01-01T06:00:00Z"),
-    endDate: new Date("2024-01-11T06:02:00Z"),
+    endDate: new Date("2024-01-21T06:02:00Z"),
   });
 
   const awaitSubject = new Subject();
