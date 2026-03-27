@@ -141,6 +141,36 @@ const BACKTEST_FN = async (
   }
 };
 
+const CLOSE_PENDING_FN = async (
+  self: BacktestLogicPrivateService,
+  symbol: string,
+  context: { strategyName: string; exchangeName: string; frameName: string },
+  lastChunkCandles: ICandleData[],
+  frameEndTime: number,
+  when: Date,
+  signalId: string
+): Promise<IStrategyTickResultClosed | IStrategyTickResultCancelled | TFnError> => {
+  try {
+    await self.strategyCoreService.closePending(true, symbol, context);
+  } catch (error) {
+    const message = `closePending failed: ${getErrorMessage(error)}`;
+    console.error(`backtestLogicPrivateService CLOSE_PENDING_FN: ${message} symbol=${symbol}`);
+    await errorEmitter.next(error instanceof Error ? error : new Error(message));
+    return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "CLOSE_PENDING_FN", message };
+  }
+  const result = await BACKTEST_FN(self, symbol, lastChunkCandles, frameEndTime, when, context, { signalId });
+  if ("__error__" in result) {
+    return result;
+  }
+  if (result.action === "active") {
+    const message = `signal ${signalId} still active after closePending`;
+    console.error(`backtestLogicPrivateService CLOSE_PENDING_FN: ${message} symbol=${symbol}`);
+    await errorEmitter.next(new Error(message));
+    return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "CLOSE_PENDING_FN", message };
+  }
+  return result;
+};
+
 const RUN_INFINITY_CHUNK_LOOP_FN = async (
   self: BacktestLogicPrivateService,
   symbol: string,
@@ -163,25 +193,7 @@ const RUN_INFINITY_CHUNK_LOOP_FN = async (
     }
 
     if (!chunkCandles.length) {
-      try {
-        await self.strategyCoreService.closePending(true, symbol, context);
-      } catch (error) {
-        const message = `closePending failed: ${getErrorMessage(error)}`;
-        console.error(`backtestLogicPrivateService RUN_INFINITY_CHUNK_LOOP_FN: ${message} symbol=${symbol}`);
-        await errorEmitter.next(error instanceof Error ? error : new Error(message));
-        return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "CLOSE_PENDING_FN", message };
-      }
-      const result = await BACKTEST_FN(self, symbol, lastChunkCandles, frameEndTime, when, context, { signalId });
-      if ("__error__" in result) {
-        return result;
-      }
-      if (result.action === "active") {
-        const message = `signal ${signalId} still active after closePending`;
-        console.error(`backtestLogicPrivateService RUN_INFINITY_CHUNK_LOOP_FN: ${message} symbol=${symbol}`);
-        await errorEmitter.next(new Error(message));
-        return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "RUN_INFINITY_CHUNK_LOOP_FN", message };
-      }
-      return result;
+      return await CLOSE_PENDING_FN(self, symbol, context, lastChunkCandles, frameEndTime, when, signalId);
     }
 
     self.loggerService.info("backtestLogicPrivateService candles fetched for infinity chunk", {
@@ -430,29 +442,7 @@ const RUN_OPENED_CHUNK_LOOP_FN = async (
         await errorEmitter.next(new Error(message));
         return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "RUN_OPENED_CHUNK_LOOP_FN", message };
       }
-      try {
-        await self.strategyCoreService.closePending(true, symbol, context);
-      } catch (error) {
-        const message = `closePending failed: ${getErrorMessage(error)}`;
-        console.error(`backtestLogicPrivateService RUN_OPENED_CHUNK_LOOP_FN: ${message} symbol=${symbol}`);
-        await errorEmitter.next(error instanceof Error ? error : new Error(message));
-        return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "CLOSE_PENDING_FN", message };
-      }
-      const result = await BACKTEST_FN(self, symbol, lastChunkCandles, frameEndTime, when, context, { signalId });
-      if ("__error__" in result) {
-        return result;
-      }
-      if (result.action === "active") {
-        const message = `signal ${signalId} still active after closePending`;
-        console.error(`backtestLogicPrivateService RUN_OPENED_CHUNK_LOOP_FN: ${message} symbol=${symbol}`);
-        self.loggerService.warn("backtestLogicPrivateService opened infinity: signal still active after closePending", {
-          symbol,
-          signalId,
-        });
-        await errorEmitter.next(new Error(message));
-        return { type: "error", __error__: SYMBOL_FN_ERROR, reason: "RUN_OPENED_CHUNK_LOOP_FN", message };
-      }
-      return result;
+      return await CLOSE_PENDING_FN(self, symbol, context, lastChunkCandles, frameEndTime, when, signalId);
     }
 
     self.loggerService.info("backtestLogicPrivateService candles fetched", {
