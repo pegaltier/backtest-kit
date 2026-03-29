@@ -32,7 +32,8 @@ Port your TradingView strategies to backtest-kit with zero rewrite. Powered by [
 |----------|-------------|
 | **`getSignal()`** | Run Pine Script and get structured `ISignalDto` (position, TP/SL, estimated time) |
 | **`run()`** | Run Pine Script and return raw plot data |
-| **`extract()`** | Extract values from plots with custom mapping |
+| **`extract()`** | Extract the latest bar values from plots with custom mapping |
+| **`extractRows()`** | Extract all bars as a timestamped row array with custom mapping |
 | **`dumpPlotData()`** | Dump plot data to markdown files for debugging |
 | **`usePine()`** | Register custom Pine constructor |
 | **`setLogger()`** | Configure custom logger |
@@ -165,6 +166,52 @@ const data = await extract(plots, {
 
 // data = { rsi: 55.2, macd: 12.5, prevRsi: 52.1, trendStrength: 'strong' }
 ```
+
+### Historical Rows Extraction
+
+`extractRows()` returns **every bar** as a typed row with a `timestamp` field — useful for building datasets, detecting crossovers across history, or feeding data into downstream analysis.
+
+```typescript
+import { File, run, extractRows } from '@backtest-kit/pinets';
+
+const source = File.fromPath('indicators.pine');
+
+const plots = await run(source, {
+  symbol: 'ETHUSDT',
+  timeframe: '1h',
+  limit: 200,
+});
+
+const rows = await extractRows(plots, {
+  // Simple: plot name -> number | null
+  rsi: 'RSI',
+  macd: 'MACD',
+
+  // Advanced: with lookback and optional transform
+  prevRsi: {
+    plot: 'RSI',
+    barsBack: 1,
+  },
+  trend: {
+    plot: 'ADX',
+    transform: (v) => v > 25 ? 'strong' : 'weak',
+  },
+});
+
+// rows[0] = { timestamp: '2024-01-01T00:00:00.000Z', rsi: 48.3, macd: -2.1, prevRsi: null, trend: 'weak' }
+// rows[1] = { timestamp: '2024-01-01T01:00:00.000Z', rsi: 52.1, macd: -1.5, prevRsi: 48.3,  trend: 'weak' }
+// ...
+```
+
+**Difference between `extract()` and `extractRows()`:**
+
+| | `extract()` | `extractRows()` |
+|---|---|---|
+| Returns | Single object (latest bar) | Array of objects (all bars) |
+| Missing value | `0` (fallback) | `null` |
+| `timestamp` field | No | Yes — ISO string from the bar's time |
+| `barsBack` | Looks back from the last bar | Looks back from each bar's own index |
+| Use case | Signal generation at current bar | Dataset export, historical analysis |
 
 ### Debug with Plot Dump
 
