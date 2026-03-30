@@ -11,6 +11,11 @@ const __dirname = dirname(__filename);
 
 const MUSTACHE_EXT = ".mustache";
 
+const MUSTACHE_RENAME: Record<string, string> = {
+  "gitignore": ".gitignore",
+  "package": "package.json",
+};
+
 async function isDirEmpty(dirPath: string): Promise<boolean> {
   try {
     const files = await readdir(dirPath);
@@ -36,8 +41,12 @@ async function copyDir(
       await copyDir(srcPath, join(destDir, entry.name), data);
       continue;
     }
+    if (entry.name === ".gitkeep") {
+      continue;
+    }
     if (entry.name.endsWith(MUSTACHE_EXT)) {
-      const destName = entry.name.slice(0, -MUSTACHE_EXT.length);
+      const baseName = entry.name.slice(0, -MUSTACHE_EXT.length);
+      const destName = MUSTACHE_RENAME[baseName] ?? baseName;
       const destPath = join(destDir, destName);
       const template = await readFile(srcPath, "utf-8");
       const rendered = Mustache.render(template, data);
@@ -79,7 +88,7 @@ export const main = async () => {
 
   const projectName = <string>values.output || "backtest-kit-project";
   const projectPath = join(process.cwd(), projectName);
-  const templatePath = join(__dirname, "../../template/project");
+  const templatePath = join(__dirname, "../template/project");
 
   const isEmpty = await isDirEmpty(projectPath);
   if (!isEmpty) {
