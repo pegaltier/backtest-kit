@@ -24,7 +24,8 @@ const INTERVAL_MINUTES: Record<FrameInterval, number> = {
   "8h": 480,
   "12h": 720,
   "1d": 1440,
-  "3d": 4320,
+  "1w": 10080,
+  "1M": 43200,
 };
 
 /**

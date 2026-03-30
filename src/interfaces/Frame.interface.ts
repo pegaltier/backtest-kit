@@ -21,7 +21,8 @@ export type FrameInterval =
   | "8h"
   | "12h"
   | "1d"
-  | "3d";
+  | "1w"
+  | "1M";
 
 /**
  * Frame parameters passed to ClientFrame constructor.
