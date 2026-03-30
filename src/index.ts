@@ -482,6 +482,7 @@ export { slPercentShiftToPrice } from "./math/slPercentShiftToPrice";
 export { tpPercentShiftToPrice } from "./math/tpPercentShiftToPrice"
 export { percentToCloseCost } from "./math/percentToCloseCost";
 
+export { validateSignal } from "./validation/validateSignal";
 export { validateCommonSignal } from "./validation/validateCommonSignal";
 export { validatePendingSignal } from "./validation/validatePendingSignal";
 export { validateScheduledSignal } from "./validation/validateScheduledSignal";
