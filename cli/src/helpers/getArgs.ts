@@ -10,6 +10,11 @@ const ALLOWED_EXTENSIONS = [
   `.pine`,
 ];
 
+const DISALLOWED_PATHS = [
+  "node_modules",
+  "@backtest-kit",
+];
+
 export const getArgs = singleshot(() => {
   const { values, positionals } = parseArgs({
     args: process.argv,
@@ -116,8 +121,10 @@ export const getArgs = singleshot(() => {
 
 export const getPositional = singleshot((): string | null => {
   const { positionals = [] } = getArgs();
-  const result = positionals.find((value) =>
-    ALLOWED_EXTENSIONS.some((ext) => value.endsWith(ext)),
-  );
+  const result = positionals
+    .filter((value) => !DISALLOWED_PATHS.some((path) => value.includes(path)))
+    .find((value) =>
+      ALLOWED_EXTENSIONS.some((ext) => value.endsWith(ext)),
+    );
   return result || null;
 });
