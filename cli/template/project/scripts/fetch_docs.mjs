@@ -44,15 +44,24 @@ const OUT_DIR = path.resolve("./docs/lib");
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-for (const lib of LIBRARY_LIST) {
-  const res = await fetch(lib.readme);
-  if (!res.ok) {
-    console.error(`Failed to fetch ${lib.name}: ${res.status} ${res.statusText}`);
-    continue;
+const main = async () => {
+  for (const lib of LIBRARY_LIST) {
+    const res = await fetch(lib.readme);
+    if (!res.ok) {
+      console.error(`Failed to fetch ${lib.name}: ${res.status} ${res.statusText}`);
+      continue;
+    }
+    const text = await res.text();
+    const fileName = lib.name.replace(/\//g, "__") + ".md";
+    const outPath = path.join(OUT_DIR, fileName);
+    fs.writeFileSync(outPath, text, "utf-8");
+    console.log(`Saved ${lib.name} -> ${outPath}`);
   }
-  const text = await res.text();
-  const fileName = lib.name.replace(/\//g, "__") + ".md";
-  const outPath = path.join(OUT_DIR, fileName);
-  fs.writeFileSync(outPath, text, "utf-8");
-  console.log(`Saved ${lib.name} -> ${outPath}`);
+};
+
+try {
+  await main();
+} catch {
+  console.log("Failed to fetch docs")
 }
+
