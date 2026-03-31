@@ -1,3 +1,159 @@
+# AI-Assisted Strategy Workflow (v6.0.0, 31/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.0.0)
+
+The central theme of v6.0 is first-class support for AI-driven strategy development. A new `--init` CLI command scaffolds a complete project that an AI coding assistant (Claude Code, Cursor, etc.) can work in end-to-end — from market research and PineScript prototyping to backtesting and reporting — without any manual setup.
+
+## CLI: `--init` — Project Scaffold for AI Agents
+
+```bash
+npx @backtest-kit/cli@6.0.0 --init --output my-project
+```
+
+Creates a ready-to-use project directory and fetches library documentation. Refuses to run if the target directory already exists and is non-empty. Files with `.mustache` extension are rendered via Mustache (project name substituted); `package.json` and `.gitignore` are generated from templates.
+
+### Project structure
+
+```
+├── content/                  # Strategy entry points (.ts)
+│   └── feb_2026.strategy.ts
+├── docs/                     # Documentation
+│   ├── lib/                  # Auto-fetched library READMEs (via sync:lib)
+│   └── *.md                  # Backtest Kit how-to guides
+├── math/                     # PineScript indicator files (.pine)
+│   └── feb_2026.pine
+├── modules/                  # Side-effect module hooks (loaded automatically)
+│   ├── dump.module.ts        # Exchange schema for --dump mode
+│   └── pine.module.ts        # Exchange schema for --pine mode
+├── report/                   # Strategy research reports (.md)
+│   └── feb_2026.md
+├── scripts/
+│   └── fetch_docs.mjs        # Downloads library READMEs into docs/lib/
+├── CLAUDE.md                 # AI-agent guide for writing strategies
+└── package.json
+```
+
+### `CLAUDE.md` — AI strategy writing guide
+
+A prescriptive workflow for AI coding assistants covering the full loop from market research to a profitable strategy:
+
+**Per-month discipline** — one `.pine` + one `.strategy.ts` per calendar month; cross-month backtests are forbidden (commission whipsaw makes them mathematically meaningless).
+
+**Research-first** — agent must read negative news for the target period and correlate it with a candle dump before writing any code. No brute-force parameter iteration.
+
+**`--dump` driven analysis** — dump candles first, identify the dominant structure (bear/bull/range), then design the entry logic around it.
+
+**Hard quality rules** — no HOLD, no infinite trailing SL, TP ≥ 1% (exchange charges 0.2% each way), minimum 1 signal/day (3 trades is luck, not a strategy).
+
+**Deliverable spec** — `.pine` header must contain honest `sharpeRatio`, `avgPnl`, `stdDev`, trade list with timestamps and PnL; accompanied by a `report/<month>.md` market analysis.
+
+### Embedded `docs/` guides
+
+| File | Topic |
+|---|---|
+| `backtest_strategy_structure.md` | Strategy schemas, `getSignal`, callbacks |
+| `backtest_actions.md` | `commitPartialProfit`, `commitPartialLoss`, `commitAverageBuy` |
+| `backtest_graph_pattern.md` | `sourceNode` / `outputNode` pattern |
+| `backtest_graph_multiple_outputs.md` | Multiple simultaneous graph outputs |
+| `backtest_pinets_usage.md` | Running PineScript with `@backtest-kit/pinets` |
+| `backtest_logging_jsonl.md` | JSONL dump logging from strategies |
+| `backtest_risk_async.md` | Async risk management patterns |
+| `pine_debug.md` | Debugging PineScript indicators |
+| `pine_indicator_warmup.md` | Indicator warmup and bar indexing |
+
+`scripts/fetch_docs.mjs` downloads `README.md` from: `backtest-kit`, `backtest-kit/graph`, `backtest-kit/pinets`, `backtest-kit/ollama`, `backtest-kit/cli`, `garch`, `volume-anomaly`, `agent-swarm-kit`, `functools-kit` into `docs/lib/`.
+
+## CLI: `--dump` — Raw Candle Export
+
+```bash
+node index.mjs --dump --symbol BTCUSDT --timeframe 15m --limit 500 --when "2026-02-28T00:00:00Z" --jsonl
+```
+
+Fetches OHLCV candles from the registered exchange and writes them to `./dump/`. Used by AI agents to analyse market structure before writing a strategy.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--symbol` | `BTCUSDT` | Trading pair |
+| `--timeframe` | `15m` | Candle interval |
+| `--limit` | `250` | Number of candles |
+| `--when` | now | End date — ISO 8601 or Unix ms |
+| `--exchange` | first registered | Exchange name |
+| `--output` | `{SYMBOL}_{LIMIT}_{TF}_{TS}` | Output file base name |
+| `--json` | — | Save as JSON array to `./dump/<output>.json` |
+| `--jsonl` | — | Save as JSONL to `./dump/<output>.jsonl` |
+
+Exchange schema is loaded from `./modules/dump.module` automatically.
+
+## CLI: `--help` and `--version`
+
+`--help` prints a full usage reference covering all modes, flags, module hooks, and environment variables.
+`--version` prints `@backtest-kit/cli <version>`.
+
+## CLI: `--pine` output path fix
+
+`--json`, `--jsonl`, `--markdown` changed from `string` (explicit path) to `boolean` flag. Output is always written to `./dump/<name>.<ext>` where `<name>` defaults to the Pine file basename; `--output` overrides the base name.
+
+## Backend: Signal Validation
+
+Four validator functions added and exported from `backtest-kit`:
+
+| Function | Description |
+|---|---|
+| `validateSignal(signal, currentPrice)` | Top-level: branches pending vs scheduled, returns `bool` |
+| `validateCommonSignal(signal)` | Position, finite prices, TP/SL direction and distance |
+| `validatePendingSignal(signal, currentPrice)` | Pending: `currentPrice` between SL and TP |
+| `validateScheduledSignal(signal, currentPrice)` | Scheduled: `priceOpen` between SL and TP |
+
+Call `validateSignal` inside `getSignal` to catch bad values early. The common/pending/scheduled variants are `@deprecated` internal exports for unit tests.
+
+## Backend: `CC_ENABLE_TRAILING_EVERYWHERE`
+
+```typescript
+GLOBAL_CONFIG.CC_ENABLE_TRAILING_EVERYWHERE = true;
+```
+
+Activates trailing take / trailing stop without waiting for absorption conditions. Default: `false`.
+
+## Backend: `frameEndTime` in backtest
+
+`IStrategy.backtest` gains a required `frameEndTime: number` parameter. Propagated through `BacktestLogicPrivateService` → `StrategyCoreService`. A new `CLOSE_PENDING_FN` closes any still-active signal at frame end; emits a fatal error if the signal remains active afterward.
+
+## Backend: New Intervals
+
+`CandleInterval` extended with `"1d"`, `"1w"`. `FrameInterval` extended with `"1w"`, `"1M"`. `ExchangeService` and `AxisProviderService` updated with correct minute counts (1440 / 10080).
+
+
+
+
+# Pine Script CLI Runner (v5.10, 26/03/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.10)
+
+## CLI: Pine Script runner
+
+A new `--pine` entry point has been added to the CLI. Passing `--pine` together with a `.pine` file path runs the script against live exchange data and prints results without requiring a full backtest strategy setup.
+
+```bash
+npx @backtest-kit/cli ./math/master_trend_15m.pine --pine --symbol BTCUSDT --timeframe 15m --limit 10 --markdown=output.md
+```
+
+### New CLI flags
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--pine` | boolean | false | Enable Pine Script execution mode |
+| `--timeframe` | string | `"15m"` | Candle interval passed to the script |
+| `--limit` | string | `"250"` | Number of candles to fetch |
+| `--when` | string | now | ISO date string — end timestamp for the candle window |
+| `--json <path>` | string | — | Write extracted rows as a JSON array to a file |
+| `--jsonl <path>` | string | — | Write extracted rows as newline-delimited JSON to a file |
+| `--markdown <path>` | string | — | Write the Markdown report to a file |
+
+When none of `--json`, `--jsonl`, or `--markdown` is given the Markdown table is printed to stdout.
+
+
+
+
 # Trading Agent Memory System (v5.9, 23/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/5.9)
