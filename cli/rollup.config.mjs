@@ -3,10 +3,7 @@ import typescript from "@rollup/plugin-typescript";
 import { dts } from "rollup-plugin-dts";
 import replace from "@rollup/plugin-replace";
 import path from "path";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
-const { version } = require("./package.json");
+import pkg from "../package.json" with { type: 'json' };
 
 export default [
   {
@@ -21,7 +18,7 @@ export default [
       replace({
         preventAssignment: true,
         __IS_ESM__: "true",
-        __PACKAGE_VERSION__: JSON.stringify(version),
+        __PACKAGE_VERSION__: JSON.stringify(pkg.version),
       }),
       typescript({ tsconfig: "./tsconfig.json", noEmit: true }),
     ],
@@ -38,7 +35,7 @@ export default [
       replace({
         preventAssignment: true,
         __IS_ESM__: "false",
-        __PACKAGE_VERSION__: JSON.stringify(version),
+        __PACKAGE_VERSION__: JSON.stringify(pkg.version),
       }),
       typescript({ tsconfig: "./tsconfig.json", noEmit: true }),
     ],
