@@ -110,17 +110,13 @@ The critical difference is creating `CLAUDE.md`. This is a system prompt that de
 
 File `BTCUSDT_500_15m_1772236800000.jsonl` will be created at `./dump/BTCUSDT_500_15m_1772236800000.jsonl`
 
-```
 npm start -- --dump --timeframe 15m --limit 500 --when "2026-02-28T00:00:00.000Z" --jsonl
-```
 
 ### Running `.pine` Files
 
 File `impulse_trend_15m.jsonl` will be created at `./math/dump/impulse_trend_15m.jsonl`
 
-```
 npm start --  --pine ./math/impulse_trend_15m.pine --timeframe 15m --limit 500 --when "2026-02-28T00:00:00.000Z" --jsonl
-```
 
 ### Algorithm
 
@@ -202,9 +198,7 @@ Task submitted to the agent:
 
 I created the January strategy specifically as a genesis for the recursion, so the prompt would work the first time. It's a bear trend continuation strategy. It works when the market drops monotonically. Now we need to understand why February didn't produce profit.
 
-```
 npm start -- --dump --timeframe 15m --limit 500 --when "2026-02-28T00:00:00.000Z" --jsonl
-```
 
 The agent received a dump of 500 15-minute candles. Not to stare at numbers — but to see the shape of the movement: where volume spikes occurred, where price gaps formed, how pullbacks looked.
 
