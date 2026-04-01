@@ -1495,10 +1495,10 @@ export function listenStrategyCommitOnce(
  * @param fn - Callback function to handle sync events. If the function returns a promise, signal processing will wait until it resolves.
  * @returns Unsubscribe function to stop listening
  */
-export function listenSync(fn: (event: SignalSyncContract) => void) {
+export function listenSync(fn: (event: SignalSyncContract) => void, warned = false) {
   backtest.loggerService.log(LISTEN_SYNC_METHOD_NAME);
 
-  {
+  if (!warned) {
     console.error("listenSync is unwanted cause exchange integration should be implemented in Broker.useBrokerAdapter as an infrastructure domain layer");
     console.error("If you need to implement custom logic on signal open/close, please use signal(), signalBacktest(), signalLive() in addActionSchema handler");
     console.error("If listenSync throws the exchange will not execute the order!");
@@ -1519,11 +1519,12 @@ export function listenSync(fn: (event: SignalSyncContract) => void) {
  */
 export function listenSyncOnce(
   filterFn: (event: SignalSyncContract) => boolean,
-  fn: (event: SignalSyncContract) => void
+  fn: (event: SignalSyncContract) => void,
+  warned = false
 ) {
   backtest.loggerService.log(LISTEN_SYNC_ONCE_METHOD_NAME);
 
-  {
+  if (!warned) {
     console.error("listenSyncOnce is unwanted cause exchange integration should be implemented in Broker.useBrokerAdapter as an infrastructure domain layer");
     console.error("If you need to implement custom logic on signal open/close, please use signal(), signalBacktest(), signalLive() in addActionSchema handler");
     console.error("If listenSyncOnce throws the exchange will not execute the order!");
@@ -1540,7 +1541,7 @@ export function listenSyncOnce(
     }
   };
 
-  return disposeFn = listenSync(wrappedFn);
+  return disposeFn = listenSync(wrappedFn, true);
 }
 
 /**
