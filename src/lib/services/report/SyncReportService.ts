@@ -1,7 +1,7 @@
 import { inject } from "../../../lib/core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
-import { singleshot } from "functools-kit";
+import { singleshot, trycatch } from "functools-kit";
 import { syncSubject } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
 import SignalSyncContract from "../../../contract/SignalSync.contract";
@@ -124,7 +124,7 @@ export class SyncReportService {
    */
   public subscribe = singleshot(() => {
     this.loggerService.log(SYNC_REPORT_METHOD_NAME_SUBSCRIBE);
-    const unsubscribe = syncSubject.subscribe(this.tick);
+    const unsubscribe = syncSubject.subscribe(trycatch(this.tick));
     return () => {
       this.subscribe.clear();
       unsubscribe();

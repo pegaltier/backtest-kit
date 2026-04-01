@@ -1,7 +1,7 @@
 import { inject } from "../../core/di";
 import LoggerService from "../base/LoggerService";
 import TYPES from "../../core/types";
-import { memoize, singleshot } from "functools-kit";
+import { memoize, singleshot, trycatch } from "functools-kit";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
@@ -278,7 +278,7 @@ export class SyncMarkdownService {
    */
   public subscribe = singleshot(() => {
     this.loggerService.log("syncMarkdownService init");
-    const unsubscribe = syncSubject.subscribe(this.tick);
+    const unsubscribe = syncSubject.subscribe(trycatch(this.tick));
     return () => {
       this.subscribe.clear();
       this.clear();
