@@ -56,7 +56,10 @@ export class LiveMainService {
       this.telegramProviderService.connect();
     }
 
-    await this.resolveService.attachJavascript(payload.entryPoint);
+    {
+      await this.resolveService.attachJavascript(payload.entryPoint);
+      await this.moduleConnectionService.loadModule("./live.module");
+    }
 
     {
       this.exchangeSchemaService.addSchema();
@@ -93,8 +96,6 @@ export class LiveMainService {
       });
       notifyVerbose();
     }
-
-    await this.moduleConnectionService.loadModule("./live.module")
 
     Live.background(symbol, {
       strategyName,

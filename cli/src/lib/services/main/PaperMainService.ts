@@ -56,7 +56,10 @@ export class PaperMainService {
         this.telegramProviderService.connect();
       }
 
-      await this.resolveService.attachJavascript(payload.entryPoint);
+      {
+        await this.resolveService.attachJavascript(payload.entryPoint);
+        await this.moduleConnectionService.loadModule("./paper.module");
+      }
 
       {
         this.exchangeSchemaService.addSchema();
@@ -95,8 +98,6 @@ export class PaperMainService {
         });
         notifyVerbose();
       }
-
-      await this.moduleConnectionService.loadModule("./paper.module")
 
       Live.background(symbol, {
         strategyName,

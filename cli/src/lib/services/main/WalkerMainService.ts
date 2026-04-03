@@ -1,7 +1,6 @@
 import {
   Walker,
   CandleInterval,
-  listWalkerSchema,
   getWalkerSchema,
   addWalkerSchema,
   listStrategySchema,
@@ -10,6 +9,8 @@ import {
   overrideExchangeSchema,
   listenDoneWalker,
   overrideWalkerSchema,
+  addFrameSchema,
+  alignToInterval,
 } from "backtest-kit";
 import { createAwaiter, singleshot } from "functools-kit";
 import { getArgs, getPositionals } from "../../../helpers/getArgs";
@@ -27,6 +28,7 @@ import notifyVerbose from "../../../utils/notifyVerbose";
 import ModuleConnectionService from "../connection/ModuleConnectionService";
 import { join, resolve } from "path";
 import { mkdir, writeFile } from "fs/promises";
+import FrameName from "../../../enum/FrameName";
 
 const DEFAULT_CACHE_LIST: CandleInterval[] = ["1m", "15m", "30m", "1h", "4h"];
 
@@ -76,9 +78,26 @@ export class WalkerMainService {
         await this.resolveService.attachStrategy(entryPoint);
       }
 
+      await this.moduleConnectionService.loadModule("./walker.module");
+
       {
         this.exchangeSchemaService.addSchema();
         this.symbolSchemaService.addSchema();
+      }
+
+      {
+        const { length } = await listFrameSchema();
+        if (!length) {
+          const endDate = alignToInterval(new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), "1m");
+          const startDate = alignToInterval(new Date(Date.now() - 31 * 24 * 60 * 60 * 1000), "1m");
+          console.warn(`Warning: The default frame schema is set to the interval ${startDate.toISOString()} — ${endDate.toISOString()}. Please make sure to update it according to your needs using addFrameSchema in your strategy files.`);
+          addFrameSchema({
+            frameName: FrameName.DefaultFrame,
+            interval: "1m",
+            startDate,
+            endDate,
+          });
+        }
       }
 
       const symbol = payload.symbol || "BTCUSDT";
@@ -156,8 +175,6 @@ export class WalkerMainService {
           }
         })
       }
-
-      await this.moduleConnectionService.loadModule("./walker.module");
 
       Walker.background(symbol, { walkerName: WALKER_NAME });
 

@@ -84,7 +84,10 @@ export class BacktestMainService {
         this.telegramProviderService.connect();
       }
 
-      await this.resolveService.attachJavascript(payload.entryPoint);
+      {
+        await this.resolveService.attachJavascript(payload.entryPoint);
+        await this.moduleConnectionService.loadModule("./backtest.module")
+      }
 
       {
         this.exchangeSchemaService.addSchema();
@@ -142,8 +145,6 @@ export class BacktestMainService {
         });
         notifyVerbose();
       }
-
-      await this.moduleConnectionService.loadModule("./backtest.module")
 
       Backtest.background(symbol, {
         strategyName,

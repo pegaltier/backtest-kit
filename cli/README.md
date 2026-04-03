@@ -230,6 +230,8 @@ npm run walker
 
 Each positional argument is a separate strategy entry point. All files are loaded without changing `process.cwd()` — `.env` is read from the working directory only. After loading, `addWalkerSchema` is called automatically using the exchange and frame registered by the strategy files.
 
+If no frame is registered, the CLI falls back to the last 31 days from `Date.now()` with a console warning.
+
 **Walker-specific flags:**
 
 | Flag | Type | Description |
