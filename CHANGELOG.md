@@ -1,3 +1,44 @@
+# Walker A/B Strategy Comparison for CLI (v6.2.0, 03/04/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.2.0)
+
+
+v6.2.0 introduces the `--walker` CLI mode for side-by-side A/B comparison of multiple strategy variants against the same historical data. It also extends the positionals API to support multiple entry points and adds the `walker.module` hook slot.
+
+## CLI: `--walker` — Multi-Strategy Comparison
+
+```bash
+node index.mjs --walker ./content/v1.strategy.ts ./content/v2.strategy.ts ./content/v3.strategy.ts
+node index.mjs --walker --symbol BTCUSDT --noCache --markdown ./content/v1.ts ./content/v2.ts
+```
+
+Runs all provided strategy entry points against the same exchange and frame, then prints a comparison report to stdout or saves it to `./dump/`.
+
+### Walker flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--symbol` | `BTCUSDT` | Trading pair |
+| `--cacheInterval` | `1m,15m,30m,1h,4h` | Comma-separated intervals to pre-cache |
+| `--noCache` | — | Skip candle cache warming before the run |
+| `--verbose` | — | Log every candle fetch and strategy lifecycle event to stdout |
+| `--output` | `walker_{SYMBOL}_{TIMESTAMP}` | Output file base name |
+| `--json` | — | Save results as JSON to `./dump/<output>.json` |
+| `--markdown` | — | Save report as Markdown to `./dump/<output>.md` |
+
+Each positional argument is a strategy entry point. All strategy files are loaded without changing `process.cwd()` — `.env` is read from the working directory only. `addWalkerSchema` is called automatically using the first registered exchange and frame. After comparison completes the report is printed to stdout (or saved when `--json`/`--markdown` is set).
+
+### Module hook
+
+`modules/walker.module` is loaded automatically when `--walker` is active, matching the pattern of `backtest.module`, `paper.module`, etc.
+
+### Graceful shutdown
+
+`SIGINT` stops any in-progress Walker run cleanly before the process exits.
+
+
+
+
 # AI-Assisted Strategy Workflow (v6.0.0, 31/03/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.0.0)
