@@ -1,6 +1,6 @@
 import path from "path";
 import { createRequire } from "module";
-import { getErrorMessage, singleshot } from "functools-kit";
+import { getErrorMessage, memoize, singleshot } from "functools-kit";
 import fs from "fs";
 
 import { ILoader, ILoaderParams } from "../interfaces/Loader.interface";
@@ -16,27 +16,30 @@ declare const __IS_ESM__: boolean;
 
 type Require = ReturnType<typeof CREATE_BASE_REQUIRE_FN>;
 
-const TRANSPILE_FN = (code: string, self: ClientLoader, require: Require) => {
-  const __filename = self.__filename;
-  const __dirname = self.__dirname;
-  const module = { exports: {} as Record<string, unknown> };
-  const exports = module.exports;
-  try {
-    eval(self.params.babel.transpile(code));
-  } catch (error) {
-    console.log(
-      `Error during transpilation error=\`${getErrorMessage(error)}\` __filename=\`${__filename}\` __dirname=\`${__dirname}\``,
-    );
-    process.exit(-1);
+const TRANSPILE_FN = memoize(
+  ([path]) => `${path}`, 
+  (path: string, code: string, self: ClientLoader, require: Require) => {
+    const __filename = self.__filename;
+    const __dirname = self.__dirname;
+    const module = { exports: {} as Record<string, unknown> };
+    const exports = module.exports;
+    try {
+      eval(self.params.babel.transpile(code));
+    } catch (error) {
+      console.log(
+        `Error during transpilation error=\`${getErrorMessage(error)}\` path=${path} __filename=\`${__filename}\` __dirname=\`${__dirname}\``,
+      );
+      process.exit(-1);
+    }
+    return {
+      require,
+      __filename,
+      __dirname,
+      exports,
+      module,
+    };
   }
-  return {
-    require,
-    __filename,
-    __dirname,
-    exports,
-    module,
-  };
-};
+);
 
 const REQUIRE_ENTRY_FACTORY = (filePath: string, self: ClientLoader, seen: Set<string>) => {
   if (__IS_ESM__) {
@@ -55,7 +58,7 @@ const BABEL_ENTRY_FACTORY = (filePath: string, self: ClientLoader, seen: Set<str
     const resolvedPath = path.resolve(self.__dirname, filePath);
     const code = fs.readFileSync(resolvedPath, "utf-8");
     const child = self.fork(path.dirname(resolvedPath));
-    const { module } = TRANSPILE_FN(code, child, CREATE_BASE_REQUIRE_FN(child, seen));
+    const { module } = TRANSPILE_FN(resolvedPath, code, child, CREATE_BASE_REQUIRE_FN(child, seen));
     return "default" in module.exports
       ? module.exports.default
       : module.exports;
