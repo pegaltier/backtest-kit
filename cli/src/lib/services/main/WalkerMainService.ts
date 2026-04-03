@@ -1,0 +1,237 @@
+import {
+  Walker,
+  CandleInterval,
+  listWalkerSchema,
+  getWalkerSchema,
+  addWalkerSchema,
+  listStrategySchema,
+  listExchangeSchema,
+  listFrameSchema,
+  overrideExchangeSchema,
+  listenDoneWalker,
+  overrideWalkerSchema,
+} from "backtest-kit";
+import { createAwaiter, singleshot } from "functools-kit";
+import { getArgs, getPositionals } from "../../../helpers/getArgs";
+import { inject } from "../../../lib/core/di";
+import LoggerService from "../base/LoggerService";
+import TYPES from "../../../lib/core/types";
+import ExchangeSchemaService from "../schema/ExchangeSchemaService";
+import ResolveService from "../base/ResolveService";
+import FrontendProviderService from "../provider/FrontendProviderService";
+import TelegramProviderService from "../provider/TelegramProviderService";
+import CacheLogicService from "../logic/CacheLogicService";
+import SymbolSchemaService from "../schema/SymbolSchemaService";
+import getEntry from "../../../helpers/getEntry";
+import notifyVerbose from "../../../utils/notifyVerbose";
+import ModuleConnectionService from "../connection/ModuleConnectionService";
+import { join, resolve } from "path";
+import { mkdir, writeFile } from "fs/promises";
+
+const DEFAULT_CACHE_LIST: CandleInterval[] = ["1m", "15m", "30m", "1h", "4h"];
+
+const WALKER_NAME = "cli-walker";
+
+const GET_CACHE_INTERVAL_LIST_FN = () => {
+  const { values } = getArgs();
+  if (!values.cacheInterval) {
+    return DEFAULT_CACHE_LIST;
+  }
+  return String(values.cacheInterval)
+    .split(",")
+    .map((timeframe) => <CandleInterval>timeframe.trim());
+};
+
+export class WalkerMainService {
+  private loggerService = inject<LoggerService>(TYPES.loggerService);
+  private resolveService = inject<ResolveService>(TYPES.resolveService);
+
+  private exchangeSchemaService = inject<ExchangeSchemaService>(
+    TYPES.exchangeSchemaService,
+  );
+  private symbolSchemaService = inject<SymbolSchemaService>(
+    TYPES.symbolSchemaService,
+  );
+  private cacheLogicService = inject<CacheLogicService>(
+    TYPES.cacheLogicService,
+  );
+  private moduleConnectionService = inject<ModuleConnectionService>(
+    TYPES.moduleConnectionService,
+  );
+
+  public run = singleshot(
+    async (payload: {
+      entryPoints: string[];
+      symbol: string;
+      output: string;
+      cacheInterval: CandleInterval[];
+      json: boolean;
+      markdown: boolean;
+      verbose: boolean;
+      noCache: boolean;
+    }) => {
+      this.loggerService.log("walkerMainService run", { payload });
+
+      for (const entryPoint of payload.entryPoints) {
+        await this.resolveService.attachStrategy(entryPoint);
+      }
+
+      {
+        this.exchangeSchemaService.addSchema();
+        this.symbolSchemaService.addSchema();
+      }
+
+      const symbol = payload.symbol || "BTCUSDT";
+
+      const strategyList = await listStrategySchema();
+      const strategyNames = strategyList.map(
+        (s) => s.strategyName,
+      );
+
+      if (!strategyNames.length) {
+        throw new Error("No strategies found in provided entry points");
+      }
+
+      const [defaultExchangeName = null] = await listExchangeSchema();
+      const [defaultFrameName = null] = await listFrameSchema();
+
+      const exchangeName = defaultExchangeName?.exchangeName;
+      const frameName = defaultFrameName?.frameName;
+
+      if (!exchangeName) {
+        throw new Error("Exchange name is required");
+      }
+
+      if (!frameName) {
+        throw new Error("Frame name is required");
+      }
+
+      addWalkerSchema({
+        walkerName: WALKER_NAME,
+        exchangeName,
+        frameName,
+        strategies: strategyNames,
+      });
+
+      const walkerSchema = getWalkerSchema(WALKER_NAME);
+
+      if (!payload.noCache) {
+        await this.cacheLogicService.execute(payload.cacheInterval, {
+          exchangeName: walkerSchema.exchangeName,
+          frameName: walkerSchema.frameName,
+          symbol,
+        });
+      }
+
+      if (payload.verbose) {
+        overrideExchangeSchema({
+          exchangeName: walkerSchema.exchangeName,
+          callbacks: {
+            onCandleData(symbol, interval, since) {
+              console.log(
+                `Received candle data for symbol: ${symbol}, interval: ${interval}, since: ${since.toUTCString()}`,
+              );
+            },
+          },
+        });
+        notifyVerbose();
+      }
+
+      if (payload.verbose) {
+        overrideWalkerSchema({
+          walkerName: WALKER_NAME,
+          callbacks: {
+            onStrategyStart(strategyName, symbol) {
+              console.log(`Strategy started: ${strategyName} for symbol: ${symbol}`);
+            },
+            onStrategyError(strategyName, symbol, error) {
+              console.error(`Strategy error: ${strategyName} for symbol: ${symbol}`, error);
+            },
+            onStrategyComplete(strategyName, symbol) {
+              console.log(`Strategy completed: ${strategyName} for symbol: ${symbol}`);
+            },
+            onComplete(results) {
+              console.log(`Walker completed for symbol: ${results.symbol}`, results);
+            }
+          }
+        })
+      }
+
+      await this.moduleConnectionService.loadModule("./walker.module");
+
+      Walker.background(symbol, { walkerName: WALKER_NAME });
+
+      const [awaiter, { resolve: res }] = createAwaiter<void>();
+
+      const unWalker = listenDoneWalker(() => {
+        console.log("Walker comparison finished");
+        unWalker();
+        res();
+      });
+
+      await awaiter;
+
+      const dumpName = payload.output || `walker_${symbol}_${Date.now()}`;
+      const dumpDir = join(process.cwd(), "dump");
+
+      if (payload.json) {
+        const filePath = resolve(dumpDir, `${dumpName}.json`);
+        const data = await Walker.getData(symbol, { walkerName: WALKER_NAME });
+        await mkdir(dumpDir, { recursive: true });
+        await writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+        console.log(`Saved: ${filePath}`);
+        process.exit(0);
+        return;
+      }
+
+      if (payload.markdown) {
+        const filePath = resolve(dumpDir, `${dumpName}.md`);
+        const report = await Walker.getReport(symbol, { walkerName: WALKER_NAME });
+        await mkdir(dumpDir, { recursive: true });
+        await writeFile(filePath, report, "utf-8");
+        console.log(`Saved: ${filePath}`);
+        process.exit(0);
+        return;
+      }
+
+      const report = await Walker.getReport(symbol, { walkerName: WALKER_NAME });
+      console.log(report);
+      process.exit(0);
+    },
+  );
+
+  public connect = singleshot(async () => {
+    this.loggerService.log("walkerMainService connect");
+
+    if (!getEntry(import.meta.url)) {
+      return;
+    }
+
+    const { values } = getArgs();
+
+    if (!values.walker) {
+      return;
+    }
+
+    const entryPoints = getPositionals();
+
+    if (!entryPoints.length) {
+      throw new Error("At least one entry point is required");
+    }
+
+    const cacheInterval = GET_CACHE_INTERVAL_LIST_FN();
+
+    return await this.run({
+      entryPoints,
+      json: <boolean>values.json,
+      markdown: <boolean>values.markdown,
+      symbol: <string>values.symbol,
+      output: <string>values.output,
+      cacheInterval,
+      verbose: <boolean>values.verbose,
+      noCache: <boolean>values.noCache,
+    });
+  });
+}
+
+export default WalkerMainService;
