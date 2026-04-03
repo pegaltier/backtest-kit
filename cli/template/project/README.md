@@ -87,7 +87,7 @@ npm start -- --live --symbol BTCUSDT --ui --telegram ./content/feb_2026.strategy
 
 Module file `./modules/live.module.ts` is loaded automatically if it exists. Use it to register a `Broker` adapter that intercepts every trade mutation before internal state changes — exchange rejection rolls back the operation atomically.
 
-## 🚶 Walker — A/B Strategy Comparison (`--walker`)
+## ⚖️ Walker — A/B Strategy Comparison (`--walker`)
 
 Runs the same historical period across multiple strategy files and prints a ranked comparison report. Use it to pick the best variant before committing to a single strategy.
 
