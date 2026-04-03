@@ -1,6 +1,8 @@
 import { getArgs } from "../helpers/getArgs";
 import getEntry from "../helpers/getEntry";
 
+const ENTRY_PATH = "./node_modules/@backtest-kit/cli/build/index.mjs";
+
 const HELP_TEXT = `
 @backtest-kit/cli
 
@@ -91,13 +93,13 @@ Environment variables:
 
 Examples:
 
-  node index.mjs --backtest ./content/feb_2026.strategy.ts
-  node index.mjs --backtest --symbol BTCUSDT --noCache --ui ./content/feb_2026.strategy.ts
-  node index.mjs --paper --symbol ETHUSDT ./content/feb_2026.strategy.ts
-  node index.mjs --live --ui --telegram ./content/feb_2026.strategy.ts
-  node index.mjs --pine ./math/feb_2026.pine --timeframe 15m --limit 500 --jsonl
-  node index.mjs --dump --symbol BTCUSDT --timeframe 15m --limit 500 --jsonl
-  node index.mjs --init --output my-trading-bot
+  node ${ENTRY_PATH} --backtest ./content/feb_2026.strategy.ts
+  node ${ENTRY_PATH} --backtest --symbol BTCUSDT --noCache --ui ./content/feb_2026.strategy.ts
+  node ${ENTRY_PATH} --paper --symbol ETHUSDT ./content/feb_2026.strategy.ts
+  node ${ENTRY_PATH} --live --ui --telegram ./content/feb_2026.strategy.ts
+  node ${ENTRY_PATH} --pine ./math/feb_2026.pine --timeframe 15m --limit 500 --jsonl
+  node ${ENTRY_PATH} --dump --symbol BTCUSDT --timeframe 15m --limit 500 --jsonl
+  node ${ENTRY_PATH} --init --output my-trading-bot
 `.trimStart();
 
 export const main = async () => {
