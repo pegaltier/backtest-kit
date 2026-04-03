@@ -181,7 +181,9 @@ export class WalkerMainService {
         res();
       });
 
+      payload.verbose && console.time("Walker");
       await awaiter;
+      payload.verbose && console.timeEnd("Walker");
 
       const dumpName = payload.output || `walker_${symbol}_${Date.now()}`;
       const dumpDir = join(process.cwd(), "dump");
