@@ -87,6 +87,34 @@ npm start -- --live --symbol BTCUSDT --ui --telegram ./content/feb_2026.strategy
 
 Module file `./modules/live.module.ts` is loaded automatically if it exists. Use it to register a `Broker` adapter that intercepts every trade mutation before internal state changes — exchange rejection rolls back the operation atomically.
 
+## 🚶 Walker — A/B Strategy Comparison (`--walker`)
+
+Runs the same historical period across multiple strategy files and prints a ranked comparison report. Use it to pick the best variant before committing to a single strategy.
+
+```bash
+npm start -- --walker --symbol BTCUSDT --noCache \
+  ./content/feb_2026_v1.strategy.ts \
+  ./content/feb_2026_v2.strategy.ts \
+  ./content/feb_2026_v3.strategy.ts
+```
+
+Each positional argument is a separate strategy file. All files are loaded without changing `process.cwd()` — `.env` is always read from the project root. `addWalkerSchema` is called automatically using the exchange and frame registered by the strategy files. If no frame is registered, the CLI falls back to the last 31 days from `Date.now()` with a warning.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--walker` | boolean | — | Enable walker comparison mode |
+| `--symbol` | string | `BTCUSDT` | Trading pair |
+| `--cacheInterval` | string | `1m, 15m, 30m, 1h, 4h` | Comma-separated intervals to pre-cache |
+| `--noCache` | boolean | `false` | Skip candle cache warming |
+| `--verbose` | boolean | `false` | Log candle fetches and per-strategy progress |
+| `--output` | string | `walker_{SYMBOL}_{TIMESTAMP}` | Output file base name (no extension) |
+| `--json` | boolean | `false` | Save results as JSON to `./dump/<output>.json` |
+| `--markdown` | boolean | `false` | Save report as Markdown to `./dump/<output>.md` |
+
+Output file is created at `./dump/<output>.md` (or `.json`). Without `--json`/`--markdown` the report is printed to stdout.
+
+Module file `./modules/walker.module.ts` is loaded automatically before comparison starts (shared for all strategy files in the run).
+
 ## 🌲 Running PineScript Indicators (`--pine`)
 
 Executes a local `.pine` file against a real exchange and prints the output as a Markdown table or saves it to a file.
@@ -148,6 +176,7 @@ Module file `./modules/dump.module.ts` is loaded automatically. The project incl
 | File | Loaded by mode | Purpose |
 |------|----------------|---------|
 | `modules/backtest.module.ts` | `--backtest` | Register a `Broker` adapter for backtest |
+| `modules/walker.module.ts` | `--walker` | Shared config loaded before walker comparison starts |
 | `modules/paper.module.ts` | `--paper` | Register a `Broker` adapter for paper trading |
 | `modules/live.module.ts` | `--live` | Register a `Broker` adapter for live trading |
 | `modules/pine.module.ts` | `--pine` | Register an exchange schema for PineScript runs |
