@@ -2,6 +2,8 @@ import "./config/polyfill";
 import "./config/setup";
 import "./lib";
 
+import "./main/start";
+
 import "./main/backtest";
 import "./main/paper";
 import "./main/live";
