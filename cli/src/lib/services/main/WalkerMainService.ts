@@ -10,6 +10,7 @@ import {
   overrideWalkerSchema,
   addFrameSchema,
   alignToInterval,
+  Log,
 } from "backtest-kit";
 import { createAwaiter, singleshot } from "functools-kit";
 import { getArgs, getPositionals } from "../../../helpers/getArgs";
@@ -23,7 +24,8 @@ import SymbolSchemaService from "../schema/SymbolSchemaService";
 import getEntry from "../../../helpers/getEntry";
 import notifyVerbose from "../../../utils/notifyVerbose";
 import ModuleConnectionService from "../connection/ModuleConnectionService";
-import { join, resolve } from "path";
+import path, { join, resolve } from "path";
+import dotenv from "dotenv";
 import { mkdir, writeFile } from "fs/promises";
 import FrameName from "../../../enum/FrameName";
 
@@ -71,8 +73,17 @@ export class WalkerMainService {
     }) => {
       this.loggerService.log("walkerMainService run", { payload });
 
+      const strategyMap = new Map();
+
       for (const entryPoint of payload.entryPoints) {
         await this.resolveService.attachStrategy(entryPoint);
+
+        for (const { strategyName } of await listStrategySchema()) {
+          if (strategyMap.has(strategyName)) {
+            continue;
+          }
+          strategyMap.set(strategyName, entryPoint)
+        }
       }
 
       await this.moduleConnectionService.loadModule("./walker.module");
@@ -122,20 +133,42 @@ export class WalkerMainService {
         throw new Error("Frame name is required");
       }
 
+      const cwd = process.cwd();
+      const self = this;
+
+      const callbacks = {
+        async onStrategyStart(strategyName: string) {
+          const entryPoint = strategyMap.get(strategyName);
+          if (!entryPoint) {
+            return;
+          }
+          const absolutePath = path.resolve(entryPoint);
+          const moduleRoot = path.dirname(absolutePath);
+
+          {
+            process.chdir(moduleRoot);
+            cwd !== moduleRoot && Log.useJsonl();
+            dotenv.config({ path: path.join(cwd, '.env'), override: true, quiet: true });
+            dotenv.config({ path: path.join(moduleRoot, '.env'), override: true, quiet: true });
+          }
+
+          if (!payload.noCache) {
+            await self.cacheLogicService.execute(payload.cacheInterval, {
+              exchangeName,
+              frameName,
+              symbol,
+            });
+          }
+        },
+      };
+
       addWalkerSchema({
         walkerName: WALKER_NAME,
         exchangeName,
         frameName,
         strategies: strategyNames,
+        callbacks,
       });
-
-      if (!payload.noCache) {
-        await this.cacheLogicService.execute(payload.cacheInterval, {
-          exchangeName,
-          frameName,
-          symbol,
-        });
-      }
 
       if (payload.verbose) {
         overrideExchangeSchema({
@@ -155,8 +188,9 @@ export class WalkerMainService {
         overrideWalkerSchema({
           walkerName: WALKER_NAME,
           callbacks: {
-            onStrategyStart(strategyName, symbol) {
+            async onStrategyStart(strategyName, symbol) {
               console.log(`Strategy started: ${strategyName} for symbol: ${symbol}`);
+              await callbacks.onStrategyStart(strategyName);
             },
             onStrategyError(strategyName, symbol, error) {
               console.error(`Strategy error: ${strategyName} for symbol: ${symbol}`, error);
@@ -181,9 +215,13 @@ export class WalkerMainService {
         res();
       });
 
-      payload.verbose && console.time("Walker");
-      await awaiter;
-      payload.verbose && console.timeEnd("Walker");
+      {
+        payload.verbose && console.time("Walker");
+        await awaiter;
+        payload.verbose && console.timeEnd("Walker");
+      }
+
+      process.chdir(cwd);
 
       const dumpName = payload.output || `walker_${symbol}_${Date.now()}`;
       const dumpDir = join(process.cwd(), "dump");
