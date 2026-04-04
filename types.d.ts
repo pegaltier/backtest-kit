@@ -25085,36 +25085,139 @@ declare class StrategyCoreService implements TStrategy {
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the effective (DCA-averaged) entry price for the current pending signal.
+     *
+     * This is the harmonic mean of all _entry prices, which is the correct
+     * cost-basis price used in all PNL calculations.
+     * With no DCA entries, equals the original priceOpen.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to effective entry price or null
+     */
     getPositionEffectivePrice: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the number of DCA entries made for the current pending signal.
+     *
+     * 1 = original entry only (no DCA).
+     * Increases by 1 with each successful commitAverageBuy().
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to entry count or null
+     */
     getPositionInvestedCount: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the total invested cost basis in dollars for the current pending signal.
+     *
+     * Equal to entryCount × $100 (COST_BASIS_PER_ENTRY).
+     * 1 entry = $100, 2 entries = $200, etc.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to total invested cost in dollars or null
+     */
     getPositionInvestedCost: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the unrealized PNL percentage for the current pending signal at currentPrice.
+     *
+     * Accounts for partial closes, DCA entries, slippage and fees
+     * (delegates to toProfitLossDto).
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to pnlPercentage or null
+     */
     getPositionPnlPercent: (backtest: boolean, symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the unrealized PNL in dollars for the current pending signal at currentPrice.
+     *
+     * Calculated as: pnlPercentage / 100 × totalInvestedCost
+     * Accounts for partial closes, DCA entries, slippage and fees.
+     *
+     * Returns null if no pending signal exists.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to pnl in dollars or null
+     */
     getPositionPnlCost: (backtest: boolean, symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number | null>;
+    /**
+     * Returns the list of DCA entry prices for the current pending signal.
+     *
+     * The first element is always the original priceOpen (initial entry).
+     * Each subsequent element is a price added by commitAverageBuy().
+     *
+     * Returns null if no pending signal exists.
+     * Returns a single-element array [priceOpen] if no DCA entries were made.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to array of entry prices or null
+     *
+     * @example
+     * ```typescript
+     * // No DCA: [43000]
+     * // One DCA: [43000, 42000]
+     * // Two DCA: [43000, 42000, 41500]
+     * ```
+     */
     getPositionLevels: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
     }) => Promise<number[] | null>;
+    /**
+     * Returns the list of partial closes for the current pending signal.
+     *
+     * Each entry records a partial profit or loss close event with its type,
+     * percent closed, price at close, cost basis snapshot, and entry count at close.
+     *
+     * Returns null if no pending signal exists.
+     * Returns an empty array if no partial closes have been executed.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to array of partial close records or null
+     */
     getPositionPartials: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
@@ -25127,6 +25230,27 @@ declare class StrategyCoreService implements TStrategy {
         entryCountAtClose: number;
         timestamp: number;
     }[]>;
+    /**
+     * Returns the list of DCA entry prices and costs for the current pending signal.
+     *
+     * Each entry records the price and cost of a single position entry.
+     * The first element is always the original priceOpen (initial entry).
+     * Each subsequent element is an entry added by averageBuy().
+     *
+     * Returns null if no pending signal exists.
+     * Returns a single-element array [{ price: priceOpen, cost }] if no DCA entries were made.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise resolving to array of entry records or null
+     *
+     * @example
+     * ```typescript
+     * // No DCA: [{ price: 43000, cost: 100 }]
+     * // One DCA: [{ price: 43000, cost: 100 }, { price: 42000, cost: 100 }]
+     * ```
+     */
     getPositionEntries: (backtest: boolean, symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
@@ -25426,6 +25550,22 @@ declare class StrategyCoreService implements TStrategy {
         frameName: FrameName;
     }) => Promise<boolean>;
     /**
+     * Checks whether `trailingStop` would succeed without executing it.
+     * Validates context, then delegates to StrategyConnectionService.validateTrailingStop().
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
+     * @param currentPrice - Current market price to validate against
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if `trailingStop` would execute, false otherwise
+     */
+    validateTrailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
      * Adjusts the trailing stop-loss distance for an active pending signal.
      *
      * Validates strategy existence and delegates to connection service
@@ -25438,7 +25578,7 @@ declare class StrategyCoreService implements TStrategy {
      * @param percentShift - Percentage adjustment to SL distance (-100 to 100)
      * @param currentPrice - Current market price to check for intrusion
      * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when trailing SL is updated
+     * @returns Promise<boolean> - true if trailing SL was updated, false otherwise
      *
      * @example
      * ```typescript
@@ -25453,52 +25593,7 @@ declare class StrategyCoreService implements TStrategy {
      * );
      * ```
      */
-    validateTrailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Checks whether `trailingStop` would succeed without executing it.
-     * Validates context, then delegates to StrategyConnectionService.validateTrailingStop().
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage shift of ORIGINAL SL distance [-100, 100], excluding 0
-     * @param currentPrice - Current market price to validate against
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if `trailingStop` would execute, false otherwise
-     */
     trailingStop: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Adjusts the trailing take-profit distance for an active pending signal.
-     * Validates context and delegates to StrategyConnectionService.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
-     * @param currentPrice - Current market price to check for intrusion
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @returns Promise that resolves when trailing TP is updated
-     *
-     * @example
-     * ```typescript
-     * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
-     * // Move TP further by 50%: newTP = 100 + 15% = 115
-     * await strategyCoreService.trailingTake(
-     *   false,
-     *   "BTCUSDT",
-     *   50,
-     *   102,
-     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
-     * );
-     * ```
-     */
-    validateTrailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
@@ -25514,7 +25609,51 @@ declare class StrategyCoreService implements TStrategy {
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @returns Promise<boolean> - true if `trailingTake` would execute, false otherwise
      */
+    validateTrailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Adjusts the trailing take-profit distance for an active pending signal.
+     * Validates context and delegates to StrategyConnectionService.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param percentShift - Percentage adjustment to TP distance (-100 to 100)
+     * @param currentPrice - Current market price to check for intrusion
+     * @param context - Strategy context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if trailing TP was updated, false otherwise
+     *
+     * @example
+     * ```typescript
+     * // LONG: entry=100, originalTP=110, distance=10%, currentPrice=102
+     * // Move TP further by 50%: newTP = 100 + 15% = 115
+     * await strategyCoreService.trailingTake(
+     *   false,
+     *   "BTCUSDT",
+     *   50,
+     *   102,
+     *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
+     * );
+     * ```
+     */
     trailingTake: (backtest: boolean, symbol: string, percentShift: number, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Checks whether `breakeven` would succeed without executing it.
+     * Validates context, then delegates to StrategyConnectionService.validateBreakeven().
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - Current market price to validate against
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if `breakeven` would execute, false otherwise
+     */
+    validateBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
@@ -25538,21 +25677,6 @@ declare class StrategyCoreService implements TStrategy {
      *   { strategyName: "my-strategy", exchangeName: "binance", frameName: "" }
      * );
      * ```
-     */
-    validateBreakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
-     * Checks whether `breakeven` would succeed without executing it.
-     * Validates context, then delegates to StrategyConnectionService.validateBreakeven().
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param currentPrice - Current market price to validate against
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if `breakeven` would execute, false otherwise
      */
     breakeven: (backtest: boolean, symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
@@ -25588,23 +25712,6 @@ declare class StrategyCoreService implements TStrategy {
         frameName: FrameName;
     }, activateId?: string) => Promise<void>;
     /**
-     * Adds a new DCA entry to the active pending signal.
-     *
-     * Validates strategy existence and delegates to connection service
-     * to add a new averaging entry to the position.
-     *
-     * @param backtest - Whether running in backtest mode
-     * @param symbol - Trading pair symbol
-     * @param currentPrice - New entry price to add to the averaging history
-     * @param context - Execution context with strategyName, exchangeName, frameName
-     * @returns Promise<boolean> - true if entry added, false if rejected
-     */
-    validateAverageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<boolean>;
-    /**
      * Checks whether `averageBuy` would succeed without executing it.
      * Validates context, then delegates to StrategyConnectionService.validateAverageBuy().
      *
@@ -25613,6 +25720,24 @@ declare class StrategyCoreService implements TStrategy {
      * @param currentPrice - New entry price to validate
      * @param context - Execution context with strategyName, exchangeName, frameName
      * @returns Promise<boolean> - true if `averageBuy` would execute, false otherwise
+     */
+    validateAverageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: {
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+    }) => Promise<boolean>;
+    /**
+     * Adds a new DCA entry to the active pending signal.
+     *
+     * Validates strategy existence and delegates to connection service
+     * to add a new averaging entry to the position.
+     *
+     * @param backtest - Whether running in backtest mode
+     * @param symbol - Trading pair symbol
+     * @param currentPrice - New entry price to add to the averaging history
+     * @param cost - Cost basis for this entry in dollars
+     * @param context - Execution context with strategyName, exchangeName, frameName
+     * @returns Promise<boolean> - true if entry added, false if rejected
      */
     averageBuy: (backtest: boolean, symbol: string, currentPrice: number, context: {
         strategyName: StrategyName;
