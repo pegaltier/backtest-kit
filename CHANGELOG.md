@@ -1,3 +1,73 @@
+# Walker Strategy Dump Isolation (v6.4.0, 04/04/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.4.0)
+
+v6.4.0 introduces a universal `clear()` lifecycle across all major adapters and a new `Setup` class that encapsulates the full initialization sequence. The Walker now properly tears down and re-initialises state between strategy iterations, fixing cross-contamination of memoized instances when `process.cwd()` changes.
+
+## `Setup` — Centralised Init/Teardown for CLI
+
+```ts
+import { Setup } from "@backtest-kit/cli";
+
+Setup.clear();  // tears down all adapters and resets the singleshot
+Setup.enable(); // idempotent — safe to call multiple times
+```
+
+`Setup` is a singleton (`SetupUtils`) exported from `@backtest-kit/cli`. Its `enable()` method (backed by `singleshot`) runs the full adapter wiring that was previously scattered across `config/setup.ts`. `clear()` tears down every adapter and resets `enable` so the next call starts fresh.
+
+`WalkerMainService` now calls `Setup.clear(); Setup.enable()` before loading each strategy entry point — ensuring that path-dependent singletons (Persist storage roots, Log file handles, Cache instances) are rebuilt with the current `process.cwd()` rather than reusing stale instances from the previous run.
+
+## Cache API Changes
+
+### `Cache.fn` / `Cache.file` — `clear()` and `gc()` on the returned function
+
+```ts
+const cachedFn = Cache.fn(fetchData, { interval: "1h" });
+
+cachedFn.clear(); // clears cached value for current execution context
+cachedFn.gc();    // removes expired entries, returns count removed
+```
+
+`Cache.fn()` now returns `T & { clear(): void; gc(): number | undefined }` and `Cache.file()` returns `T & { clear(): void }`. Cache management is now done via methods on the wrapped function instead of passing the original function as an argument to `Cache.*` static calls.
+
+### `Cache.clear(fn)` → `Cache.dispose(fn)` / `Cache.flush()` removed
+
+| Old API | New API |
+|---|---|
+| `Cache.clear(fn)` | `fn.clear()` |
+| `Cache.gc(fn)` | `fn.gc()` |
+| `Cache.flush(fn)` | `Cache.dispose(fn)` |
+| `Cache.flush()` | `Cache.clear()` |
+
+`Cache.dispose(fn)` removes the memoized `CacheInstance` for a specific function across all contexts. `Cache.clear()` (no arguments) disposes all fn and file instances and resets the `CacheFileInstance` index counter — used by `Setup.clear()` during Walker teardown.
+
+## Universal `clear()` on All Adapters
+
+Every major adapter now exposes a `clear()` method that resets its memoized or path-dependent state:
+
+| Adapter | What `clear()` resets |
+|---|---|
+| `Broker` | `_brokerInstance` + `enable` singleshot |
+| `Dump` | `getInstance` memoization |
+| `Log` | replaces `_log` with a fresh `LogMemoryUtils` |
+| `Markdown` | `getMarkdownStorage` memoization |
+| `Memory` | `getInstance` memoization |
+| `Report` | `getReportStorage` memoization |
+| `StorageBacktest` | resets to `StorageMemoryBacktestUtils` |
+| `StorageLive` | resets to `StoragePersistLiveUtils` |
+| `NotificationBacktest` | resets to `NotificationMemoryBacktestUtils` |
+| `NotificationLive` | resets to `NotificationMemoryLiveUtils` |
+| All `Persist*` adapters | clears the respective memoized storage factory |
+
+## `dispose()` Rename in Notification and PersistMemory
+
+`INotificationUtils.clear()` is renamed to `dispose()` across all implementations (`NotificationMemory*`, `NotificationPersist*`, `NotificationDummy*`, `NotificationBacktestAdapter`, `NotificationLiveAdapter`) to disambiguate from the new cache-reset `clear()` added to the adapter wrappers.
+
+Similarly, `PersistMemoryUtils.clear(signalId, bucketName)` (which removed a single signal's storage key) is renamed to `dispose(signalId, bucketName)`, while `PersistMemoryUtils.clear()` (no args) is the new cache-reset method.
+
+
+
+
 # Walker A/B Strategy Comparison for CLI (v6.2.0, 03/04/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.2.0)
