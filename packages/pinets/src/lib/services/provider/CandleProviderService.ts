@@ -4,6 +4,7 @@ import {
   ExecutionContextService,
   getRawCandles,
   MethodContextService,
+  lib,
 } from "backtest-kit";
 import { IProvider } from "../../../interface/Provider.interface";
 import { inject } from "../../core/di";
@@ -11,7 +12,26 @@ import { CandleModel } from "../../../model/Candle.model";
 import { SymbolInfoModel } from "../../../model/SymbolInfo.model";
 import LoggerService from "../base/LoggerService";
 import { TYPES } from "../../core/types";
-import ExchangeContextService, { TExchangeContextService } from "../context/ExchangeContextService";
+import ExchangeContextService, {
+  TExchangeContextService,
+} from "../context/ExchangeContextService";
+
+const PINE_TF_MAP = {
+  "1": "1m",
+  "3": "3m",
+  "5": "5m",
+  "15": "15m",
+  "30": "30m",
+  "60": "1h",
+  "120": "2h",
+  "240": "4h",
+  "360": "6h",
+  "480": "8h",
+  "1D": "1d",
+  D: "1d",
+  "1W": "1w",
+  W: "1w",
+};
 
 const GET_RAW_CANDLES_FN = async (
   self: CandleProviderService,
@@ -46,7 +66,9 @@ const GET_RAW_CANDLES_FN = async (
 
 export class CandleProviderService implements IProvider {
   readonly loggerService = inject<LoggerService>(TYPES.loggerService);
-  readonly exchangeContextService = inject<TExchangeContextService>(TYPES.exchangeContextService);
+  readonly exchangeContextService = inject<TExchangeContextService>(
+    TYPES.exchangeContextService,
+  );
 
   async getMarketData(
     tickerId: string,
@@ -67,13 +89,22 @@ export class CandleProviderService implements IProvider {
       .toUpperCase()
       .replace(/^BINANCE:|^BYBIT:|^OKX:/, "");
 
+    const normalizedTimeframe = PINE_TF_MAP[timeframe] ?? timeframe;
+    let clampedEDate = eDate;
+    if (ExecutionContextService.hasContext()) {
+      const whenMs = lib.executionContextService.context.when.getTime();
+      if (clampedEDate === undefined || clampedEDate > whenMs) {
+        clampedEDate = whenMs;
+      }
+    }
+
     const rawCandles = await GET_RAW_CANDLES_FN(
       this,
       symbol,
-      <CandleInterval>timeframe,
+      <CandleInterval>normalizedTimeframe,
       limit,
       sDate,
-      eDate,
+      clampedEDate,
     );
 
     const candles: CandleModel[] = rawCandles.map((c) => ({
