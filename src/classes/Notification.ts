@@ -734,13 +734,13 @@ const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_ADAPTER = "NotificationBackt
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_DUMMY = "NotificationBacktestAdapter.useDummy";
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY = "NotificationBacktestAdapter.useMemory";
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST = "NotificationBacktestAdapter.usePersist";
-const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_RESET_ADAPTER = "NotificationBacktestAdapter.resetAdapter";
+const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_CLEAR = "NotificationBacktestAdapter.clear";
 
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER = "NotificationLiveAdapter.useNotificationAdapter";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY = "NotificationLiveAdapter.useDummy";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY = "NotificationLiveAdapter.useMemory";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST = "NotificationLiveAdapter.usePersist";
-const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_RESET_ADAPTER = "NotificationLiveAdapter.resetAdapter";
+const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_CLEAR = "NotificationLiveAdapter.clear";
 
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_WAIT_FOR_INIT = "NotificationPersistBacktestUtils.waitForInit";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_UPDATE_NOTIFICATIONS = "NotificationPersistBacktestUtils._updateNotifications";
@@ -2028,8 +2028,8 @@ export class NotificationBacktestAdapter implements INotificationUtils {
    * Call this when process.cwd() changes between strategy iterations
    * so a new instance is created with the updated base path.
    */
-  public resetAdapter = (): void => {
-    backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_RESET_ADAPTER);
+  public clear = (): void => {
+    backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_CLEAR);
     this._notificationBacktestUtils = new NotificationMemoryBacktestUtils();
   };
 }
@@ -2199,8 +2199,8 @@ export class NotificationLiveAdapter implements INotificationUtils {
    * Call this when process.cwd() changes between strategy iterations
    * so a new instance is created with the updated base path.
    */
-  public resetAdapter = (): void => {
-    backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_RESET_ADAPTER);
+  public clear = (): void => {
+    backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_CLEAR);
     this._notificationLiveUtils = new NotificationMemoryLiveUtils();
   };
 }
