@@ -41,6 +41,7 @@ const DUMP_ADAPTER_METHOD_NAME_USE_MEMORY = "DumpAdapter.useMemory";
 const DUMP_ADAPTER_METHOD_NAME_USE_DUMMY = "DumpAdapter.useDummy";
 const DUMP_ADAPTER_METHOD_NAME_USE_BOTH = "DumpAdapter.useMarkdownMemoryBoth";
 const DUMP_ADAPTER_METHOD_NAME_USE_ADAPTER = "DumpAdapter.useDumpAdapter";
+const DUMP_ADAPTER_METHOD_NAME_CLEAR = "DumpAdapter.clear";
 
 /**
  * Renders a single MessageModel as a markdown section.
@@ -965,6 +966,16 @@ export class DumpAdapter {
   public useDumpAdapter = (Ctor: TDumpInstanceCtor): void => {
     backtest.loggerService.info(DUMP_ADAPTER_METHOD_NAME_USE_ADAPTER);
     this.DumpFactory = Ctor;
+  };
+
+  /**
+   * Clears the memoized instance cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new instances are created with the updated base path.
+   */
+  public clear = (): void => {
+    backtest.loggerService.info(DUMP_ADAPTER_METHOD_NAME_CLEAR);
+    this.getInstance.clear();
   };
 }
 

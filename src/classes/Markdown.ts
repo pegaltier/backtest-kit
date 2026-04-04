@@ -23,6 +23,7 @@ const MARKDOWN_METHOD_NAME_WRITE_DATA = "MarkdownAdapter.writeData";
 const MARKDOWN_METHOD_NAME_USE_MD = "MarkdownAdapter.useMd";
 const MARKDOWN_METHOD_NAME_USE_JSONL = "MarkdownAdapter.useJsonl";
 const MARKDOWN_METHOD_NAME_USE_DUMMY = "MarkdownAdapter.useDummy";
+const MARKDOWN_METHOD_NAME_CLEAR = "MarkdownAdapter.clear";
 
 /**
  * Configuration interface for selective markdown service enablement.
@@ -660,6 +661,16 @@ export class MarkdownAdapter extends MarkdownUtils {
   public useJsonl() {
     backtest.loggerService.debug(MARKDOWN_METHOD_NAME_USE_JSONL);
     this.useMarkdownAdapter(MarkdownFileBase);
+  }
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    backtest.loggerService.log(MARKDOWN_METHOD_NAME_CLEAR);
+    this.getMarkdownStorage.clear();
   }
 
   /**

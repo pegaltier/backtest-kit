@@ -10855,6 +10855,12 @@ declare class PersistSignalUtils {
      */
     writeSignalData: (signalRow: ISignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
     /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
      */
@@ -10939,6 +10945,12 @@ declare class PersistRiskUtils {
      * @returns Promise that resolves when write is complete
      */
     writePositionData: (riskRow: RiskData, riskName: RiskName, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -11026,6 +11038,12 @@ declare class PersistScheduleUtils {
      * @returns Promise that resolves when write is complete
      */
     writeScheduleData: (scheduledSignalRow: IScheduledSignalRow | null, symbol: string, strategyName: StrategyName, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -11115,6 +11133,12 @@ declare class PersistPartialUtils {
      * @returns Promise that resolves when write is complete
      */
     writePartialData: (partialData: PartialData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -11240,6 +11264,12 @@ declare class PersistBreakevenUtils {
      */
     writeBreakevenData: (breakevenData: BreakevenData, symbol: string, strategyName: StrategyName, signalId: string, exchangeName: ExchangeName) => Promise<void>;
     /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
      */
@@ -11328,6 +11358,12 @@ declare class PersistCandleUtils {
      */
     writeCandlesData: (candles: CandleData[], symbol: string, interval: CandleInterval, exchangeName: ExchangeName) => Promise<void>;
     /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
      */
@@ -11404,6 +11440,12 @@ declare class PersistStorageUtils {
      */
     writeStorageData: (signalData: StorageData, backtest: boolean) => Promise<void>;
     /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
      */
@@ -11468,6 +11510,12 @@ declare class PersistNotificationUtils {
      * @returns Promise that resolves when write is complete
      */
     writeNotificationData: (notificationData: NotificationData, backtest: boolean) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -11534,6 +11582,12 @@ declare class PersistLogUtils {
      */
     writeLogData: (logData: LogData) => Promise<void>;
     /**
+     * Clears the cached storage instance.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new storage instance is created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
      */
@@ -11586,6 +11640,12 @@ declare class PersistMeasureUtils {
      * @returns Promise that resolves when write is complete
      */
     writeMeasureData: (data: MeasureData, bucket: string, key: string) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to the default JSON persist adapter.
      */
@@ -11700,12 +11760,20 @@ declare class PersistMemoryUtils {
         data: MemoryData;
     }>;
     /**
-     * Dispose persist adapter to prevent memory leak
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear: () => void;
+    /**
+     * Disposes of the memory adapter and releases any resources.
+     * Call this when a signal is removed to clean up its associated storage.
      *
      * @param signalId - Signal identifier
      * @param bucketName - Bucket name
+     * @returns void
      */
-    clear: (signalId: string, bucketName: string) => void;
+    dispose: (signalId: string, bucketName: string) => void;
     /**
      * Switches to the default JSON persist adapter.
      * All future persistence writes will use JSON storage.
@@ -12004,6 +12072,12 @@ declare class ReportAdapter extends ReportUtils {
      * @internal - Automatically called by report services, not for direct use
      */
     writeData: <T = any>(reportName: ReportName, data: T, options: IReportDumpOptions) => Promise<void>;
+    /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
     /**
      * Switches to a dummy report adapter that discards all writes.
      * All future report writes will be no-ops.
@@ -12345,6 +12419,12 @@ declare class MarkdownAdapter extends MarkdownUtils {
      */
     useJsonl(): void;
     /**
+     * Clears the memoized storage cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new storage instances are created with the updated base path.
+     */
+    clear(): void;
+    /**
      * Switches to a dummy markdown adapter that discards all writes.
      * All future markdown writes will be no-ops.
      */
@@ -12447,6 +12527,12 @@ declare class LogAdapter implements ILog {
      * @param dirName - Directory for the JSONL file (default: ./dump/log)
      */
     useJsonl: (fileName?: string, dirName?: string) => void;
+    /**
+     * Clears the cached log instance by resetting to the default in-memory adapter.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new adapter instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Global singleton instance of LogAdapter.
@@ -17965,6 +18051,12 @@ declare class StorageBacktestAdapter implements IStorageUtils {
      * Signals will be stored in memory only.
      */
     useMemory: () => void;
+    /**
+     * Clears the cached utils instance by resetting to the default in-memory adapter.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Live trading storage adapter with pluggable storage backend.
@@ -18039,6 +18131,12 @@ declare class StorageLiveAdapter implements IStorageUtils {
      * Signals will be stored in memory only.
      */
     useMemory: () => void;
+    /**
+     * Clears the cached utils instance by resetting to the default persistent adapter.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Main storage adapter that manages both backtest and live signal storage.
@@ -18165,7 +18263,7 @@ interface INotificationUtils {
     /**
      * Clears all stored notifications.
      */
-    clear(): Promise<void>;
+    dispose(): Promise<void>;
 }
 /**
  * Constructor type for notification adapters.
@@ -18254,7 +18352,7 @@ declare class NotificationBacktestAdapter implements INotificationUtils {
      * Clears all stored notifications.
      * Proxies call to the underlying notification adapter.
      */
-    clear: () => Promise<void>;
+    dispose: () => Promise<void>;
     /**
      * Sets the notification adapter constructor.
      * All future notification operations will use this adapter.
@@ -18277,6 +18375,12 @@ declare class NotificationBacktestAdapter implements INotificationUtils {
      * Notifications will be persisted to disk.
      */
     usePersist: () => void;
+    /**
+     * Resets the cached utils instance to the default in-memory adapter.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Live trading notification adapter with pluggable notification backend.
@@ -18360,7 +18464,7 @@ declare class NotificationLiveAdapter implements INotificationUtils {
      * Clears all stored notifications.
      * Proxies call to the underlying notification adapter.
      */
-    clear: () => Promise<void>;
+    dispose: () => Promise<void>;
     /**
      * Sets the notification adapter constructor.
      * All future notification operations will use this adapter.
@@ -18383,6 +18487,12 @@ declare class NotificationLiveAdapter implements INotificationUtils {
      * Notifications will be persisted to disk.
      */
     usePersist: () => void;
+    /**
+     * Resets the cached utils instance to the default in-memory adapter.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Main notification adapter that manages both backtest and live notification storage.
@@ -18418,7 +18528,7 @@ declare class NotificationAdapter {
      *
      * @throws Error if NotificationAdapter is not enabled
      */
-    clear: (isBacktest: boolean) => Promise<void>;
+    dispose: (isBacktest: boolean) => Promise<void>;
 }
 /**
  * Global singleton instance of NotificationAdapter.
@@ -18636,6 +18746,12 @@ declare class MemoryAdapter implements TMemoryInstance {
      */
     useDummy: () => void;
     /**
+     * Clears the memoized instance cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new instances are created with the updated base path.
+     */
+    clear: () => void;
+    /**
      * Releases resources held by this adapter.
      * Delegates to disable() to unsubscribe from signal lifecycle events.
      */
@@ -18797,6 +18913,12 @@ declare class DumpAdapter {
      * @param Ctor - Constructor for the custom dump implementation
      */
     useDumpAdapter: (Ctor: TDumpInstanceCtor) => void;
+    /**
+     * Clears the memoized instance cache.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new instances are created with the updated base path.
+     */
+    clear: () => void;
 }
 declare const Dump: DumpAdapter;
 
@@ -21389,6 +21511,12 @@ declare class BrokerAdapter {
      * ```
      */
     disable: () => void;
+    /**
+     * Clears the cached broker instance and resets the enable singleshot.
+     * Call this when process.cwd() changes between strategy iterations
+     * so a new broker instance is created with the updated base path.
+     */
+    clear: () => void;
 }
 /**
  * Base class for custom broker adapter implementations.

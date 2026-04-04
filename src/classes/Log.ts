@@ -28,6 +28,7 @@ const LOG_ADAPTER_METHOD_NAME_USE_PERSIST = "LogAdapter.usePersist";
 const LOG_ADAPTER_METHOD_NAME_USE_MEMORY = "LogAdapter.useMemory";
 const LOG_ADAPTER_METHOD_NAME_USE_DUMMY = "LogAdapter.useDummy";
 const LOG_ADAPTER_METHOD_NAME_USE_JSONL = "LogAdapter.useJsonl";
+const LOG_ADAPTER_METHOD_NAME_CLEAR = "LogAdapter.clear";
 
 const LOG_JSONL_METHOD_NAME_LOG = "LogJsonlUtils.log";
 const LOG_JSONL_METHOD_NAME_DEBUG = "LogJsonlUtils.debug";
@@ -731,6 +732,16 @@ export class LogAdapter implements ILog {
   ) => {
     backtest.loggerService.info(LOG_ADAPTER_METHOD_NAME_USE_JSONL);
     this._log = new LogJsonlUtils(fileName, dirName);
+  };
+
+  /**
+   * Clears the cached log instance by resetting to the default in-memory adapter.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new adapter instance is created with the updated base path.
+   */
+  public clear = (): void => {
+    backtest.loggerService.info(LOG_ADAPTER_METHOD_NAME_CLEAR);
+    this._log = new LogMemoryUtils();
   };
 }
 

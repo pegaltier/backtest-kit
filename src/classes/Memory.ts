@@ -46,6 +46,7 @@ const MEMORY_ADAPTER_METHOD_NAME_READ = "MemoryAdapter.readMemory";
 const MEMORY_ADAPTER_METHOD_NAME_USE_LOCAL = "MemoryAdapter.useLocal";
 const MEMORY_ADAPTER_METHOD_NAME_USE_PERSIST = "MemoryAdapter.usePersist";
 const MEMORY_ADAPTER_METHOD_NAME_USE_DUMMY = "MemoryAdapter.useDummy";
+const MEMORY_ADAPTER_METHOD_NAME_CLEAR = "MemoryAdapter.clear";
 
 /**
  * Interface for memory instance implementations.
@@ -409,7 +410,7 @@ export class MemoryPersistInstance implements IMemoryInstance {
       signalId: this.signalId,
       bucketName: this.bucketName,
     });
-    PersistMemoryAdapter.clear(
+    PersistMemoryAdapter.dispose(
       this.signalId,
       this.bucketName,
     );
@@ -705,6 +706,16 @@ export class MemoryAdapter implements TMemoryInstance {
   public useDummy = (): void => {
     swarm.loggerService.info(MEMORY_ADAPTER_METHOD_NAME_USE_DUMMY);
     this.MemoryFactory = MemoryDummyInstance;
+  };
+
+  /**
+   * Clears the memoized instance cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new instances are created with the updated base path.
+   */
+  public clear = (): void => {
+    swarm.loggerService.info(MEMORY_ADAPTER_METHOD_NAME_CLEAR);
+    this.getInstance.clear();
   };
 
   /**

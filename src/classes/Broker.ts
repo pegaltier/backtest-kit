@@ -16,6 +16,7 @@ const BROKER_METHOD_NAME_COMMIT_AVERAGE_BUY = "BrokerAdapter.commitAverageBuy";
 const BROKER_METHOD_NAME_USE_BROKER_ADAPTER = "BrokerAdapter.useBrokerAdapter";
 const BROKER_METHOD_NAME_ENABLE = "BrokerAdapter.enable";
 const BROKER_METHOD_NAME_DISABLE = "BrokerAdapter.disable";
+const BROKER_METHOD_NAME_CLEAR = "BrokerAdapter.clear";
 
 const BROKER_BASE_METHOD_NAME_WAIT_FOR_INIT = "BrokerBase.waitForInit";
 const BROKER_BASE_METHOD_NAME_ON_SIGNAL_OPEN = "BrokerBase.onSignalOpenCommit";
@@ -1078,6 +1079,17 @@ export class BrokerAdapter {
       const lastSubscription = this.enable();
       lastSubscription();
     }
+  };
+
+  /**
+   * Clears the cached broker instance and resets the enable singleshot.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new broker instance is created with the updated base path.
+   */
+  public clear = (): void => {
+    bt.loggerService.info(BROKER_METHOD_NAME_CLEAR, {});
+    this._brokerInstance = null;
+    this.enable.clear();
   };
 }
 

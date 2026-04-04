@@ -64,11 +64,13 @@ const STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_ADAPTER = "StorageBacktestAdapter
 const STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_DUMMY = "StorageBacktestAdapter.useDummy";
 const STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST = "StorageBacktestAdapter.usePersist";
 const STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY = "StorageBacktestAdapter.useMemory";
+const STORAGE_BACKTEST_ADAPTER_METHOD_NAME_CLEAR = "StorageBacktestAdapter.clear";
 
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER = "StorageLiveAdapter.useStorageAdapter";
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY = "StorageLiveAdapter.useDummy";
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST = "StorageLiveAdapter.usePersist";
 const STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY = "StorageLiveAdapter.useMemory";
+const STORAGE_LIVE_ADAPTER_METHOD_NAME_CLEAR = "StorageLiveAdapter.clear";
 
 /**
  * Type alias for signal storage row identifier.
@@ -1211,6 +1213,16 @@ export class StorageBacktestAdapter implements IStorageUtils {
     backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._signalBacktestUtils = new StorageMemoryBacktestUtils();
   };
+
+  /**
+   * Clears the cached utils instance by resetting to the default in-memory adapter.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new instance is created with the updated base path.
+   */
+  public clear = (): void => {
+    backtest.loggerService.info(STORAGE_BACKTEST_ADAPTER_METHOD_NAME_CLEAR);
+    this._signalBacktestUtils = new StorageMemoryBacktestUtils();
+  };
 }
 
 /**
@@ -1325,6 +1337,16 @@ export class StorageLiveAdapter implements IStorageUtils {
   useMemory = (): void => {
     backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY);
     this._signalLiveUtils = new StorageMemoryLiveUtils();
+  };
+
+  /**
+   * Clears the cached utils instance by resetting to the default persistent adapter.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new instance is created with the updated base path.
+   */
+  public clear = (): void => {
+    backtest.loggerService.info(STORAGE_LIVE_ADAPTER_METHOD_NAME_CLEAR);
+    this._signalLiveUtils = new StoragePersistLiveUtils();
   };
 }
 

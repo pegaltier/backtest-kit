@@ -57,6 +57,7 @@ const PERSIST_SIGNAL_UTILS_METHOD_NAME_WRITE_DATA =
 const PERSIST_SIGNAL_UTILS_METHOD_NAME_USE_JSON = "PersistSignalUtils.useJson";
 const PERSIST_SIGNAL_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistSignalUtils.useDummy";
+const PERSIST_SIGNAL_UTILS_METHOD_NAME_CLEAR = "PersistSignalUtils.clear";
 
 const PERSIST_SCHEDULE_UTILS_METHOD_NAME_USE_PERSIST_SCHEDULE_ADAPTER =
   "PersistScheduleUtils.usePersistScheduleAdapter";
@@ -68,6 +69,7 @@ const PERSIST_SCHEDULE_UTILS_METHOD_NAME_USE_JSON =
   "PersistScheduleUtils.useJson";
 const PERSIST_SCHEDULE_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistScheduleUtils.useDummy";
+const PERSIST_SCHEDULE_UTILS_METHOD_NAME_CLEAR = "PersistScheduleUtils.clear";
 
 const PERSIST_PARTIAL_UTILS_METHOD_NAME_USE_PERSIST_PARTIAL_ADAPTER =
   "PersistPartialUtils.usePersistPartialAdapter";
@@ -79,6 +81,7 @@ const PERSIST_PARTIAL_UTILS_METHOD_NAME_USE_JSON =
   "PersistPartialUtils.useJson";
 const PERSIST_PARTIAL_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistPartialUtils.useDummy";
+const PERSIST_PARTIAL_UTILS_METHOD_NAME_CLEAR = "PersistPartialUtils.clear";
 
 const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_USE_PERSIST_BREAKEVEN_ADAPTER =
   "PersistBreakevenUtils.usePersistBreakevenAdapter";
@@ -90,6 +93,7 @@ const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_USE_JSON =
   "PersistBreakevenUtils.useJson";
 const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistBreakevenUtils.useDummy";
+const PERSIST_BREAKEVEN_UTILS_METHOD_NAME_CLEAR = "PersistBreakevenUtils.clear";
 
 const PERSIST_RISK_UTILS_METHOD_NAME_USE_PERSIST_RISK_ADAPTER =
   "PersistRiskUtils.usePersistRiskAdapter";
@@ -99,6 +103,7 @@ const PERSIST_RISK_UTILS_METHOD_NAME_WRITE_DATA =
   "PersistRiskUtils.writePositionData";
 const PERSIST_RISK_UTILS_METHOD_NAME_USE_JSON = "PersistRiskUtils.useJson";
 const PERSIST_RISK_UTILS_METHOD_NAME_USE_DUMMY = "PersistRiskUtils.useDummy";
+const PERSIST_RISK_UTILS_METHOD_NAME_CLEAR = "PersistRiskUtils.clear";
 
 const PERSIST_BASE_METHOD_NAME_CTOR = "PersistBase.CTOR";
 const PERSIST_BASE_METHOD_NAME_WAIT_FOR_INIT = "PersistBase.waitForInit";
@@ -115,6 +120,7 @@ const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_JSON =
   "PersistStorageUtils.useJson";
 const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistStorageUtils.useDummy";
+const PERSIST_STORAGE_UTILS_METHOD_NAME_CLEAR = "PersistStorageUtils.clear";
 const PERSIST_STORAGE_UTILS_METHOD_NAME_USE_PERSIST_STORAGE_ADAPTER =
   "PersistStorageUtils.usePersistStorageAdapter";
 
@@ -126,6 +132,7 @@ const PERSIST_NOTIFICATION_UTILS_METHOD_NAME_USE_JSON =
   "PersistNotificationUtils.useJson";
 const PERSIST_NOTIFICATION_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistNotificationUtils.useDummy";
+const PERSIST_NOTIFICATION_UTILS_METHOD_NAME_CLEAR = "PersistNotificationUtils.clear";
 const PERSIST_NOTIFICATION_UTILS_METHOD_NAME_USE_PERSIST_NOTIFICATION_ADAPTER =
   "PersistNotificationUtils.usePersistNotificationAdapter";
 
@@ -139,6 +146,7 @@ const PERSIST_LOG_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistLogUtils.useDummy";
 const PERSIST_LOG_UTILS_METHOD_NAME_USE_PERSIST_LOG_ADAPTER =
   "PersistLogUtils.usePersistLogAdapter";
+const PERSIST_LOG_UTILS_METHOD_NAME_CLEAR = "PersistLogUtils.clear";
 
 const PERSIST_MEASURE_UTILS_METHOD_NAME_READ_DATA =
   "PersistMeasureUtils.readMeasureData";
@@ -148,8 +156,11 @@ const PERSIST_MEASURE_UTILS_METHOD_NAME_USE_JSON =
   "PersistMeasureUtils.useJson";
 const PERSIST_MEASURE_UTILS_METHOD_NAME_USE_DUMMY =
   "PersistMeasureUtils.useDummy";
+const PERSIST_MEASURE_UTILS_METHOD_NAME_CLEAR = "PersistMeasureUtils.clear";
 const PERSIST_MEASURE_UTILS_METHOD_NAME_USE_PERSIST_MEASURE_ADAPTER =
   "PersistMeasureUtils.usePersistMeasureAdapter";
+
+const PERSIST_CANDLE_UTILS_METHOD_NAME_CLEAR = "PersistCandleUtils.clear";
 
 const PERSIST_MEMORY_UTILS_METHOD_NAME_USE_PERSIST_MEMORY_ADAPTER =
   "PersistMemoryUtils.usePersistMemoryAdapter";
@@ -165,6 +176,8 @@ const PERSIST_MEMORY_UTILS_METHOD_NAME_HAS_DATA =
   "PersistMemoryUtils.hasMemoryData";
 const PERSIST_MEMORY_UTILS_METHOD_NAME_CLEAR =
   "PersistMemoryUtils.clear";
+const PERSIST_MEMORY_UTILS_METHOD_NAME_DISPOSE =
+  "PersistMemoryUtils.dispose";
 
 const BASE_WAIT_FOR_INIT_FN_METHOD_NAME = "PersistBase.waitForInitFn";
 
@@ -640,6 +653,16 @@ export class PersistSignalUtils {
   };
 
   /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_SIGNAL_UTILS_METHOD_NAME_CLEAR);
+    this.getStorage.clear();
+  }
+
+  /**
    * Switches to the default JSON persist adapter.
    * All future persistence writes will use JSON storage.
    */
@@ -787,6 +810,16 @@ export class PersistRiskUtils {
 
     await stateStorage.writeValue(RISK_STORAGE_KEY, riskRow);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_RISK_UTILS_METHOD_NAME_CLEAR);
+    this.getRiskStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -951,6 +984,16 @@ export class PersistScheduleUtils {
 
     await stateStorage.writeValue(symbol, scheduledSignalRow);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_SCHEDULE_UTILS_METHOD_NAME_CLEAR);
+    this.getScheduleStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -1119,6 +1162,16 @@ export class PersistPartialUtils {
 
     await stateStorage.writeValue(signalId, partialData);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_PARTIAL_UTILS_METHOD_NAME_CLEAR);
+    this.getPartialStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -1322,6 +1375,16 @@ class PersistBreakevenUtils {
 
     await stateStorage.writeValue(signalId, breakevenData);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_BREAKEVEN_UTILS_METHOD_NAME_CLEAR);
+    this.getBreakevenStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -1544,6 +1607,16 @@ export class PersistCandleUtils {
   };
 
   /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_CANDLE_UTILS_METHOD_NAME_CLEAR);
+    this.getCandlesStorage.clear();
+  }
+
+  /**
    * Switches to the default JSON persist adapter.
    * All future persistence writes will use JSON storage.
    */
@@ -1682,6 +1755,16 @@ export class PersistStorageUtils {
   };
 
   /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_STORAGE_UTILS_METHOD_NAME_CLEAR);
+    this.getStorage.clear();
+  }
+
+  /**
    * Switches to the default JSON persist adapter.
    * All future persistence writes will use JSON storage.
    */
@@ -1805,6 +1888,16 @@ export class PersistNotificationUtils {
       await stateStorage.writeValue(notification.id, notification);
     }
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_NOTIFICATION_UTILS_METHOD_NAME_CLEAR);
+    this.getNotificationStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -1932,6 +2025,16 @@ export class PersistLogUtils {
   };
 
   /**
+   * Clears the cached storage instance.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new storage instance is created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_LOG_UTILS_METHOD_NAME_CLEAR);
+    this._logStorage = null;
+  }
+
+  /**
    * Switches to the default JSON persist adapter.
    * All future persistence writes will use JSON storage.
    */
@@ -2044,6 +2147,16 @@ export class PersistMeasureUtils {
 
     await stateStorage.writeValue(key, data);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    swarm.loggerService.log(PERSIST_MEASURE_UTILS_METHOD_NAME_CLEAR);
+    this.getMeasureStorage.clear();
+  }
 
   /**
    * Switches to the default JSON persist adapter.
@@ -2287,16 +2400,25 @@ export class PersistMemoryUtils {
   };
 
   /**
-   * Dispose persist adapter to prevent memory leak
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear = () => {
+    swarm.loggerService.info(PERSIST_MEMORY_UTILS_METHOD_NAME_CLEAR);
+    this.getMemoryStorage.clear();
+  }
+
+  /**
+   * Disposes of the memory adapter and releases any resources.
+   * Call this when a signal is removed to clean up its associated storage.
    *
    * @param signalId - Signal identifier
    * @param bucketName - Bucket name
+   * @returns void
    */
-  public clear = (signalId: string, bucketName: string) => {
-    swarm.loggerService.info(PERSIST_MEMORY_UTILS_METHOD_NAME_CLEAR, {
-      signalId,
-      bucketName,
-    });
+  public dispose = (signalId: string, bucketName: string) => {
+    swarm.loggerService.info(PERSIST_MEMORY_UTILS_METHOD_NAME_DISPOSE);
     const key = `${signalId}:${bucketName}`;
     this.getMemoryStorage.clear(key);
   }
