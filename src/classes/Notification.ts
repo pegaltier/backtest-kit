@@ -710,7 +710,7 @@ const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_ERROR = "NotificationMemor
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationMemoryBacktestUtils.handleCriticalError";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationMemoryBacktestUtils.handleValidationError";
 const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_GET_DATA = "NotificationMemoryBacktestUtils.getData";
-const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_CLEAR = "NotificationMemoryBacktestUtils.clear";
+const NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_DISPOSE = "NotificationMemoryBacktestUtils.dispose";
 
 const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_SIGNAL = "NotificationMemoryLiveUtils.handleSignal";
 const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_PARTIAL_PROFIT = "NotificationMemoryLiveUtils.handlePartialProfit";
@@ -723,24 +723,24 @@ const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_ERROR = "NotificationMemoryLiv
 const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationMemoryLiveUtils.handleCriticalError";
 const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationMemoryLiveUtils.handleValidationError";
 const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_GET_DATA = "NotificationMemoryLiveUtils.getData";
-const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_CLEAR = "NotificationMemoryLiveUtils.clear";
+const NOTIFICATION_MEMORY_LIVE_METHOD_NAME_DISPOSE = "NotificationMemoryLiveUtils.clear";
 
 const NOTIFICATION_ADAPTER_METHOD_NAME_ENABLE = "NotificationAdapter.enable";
 const NOTIFICATION_ADAPTER_METHOD_NAME_DISABLE = "NotificationAdapter.disable";
 const NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_BACKTEST = "NotificationAdapter.getDataBacktest";
-const NOTIFICATION_ADAPTER_METHOD_NAME_GET_DATA_LIVE = "NotificationAdapter.getDataLive";
-const NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_BACKTEST = "NotificationAdapter.clearBacktest";
-const NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_LIVE = "NotificationAdapter.clearLive";
+const NOTIFICATION_ADAPTER_METHOD_NAME_DISPOSE_LIVE = "NotificationAdapter.disposeLive";
 
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_ADAPTER = "NotificationBacktestAdapter.useNotificationAdapter";
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_DUMMY = "NotificationBacktestAdapter.useDummy";
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_MEMORY = "NotificationBacktestAdapter.useMemory";
 const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST = "NotificationBacktestAdapter.usePersist";
+const NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_RESET_ADAPTER = "NotificationBacktestAdapter.resetAdapter";
 
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_ADAPTER = "NotificationLiveAdapter.useNotificationAdapter";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_DUMMY = "NotificationLiveAdapter.useDummy";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_MEMORY = "NotificationLiveAdapter.useMemory";
 const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST = "NotificationLiveAdapter.usePersist";
+const NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_RESET_ADAPTER = "NotificationLiveAdapter.resetAdapter";
 
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_WAIT_FOR_INIT = "NotificationPersistBacktestUtils.waitForInit";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_UPDATE_NOTIFICATIONS = "NotificationPersistBacktestUtils._updateNotifications";
@@ -755,7 +755,7 @@ const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_ERROR = "NotificationPers
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationPersistBacktestUtils.handleCriticalError";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationPersistBacktestUtils.handleValidationError";
 const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_GET_DATA = "NotificationPersistBacktestUtils.getData";
-const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_CLEAR = "NotificationPersistBacktestUtils.clear";
+const NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_DISPOSE = "NotificationPersistBacktestUtils.clear";
 
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_WAIT_FOR_INIT = "NotificationPersistLiveUtils.waitForInit";
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_UPDATE_NOTIFICATIONS = "NotificationPersistLiveUtils._updateNotifications";
@@ -770,7 +770,7 @@ const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_ERROR = "NotificationPersistL
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_CRITICAL_ERROR = "NotificationPersistLiveUtils.handleCriticalError";
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_HANDLE_VALIDATION_ERROR = "NotificationPersistLiveUtils.handleValidationError";
 const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_GET_DATA = "NotificationPersistLiveUtils.getData";
-const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_CLEAR = "NotificationPersistLiveUtils.clear";
+const NOTIFICATION_PERSIST_LIVE_METHOD_NAME_DISPOSE = "NotificationPersistLiveUtils.clear";
 
 /**
  * Base interface for notification adapters.
@@ -835,7 +835,7 @@ export interface INotificationUtils {
   /**
    * Clears all stored notifications.
    */
-  clear(): Promise<void>;
+  dispose(): Promise<void>;
 }
 
 /**
@@ -1009,8 +1009,8 @@ export class NotificationMemoryBacktestUtils implements INotificationUtils {
   /**
    * Clears all stored notifications.
    */
-  public clear = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_CLEAR);
+  public dispose = async (): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_MEMORY_BACKTEST_METHOD_NAME_DISPOSE);
     this._notifications = [];
   };
 }
@@ -1108,7 +1108,7 @@ export class NotificationDummyBacktestUtils implements INotificationUtils {
   /**
    * No-op clear operation.
    */
-  public clear = async (): Promise<void> => {
+  public dispose = async (): Promise<void> => {
     void 0;
   };
 }
@@ -1344,8 +1344,8 @@ export class NotificationPersistBacktestUtils implements INotificationUtils {
   /**
    * Clears all stored notifications.
    */
-  public clear = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_CLEAR);
+  public dispose = async (): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_PERSIST_BACKTEST_METHOD_NAME_DISPOSE);
     await this.waitForInit();
     this._notifications.clear();
     await this._updateNotifications();
@@ -1517,8 +1517,8 @@ export class NotificationMemoryLiveUtils implements INotificationUtils {
   /**
    * Clears all stored notifications.
    */
-  public clear = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_CLEAR);
+  public dispose = async (): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_MEMORY_LIVE_METHOD_NAME_DISPOSE);
     this._notifications = [];
   };
 }
@@ -1616,7 +1616,7 @@ export class NotificationDummyLiveUtils implements INotificationUtils {
   /**
    * No-op clear operation.
    */
-  public clear = async (): Promise<void> => {
+  public dispose = async (): Promise<void> => {
     void 0;
   };
 }
@@ -1855,8 +1855,8 @@ export class NotificationPersistLiveUtils implements INotificationUtils {
   /**
    * Clears all stored notifications.
    */
-  public clear = async (): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_CLEAR);
+  public dispose = async (): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_PERSIST_LIVE_METHOD_NAME_DISPOSE);
     await this.waitForInit();
     this._notifications.clear();
     await this._updateNotifications();
@@ -1981,8 +1981,8 @@ export class NotificationBacktestAdapter implements INotificationUtils {
    * Clears all stored notifications.
    * Proxies call to the underlying notification adapter.
    */
-  clear = async (): Promise<void> => {
-    return await this._notificationBacktestUtils.clear();
+  dispose = async (): Promise<void> => {
+    return await this._notificationBacktestUtils.dispose();
   };
 
   /**
@@ -2021,6 +2021,16 @@ export class NotificationBacktestAdapter implements INotificationUtils {
   usePersist = (): void => {
     backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._notificationBacktestUtils = new NotificationPersistBacktestUtils();
+  };
+
+  /**
+   * Resets the cached utils instance to the default in-memory adapter.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new instance is created with the updated base path.
+   */
+  public resetAdapter = (): void => {
+    backtest.loggerService.info(NOTIFICATION_BACKTEST_ADAPTER_METHOD_NAME_RESET_ADAPTER);
+    this._notificationBacktestUtils = new NotificationMemoryBacktestUtils();
   };
 }
 
@@ -2142,8 +2152,8 @@ export class NotificationLiveAdapter implements INotificationUtils {
    * Clears all stored notifications.
    * Proxies call to the underlying notification adapter.
    */
-  clear = async (): Promise<void> => {
-    return await this._notificationLiveUtils.clear();
+  dispose = async (): Promise<void> => {
+    return await this._notificationLiveUtils.dispose();
   };
 
   /**
@@ -2182,6 +2192,16 @@ export class NotificationLiveAdapter implements INotificationUtils {
   usePersist = (): void => {
     backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_USE_PERSIST);
     this._notificationLiveUtils = new NotificationPersistLiveUtils();
+  };
+
+  /**
+   * Resets the cached utils instance to the default in-memory adapter.
+   * Call this when process.cwd() changes between strategy iterations
+   * so a new instance is created with the updated base path.
+   */
+  public resetAdapter = (): void => {
+    backtest.loggerService.info(NOTIFICATION_LIVE_ADAPTER_METHOD_NAME_RESET_ADAPTER);
+    this._notificationLiveUtils = new NotificationMemoryLiveUtils();
   };
 }
 
@@ -2383,17 +2403,17 @@ export class NotificationAdapter {
    *
    * @throws Error if NotificationAdapter is not enabled
    */
-  public clear = async (isBacktest: boolean): Promise<void> => {
-    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_CLEAR_LIVE, {
+  public dispose = async (isBacktest: boolean): Promise<void> => {
+    backtest.loggerService.info(NOTIFICATION_ADAPTER_METHOD_NAME_DISPOSE_LIVE, {
       backtest: isBacktest,
     });
     if (!this.enable.hasValue()) {
       throw new Error("NotificationAdapter is not enabled. Call enable() first.");
     }
     if (isBacktest) {
-      return await NotificationBacktest.clear();
+      return await NotificationBacktest.dispose();
     }
-    return await NotificationLive.clear();
+    return await NotificationLive.dispose();
   };
 }
 
