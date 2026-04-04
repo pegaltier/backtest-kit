@@ -25,6 +25,7 @@ const REPORT_UTILS_METHOD_NAME_ENABLE = "ReportUtils.enable";
 const REPORT_UTILS_METHOD_NAME_DISABLE = "ReportUtils.disable";
 const REPORT_UTILS_METHOD_NAME_USE_DUMMY = "ReportUtils.useDummy";
 const REPORT_UTILS_METHOD_NAME_USE_JSONL = "ReportUtils.useJsonl";
+const REPORT_UTILS_METHOD_NAME_CLEAR = "ReportUtils.clear";
 
 /** Symbol key for the singleshot waitForInit function on ReportBase instances. */
 const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
@@ -594,6 +595,16 @@ export class ReportAdapter extends ReportUtils {
 
     await reportStorage.write(data, options);
   };
+
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
+  public clear(): void {
+    lib.loggerService.log(REPORT_UTILS_METHOD_NAME_CLEAR);
+    this.getReportStorage.clear();
+  }
 
   /**
    * Switches to a dummy report adapter that discards all writes.
