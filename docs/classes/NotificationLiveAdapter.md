@@ -130,10 +130,10 @@ getData: () => Promise<NotificationModel[]>
 Gets all stored notifications.
 Proxies call to the underlying notification adapter.
 
-### clear
+### dispose
 
 ```ts
-clear: () => Promise<void>
+dispose: () => Promise<void>
 ```
 
 Clears all stored notifications.
@@ -174,3 +174,13 @@ usePersist: () => void
 
 Switches to persistent notification adapter.
 Notifications will be persisted to disk.
+
+### clear
+
+```ts
+clear: () => void
+```
+
+Resets the cached utils instance to the default in-memory adapter.
+Call this when process.cwd() changes between strategy iterations
+so a new instance is created with the updated base path.

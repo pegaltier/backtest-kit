@@ -98,10 +98,10 @@ getData: () => Promise<NotificationModel[]>
 
 Gets all stored notifications.
 
-### clear
+### dispose
 
 ```ts
-clear: () => Promise<void>
+dispose: () => Promise<void>
 ```
 
 Clears all stored notifications.

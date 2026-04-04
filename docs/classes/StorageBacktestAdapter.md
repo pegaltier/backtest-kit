@@ -138,3 +138,13 @@ useMemory: () => void
 
 Switches to in-memory storage adapter.
 Signals will be stored in memory only.
+
+### clear
+
+```ts
+clear: () => void
+```
+
+Clears the cached utils instance by resetting to the default in-memory adapter.
+Call this when process.cwd() changes between strategy iterations
+so a new instance is created with the updated base path.

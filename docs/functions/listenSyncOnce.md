@@ -6,7 +6,7 @@ group: docs
 # listenSyncOnce
 
 ```ts
-declare function listenSyncOnce(filterFn: (event: SignalSyncContract) => boolean, fn: (event: SignalSyncContract) => void): () => void;
+declare function listenSyncOnce(filterFn: (event: SignalSyncContract) => boolean, fn: (event: SignalSyncContract) => void, warned?: boolean): () => void;
 ```
 
 Subscribes to filtered signal synchronization events with one-time execution.
@@ -18,3 +18,4 @@ If throws position is not being opened/closed until the async function completes
 |-----------|-------------|
 | `filterFn` | Predicate to filter which events trigger the callback |
 | `fn` | Callback function to handle the filtered event (called only once). If the function returns a promise, signal processing will wait until it resolves. |
+| `warned` | |

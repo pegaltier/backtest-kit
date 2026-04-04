@@ -233,7 +233,7 @@ and backtest mode flag.
 ### backtest
 
 ```ts
-backtest: (symbol: string, candles: ICandleData[], when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<IStrategyTickResultActive | IStrategyTickResultClosed | IStrategyTickResultCancelled>
+backtest: (symbol: string, candles: ICandleData[], frameEndTime: number, when: Date, backtest: boolean, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<...>
 ```
 
 Runs fast backtest against candle array.

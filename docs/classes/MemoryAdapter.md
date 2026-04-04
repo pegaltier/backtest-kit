@@ -122,6 +122,16 @@ useDummy: () => void
 
 Switches to dummy adapter that discards all writes.
 
+### clear
+
+```ts
+clear: () => void
+```
+
+Clears the memoized instance cache.
+Call this when process.cwd() changes between strategy iterations
+so new instances are created with the updated base path.
+
 ### dispose
 
 ```ts

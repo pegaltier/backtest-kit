@@ -76,6 +76,16 @@ usePersistLogAdapter(Ctor: TPersistBaseCtor<string, ILogEntry>): void;
 
 Registers a custom persistence adapter.
 
+### clear
+
+```ts
+clear(): void;
+```
+
+Clears the cached storage instance.
+Call this when process.cwd() changes between strategy iterations
+so a new storage instance is created with the updated base path.
+
 ### useJson
 
 ```ts

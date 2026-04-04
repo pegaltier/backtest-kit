@@ -19159,7 +19159,10 @@ declare class CacheUtils {
     fn: <T extends Function, K = symbol>(run: T, context: {
         interval: CandleInterval;
         key?: (args: Parameters<T>) => K;
-    }) => T;
+    }) => T & {
+        clear(): void;
+        gc(): number | undefined;
+    };
     /**
      * Wrap an async function with persistent file-based caching.
      *
@@ -19202,90 +19205,34 @@ declare class CacheUtils {
         interval: CandleInterval;
         name: string;
         key?: (args: CacheFileKeyArgs<T>) => string;
-    }) => T;
+    }) => T & {
+        clear(): void;
+    };
     /**
-     * Flush (remove) cached CacheInstance for a specific function or all functions.
+     * Dispose (remove) the memoized CacheInstance for a specific function.
      *
-     * This method removes CacheInstance objects from the internal memoization cache.
-     * When a CacheInstance is flushed, all cached results across all contexts
-     * (all strategy/exchange/mode combinations) for that function are discarded.
-     *
-     * Use cases:
-     * - Remove specific function's CacheInstance when implementation changes
-     * - Free memory by removing unused CacheInstances
-     * - Reset all CacheInstances when switching between different test scenarios
-     *
-     * Note: This is different from `clear()` which only removes cached values
-     * for the current context within an existing CacheInstance.
+     * Removes the CacheInstance from the internal memoization cache, discarding all cached
+     * results across all contexts (all strategy/exchange/mode combinations) for that function.
+     * The next call to the wrapped function will create a fresh CacheInstance.
      *
      * @template T - Function type
-     * @param run - Optional function to flush CacheInstance for. If omitted, flushes all CacheInstances.
+     * @param run - Function whose CacheInstance should be disposed.
      *
      * @example
      * ```typescript
      * const cachedFn = Cache.fn(calculateIndicator, { interval: "1h" });
      *
-     * // Flush CacheInstance for specific function
-     * Cache.flush(calculateIndicator);
-     *
-     * // Flush all CacheInstances
-     * Cache.flush();
+     * // Dispose CacheInstance for a specific function
+     * Cache.dispose(calculateIndicator);
      * ```
      */
-    flush: <T extends Function>(run?: T) => void;
+    dispose: <T extends Function>(run: T) => void;
     /**
-     * Clear cached value for current execution context of a specific function.
-     *
-     * Removes the cached entry for the current strategy/exchange/mode combination
-     * from the specified function's CacheInstance. The next call to the wrapped function
-     * will recompute the value for that context.
-     *
-     * This only clears the cache for the current execution context, not all contexts.
-     * Use `flush()` to remove the entire CacheInstance across all contexts.
-     *
-     * Requires active execution context (strategy, exchange, backtest mode) and method context.
-     *
-     * @template T - Function type
-     * @param run - Function whose cache should be cleared for current context
-     *
-     * @example
-     * ```typescript
-     * const cachedFn = Cache.fn(calculateIndicator, { interval: "1h" });
-     *
-     * // Within strategy execution context
-     * const result1 = cachedFn("BTCUSDT", 14); // Computed
-     * const result2 = cachedFn("BTCUSDT", 14); // Cached
-     *
-     * Cache.clear(calculateIndicator); // Clear cache for current context only
-     *
-     * const result3 = cachedFn("BTCUSDT", 14); // Recomputed for this context
-     * // Other contexts (different strategies/exchanges) remain cached
-     * ```
+     * Clears all memoized CacheInstance and CacheFileInstance objects.
+     * Call this when process.cwd() changes between strategy iterations
+     * so new instances are created with the updated base path.
      */
-    clear: <T extends Function>(run: T) => void;
-    /**
-     * Garbage collect expired cache entries for a specific function.
-     *
-     * Removes all cached entries whose interval has expired (not aligned with current time).
-     * Call this periodically to free memory from stale cache entries.
-     *
-     * Requires active execution context to get current time.
-     *
-     * @template T - Function type
-     * @param run - Function whose expired cache entries should be removed
-     * @returns Number of entries removed
-     *
-     * @example
-     * ```typescript
-     * const cachedFn = Cache.fn(calculateIndicator, { interval: "1h" });
-     *
-     * cachedFn("BTCUSDT", 14); // Cached at 10:00
-     * cachedFn("ETHUSDT", 14); // Cached at 10:00
-     * // Time passes to 11:00
-     * const removed = Cache.gc(calculateIndicator); // Returns 2
-     * ```
-     */
-    gc: <T extends Function>(run: T) => number;
+    clear: () => void;
 }
 /**
  * Singleton instance of CacheUtils for convenient function caching.

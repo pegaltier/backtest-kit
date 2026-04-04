@@ -47,10 +47,10 @@ getData: (isBacktest: boolean) => Promise<NotificationModel[]>
 
 Gets all backtest/live notifications from storage.
 
-### clear
+### dispose
 
 ```ts
-clear: (isBacktest: boolean) => Promise<void>
+dispose: (isBacktest: boolean) => Promise<void>
 ```
 
 Clears all backtest/live notifications from storage.

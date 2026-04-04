@@ -6,7 +6,7 @@ group: docs
 # listenSync
 
 ```ts
-declare function listenSync(fn: (event: SignalSyncContract) => void): () => void;
+declare function listenSync(fn: (event: SignalSyncContract) => void, warned?: boolean): () => void;
 ```
 
 Subscribes to signal synchronization events with queued async processing.
@@ -19,3 +19,4 @@ Emits when signals are being synchronized (e.g. pending signal being opened/clos
 | Parameter | Description |
 |-----------|-------------|
 | `fn` | Callback function to handle sync events. If the function returns a promise, signal processing will wait until it resolves. |
+| `warned` | |

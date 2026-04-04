@@ -43,10 +43,10 @@ _directory: string
 
 Computed directory path for entity storage
 
-### __@BASE_WAIT_FOR_INIT_SYMBOL@2624
+### __@BASE_WAIT_FOR_INIT_SYMBOL@2629
 
 ```ts
-__@BASE_WAIT_FOR_INIT_SYMBOL@2624: (() => Promise<void>) & ISingleshotClearable
+__@BASE_WAIT_FOR_INIT_SYMBOL@2629: (() => Promise<void>) & ISingleshotClearable
 ```
 
 ## Methods

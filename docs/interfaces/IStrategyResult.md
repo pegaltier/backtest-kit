@@ -33,3 +33,19 @@ metricValue: number
 ```
 
 Value of the optimization metric (null if invalid)
+
+### firstEventTime
+
+```ts
+firstEventTime: number
+```
+
+Timestamp of the first signal event (pendingAt of earliest signal), null if no signals
+
+### lastEventTime
+
+```ts
+lastEventTime: number
+```
+
+Timestamp of the last signal event (closeTimestamp of latest signal), null if no signals

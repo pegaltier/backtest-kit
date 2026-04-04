@@ -67,6 +67,16 @@ useReportAdapter(Ctor: TReportBaseCtor): void;
 Sets the report storage adapter constructor.
 All future report instances will use this adapter.
 
+### clear
+
+```ts
+clear(): void;
+```
+
+Clears the memoized storage cache.
+Call this when process.cwd() changes between strategy iterations
+so new storage instances are created with the updated base path.
+
 ### useDummy
 
 ```ts

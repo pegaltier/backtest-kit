@@ -80,10 +80,21 @@ Marks a memory entry as removed (soft delete — file is kept on disk).
 ### clear
 
 ```ts
-clear: (signalId: string, bucketName: string) => void
+clear: () => void
 ```
 
-Dispose persist adapter to prevent memory leak
+Clears the memoized storage cache.
+Call this when process.cwd() changes between strategy iterations
+so new storage instances are created with the updated base path.
+
+### dispose
+
+```ts
+dispose: (signalId: string, bucketName: string) => void
+```
+
+Disposes of the memory adapter and releases any resources.
+Call this when a signal is removed to clean up its associated storage.
 
 ## Methods
 

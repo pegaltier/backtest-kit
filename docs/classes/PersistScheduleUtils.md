@@ -67,6 +67,16 @@ usePersistScheduleAdapter(Ctor: TPersistBaseCtor<StrategyName, ScheduleData>): v
 
 Registers a custom persistence adapter.
 
+### clear
+
+```ts
+clear(): void;
+```
+
+Clears the memoized storage cache.
+Call this when process.cwd() changes between strategy iterations
+so new storage instances are created with the updated base path.
+
 ### useJson
 
 ```ts

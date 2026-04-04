@@ -179,7 +179,7 @@ Returns null if no pending signal exists or no partial closes were executed.
 ### backtest
 
 ```ts
-backtest: (symbol: string, strategyName: string, candles: ICandleData[]) => Promise<IStrategyBacktestResult>
+backtest: (symbol: string, strategyName: string, candles: ICandleData[], frameEndTime: number) => Promise<IStrategyBacktestResult>
 ```
 
 Fast backtest using historical candles.

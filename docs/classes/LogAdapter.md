@@ -121,3 +121,13 @@ useJsonl: (fileName?: string, dirName?: string) => void
 Switches to JSONL file log adapter.
 Log entries will be appended to {dirName}/{fileName}.jsonl.
 Reads are performed by parsing all lines from the file.
+
+### clear
+
+```ts
+clear: () => void
+```
+
+Clears the cached log instance by resetting to the default in-memory adapter.
+Call this when process.cwd() changes between strategy iterations
+so a new adapter instance is created with the updated base path.

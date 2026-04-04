@@ -170,3 +170,13 @@ Deactivates the broker: unsubscribes from syncSubject and resets the singleshot 
 
 Idempotent — safe to call even if `enable()` was never called.
 After `disable()`, `enable()` can be called again to reactivate.
+
+### clear
+
+```ts
+clear: () => void
+```
+
+Clears the cached broker instance and resets the enable singleshot.
+Call this when process.cwd() changes between strategy iterations
+so a new broker instance is created with the updated base path.

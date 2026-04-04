@@ -150,3 +150,13 @@ useDumpAdapter: (Ctor: TDumpInstanceCtor) => void
 
 Injects a custom dump adapter implementation.
 Uses Reflect.construct for ES3/ES6 interop compatibility.
+
+### clear
+
+```ts
+clear: () => void
+```
+
+Clears the memoized instance cache.
+Call this when process.cwd() changes between strategy iterations
+so new instances are created with the updated base path.
