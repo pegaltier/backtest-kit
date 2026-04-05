@@ -45,3 +45,5 @@ export const alignToInterval = (
   const intervalMs = minutes * MS_PER_MINUTE;
   return new Date(Math.floor(date.getTime() / intervalMs) * intervalMs);
 };
+
+export default alignToInterval;

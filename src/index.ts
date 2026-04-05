@@ -160,6 +160,10 @@ export {
   dumpJson,
 } from "./function/dump";
 export {
+  runInMockContext,
+} from "./function/context";
+
+export {
   CandleInterval,
   ICandleData,
   IPublicCandleData,
