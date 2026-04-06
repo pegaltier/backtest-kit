@@ -9,6 +9,7 @@ import {
   Risk,
   Partial,
   HighestProfit,
+  MaxDrawdown,
   Schedule,
   Performance,
   Sync,
@@ -146,6 +147,24 @@ export class MarkdownViewService {
       return await this.markdownMockService.getHighestProfitReport(symbol, strategyName, exchangeName, frameName);
     }
     return await HighestProfit.getReport(symbol, { strategyName, exchangeName, frameName }, backtest);
+  };
+
+  // MaxDrawdown
+
+  public getMaxDrawdownData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false) => {
+    this.loggerService.log("markdownViewService getMaxDrawdownData", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getMaxDrawdownData(symbol, strategyName, exchangeName, frameName);
+    }
+    return await MaxDrawdown.getData(symbol, { strategyName, exchangeName, frameName }, backtest);
+  };
+
+  public getMaxDrawdownReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false): Promise<string> => {
+    this.loggerService.log("markdownViewService getMaxDrawdownReport", { symbol, strategyName, exchangeName, frameName, backtest });
+    if (CC_ENABLE_MOCK) {
+      return await this.markdownMockService.getMaxDrawdownReport(symbol, strategyName, exchangeName, frameName);
+    }
+    return await MaxDrawdown.getReport(symbol, { strategyName, exchangeName, frameName }, backtest);
   };
 
   // Schedule

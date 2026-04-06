@@ -320,6 +320,52 @@ export class MarkdownMockService {
     return data;
   };
 
+  // MaxDrawdown
+
+  public getMaxDrawdownData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false) => {
+    this.loggerService.log("markdownMockService getMaxDrawdownData", { symbol, strategyName, exchangeName, frameName, backtest });
+    const { data, error } = await fetchApi("/api/v1/markdown_mock/max_drawdown_data", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+        backtest,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
+  public getMaxDrawdownReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false): Promise<string> => {
+    this.loggerService.log("markdownMockService getMaxDrawdownReport", { symbol, strategyName, exchangeName, frameName, backtest });
+    const { data, error } = await fetchApi("/api/v1/markdown_mock/max_drawdown_report", {
+      method: "POST",
+      body: JSON.stringify({
+        clientId: CC_CLIENT_ID,
+        serviceName: CC_SERVICE_NAME,
+        userId: CC_USER_ID,
+        requestId: randomString(),
+        symbol,
+        strategyName,
+        exchangeName,
+        frameName,
+        backtest,
+      }),
+    });
+    if (error) {
+      throw new Error(error);
+    }
+    return data;
+  };
+
   // Schedule
 
   public getScheduleData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest = false) => {

@@ -273,6 +273,34 @@ router.post("/api/v1/markdown_view/highest_profit_report", async (req, res) => {
   }
 });
 
+router.post("/api/v1/markdown_view/max_drawdown_data", async (req, res) => {
+  try {
+    const request = <MarkdownSymbolStrategyRequest>await micro.json(req);
+    const { requestId, serviceName, symbol, strategyName, exchangeName, frameName, backtest } = request;
+    const data = await ioc.markdownViewService.getMaxDrawdownData(symbol, strategyName, exchangeName, frameName, backtest);
+    const result = { data, status: "ok", error: "", requestId, serviceName };
+    ioc.loggerService.log("/api/v1/markdown_view/max_drawdown_data ok", { request, result: omit(result, "data") });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/markdown_view/max_drawdown_data error", { error: errorData(error) });
+    return await micro.send(res, 200, { status: "error", error: getErrorMessage(error) });
+  }
+});
+
+router.post("/api/v1/markdown_view/max_drawdown_report", async (req, res) => {
+  try {
+    const request = <MarkdownSymbolStrategyRequest>await micro.json(req);
+    const { requestId, serviceName, symbol, strategyName, exchangeName, frameName, backtest } = request;
+    const data = await ioc.markdownViewService.getMaxDrawdownReport(symbol, strategyName, exchangeName, frameName, backtest);
+    const result = { data, status: "ok", error: "", requestId, serviceName };
+    ioc.loggerService.log("/api/v1/markdown_view/max_drawdown_report ok", { request, result: omit(result, "data") });
+    return await micro.send(res, 200, result);
+  } catch (error) {
+    ioc.loggerService.log("/api/v1/markdown_view/max_drawdown_report error", { error: errorData(error) });
+    return await micro.send(res, 200, { status: "error", error: getErrorMessage(error) });
+  }
+});
+
 router.post("/api/v1/markdown_view/schedule_data", async (req, res) => {
   try {
     const request = <MarkdownSymbolStrategyRequest>await micro.json(req);

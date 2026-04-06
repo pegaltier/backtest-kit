@@ -1,0 +1,24 @@
+{
+  "eventList": [
+    {
+      "timestamp": 1705313400000,
+      "symbol": "BTCUSDT",
+      "strategyName": "mock-strategy",
+      "signalId": "abc123",
+      "position": "long",
+      "pnl": {
+        "pnlPercentage": -4.0,
+        "priceOpen": 50100.10002,
+        "priceClose": 48096.09602,
+        "pnlCost": -200.0,
+        "pnlEntries": 5000.0
+      },
+      "currentPrice": 48000,
+      "priceOpen": 50000,
+      "priceTakeProfit": 55000,
+      "priceStopLoss": 47500,
+      "backtest": true
+    }
+  ],
+  "totalEvents": 1
+}

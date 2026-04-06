@@ -20,6 +20,7 @@ const readBreakeven = makeReader("breakeven.md");
 const readRisk = makeReader("risk.md");
 const readPartial = makeReader("partial.md");
 const readHighestProfit = makeReader("highest_profit.md");
+const readMaxDrawdown = makeReader("max_drawdown.md");
 const readSchedule = makeReader("schedule.md");
 const readPerformance = makeReader("performance.md");
 const readSync = makeReader("sync.md");
@@ -33,6 +34,7 @@ const readBreakevenData = makeDataReader("breakeven.json");
 const readRiskData = makeDataReader("risk.json");
 const readPartialData = makeDataReader("partial.json");
 const readHighestProfitData = makeDataReader("highest_profit.json");
+const readMaxDrawdownData = makeDataReader("max_drawdown.json");
 const readScheduleData = makeDataReader("schedule.json");
 const readPerformanceData = makeDataReader("performance.json");
 const readSyncData = makeDataReader("sync.json");
@@ -124,6 +126,18 @@ export class MarkdownMockService {
   public getHighestProfitReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string): Promise<string> => {
     this.loggerService.log("markdownMockService getHighestProfitReport", { symbol, strategyName, exchangeName, frameName });
     return readHighestProfit();
+  };
+
+  // MaxDrawdown
+
+  public getMaxDrawdownData = async (symbol: string, strategyName: string, exchangeName: string, frameName: string) => {
+    this.loggerService.log("markdownMockService getMaxDrawdownData", { symbol, strategyName, exchangeName, frameName });
+    return readMaxDrawdownData();
+  };
+
+  public getMaxDrawdownReport = async (symbol: string, strategyName: string, exchangeName: string, frameName: string): Promise<string> => {
+    this.loggerService.log("markdownMockService getMaxDrawdownReport", { symbol, strategyName, exchangeName, frameName });
+    return readMaxDrawdown();
   };
 
   // Schedule
