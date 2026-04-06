@@ -42,7 +42,7 @@ Returns aggregated metrics calculated from all sync events.
 ### getReport
 
 ```ts
-getReport: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, columns?: Columns$3[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>
 ```
 
 Generates markdown report with all signal sync events for a symbol-strategy pair.
@@ -59,7 +59,7 @@ Creates formatted table containing:
 ### dump
 
 ```ts
-dump: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, path?: string, columns?: Columns$3[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>
 ```
 
 Generates and saves markdown report to file.

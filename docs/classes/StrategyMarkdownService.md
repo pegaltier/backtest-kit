@@ -139,7 +139,7 @@ ReportStorage for the specified symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$1[]) => Promise<string>
+getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns[]) => Promise<string>
 ```
 
 Generates a markdown report from accumulated strategy events.
@@ -152,7 +152,7 @@ Creates a formatted markdown document containing:
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>
+dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>
 ```
 
 Generates and saves a markdown report to disk.

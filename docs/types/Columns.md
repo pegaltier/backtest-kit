@@ -6,7 +6,7 @@ group: docs
 # Columns
 
 ```ts
-type Columns = ColumnModel<MaxDrawdownEvent>;
+type Columns = ColumnModel<StrategyEvent>;
 ```
 
-Type alias for column configuration used in max drawdown markdown reports.
+Type alias for column configuration used in strategy markdown reports.

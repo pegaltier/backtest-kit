@@ -69,7 +69,7 @@ Returns accumulated max drawdown statistics for the given context.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns[]) => Promise<string>
+getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$4[]) => Promise<string>
 ```
 
 Generates a markdown max drawdown report for the given context.
@@ -77,7 +77,7 @@ Generates a markdown max drawdown report for the given context.
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>
+dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>
 ```
 
 Generates the max drawdown report and writes it to disk.
