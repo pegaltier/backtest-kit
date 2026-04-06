@@ -5,6 +5,7 @@ import BreakevenView from "./view/BreakevenView";
 import RiskView from "./view/RiskView";
 import PartialView from "./view/PartialView";
 import HighestProfitView from "./view/HighestProfitView";
+import MaxDrawdownView from "./view/MaxDrawdownView";
 import ScheduleView from "./view/ScheduleView";
 import PerformanceView from "./view/PerformanceView";
 import SyncView from "./view/SyncView";
@@ -41,6 +42,11 @@ export const routes: IOutletModal[] = [
         id: "highest_profit",
         element: HighestProfitView,
         isActive: (pathname) => pathname.includes("/markdown_report/highest_profit"),
+    },
+    {
+        id: "max_drawdown",
+        element: MaxDrawdownView,
+        isActive: (pathname) => pathname.includes("/markdown_report/max_drawdown"),
     },
     {
         id: "schedule",

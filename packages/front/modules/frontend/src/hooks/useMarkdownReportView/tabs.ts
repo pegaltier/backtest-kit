@@ -32,6 +32,10 @@ export const tabs: ITabsStep[] = [
         label: "Highest Profit",
     },
     {
+        id: "max_drawdown",
+        label: "Max Drawdown",
+    },
+    {
         id: "schedule",
         label: "Schedule",
     },

@@ -142,6 +142,8 @@ declare class MarkdownMockService {
     getPartialReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<string>;
     getHighestProfitData: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<unknown>;
     getHighestProfitReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<string>;
+    getMaxDrawdownData: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<unknown>;
+    getMaxDrawdownReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<string>;
     getScheduleData: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<unknown>;
     getScheduleReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<string>;
     getPerformanceData: (symbol: string, strategyName: string, exchangeName: string, frameName: string) => Promise<unknown>;
@@ -278,6 +280,8 @@ declare class MarkdownViewService {
     getPartialReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<string>;
     getHighestProfitData: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<unknown>;
     getHighestProfitReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<string>;
+    getMaxDrawdownData: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<unknown>;
+    getMaxDrawdownReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<string>;
     getScheduleData: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<unknown>;
     getScheduleReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<string>;
     getPerformanceData: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest?: boolean) => Promise<unknown>;

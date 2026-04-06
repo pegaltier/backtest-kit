@@ -44,6 +44,7 @@ const fetchData = ttl(
             risk,
             partial,
             highest_profit,
+            max_drawdown,
             schedule,
             performance,
             sync,
@@ -87,6 +88,13 @@ const fetchData = ttl(
                 type === "backtest",
             ),
             ioc.markdownViewService.getHighestProfitReport(
+                symbol,
+                strategyName,
+                exchangeName,
+                frameName,
+                type === "backtest",
+            ),
+            ioc.markdownViewService.getMaxDrawdownReport(
                 symbol,
                 strategyName,
                 exchangeName,
@@ -137,6 +145,7 @@ const fetchData = ttl(
             risk,
             partial,
             highest_profit,
+            max_drawdown,
             schedule,
             performance,
             sync,
@@ -251,6 +260,22 @@ const handleCopy = async (
         onCopy(
             JSON.stringify(
                 await ioc.markdownViewService.getHighestProfitData(
+                    symbol,
+                    strategyName,
+                    exchangeName,
+                    frameName,
+                    backtest,
+                ),
+                null,
+                2,
+            ),
+        );
+        return;
+    }
+    if (pathname.includes("/markdown_report/max_drawdown")) {
+        onCopy(
+            JSON.stringify(
+                await ioc.markdownViewService.getMaxDrawdownData(
                     symbol,
                     strategyName,
                     exchangeName,
@@ -413,6 +438,8 @@ export const useMarkdownReportView = () => {
             jsonData = await ioc.markdownViewService.getPartialData(symbol, strategyName, exchangeName, frameName, backtest);
         } else if (tab === "highest_profit") {
             jsonData = await ioc.markdownViewService.getHighestProfitData(symbol, strategyName, exchangeName, frameName, backtest);
+        } else if (tab === "max_drawdown") {
+            jsonData = await ioc.markdownViewService.getMaxDrawdownData(symbol, strategyName, exchangeName, frameName, backtest);
         } else if (tab === "schedule") {
             jsonData = await ioc.markdownViewService.getScheduleData(symbol, strategyName, exchangeName, frameName, backtest);
         } else if (tab === "performance") {
@@ -496,6 +523,7 @@ export const useMarkdownReportView = () => {
                 risk,
                 partial,
                 highest_profit,
+                max_drawdown,
                 schedule,
                 performance,
                 sync,
@@ -509,6 +537,7 @@ export const useMarkdownReportView = () => {
             risk,
             partial,
             highest_profit,
+            max_drawdown,
             schedule,
             performance,
             sync,
