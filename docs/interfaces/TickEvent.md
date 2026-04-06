@@ -217,3 +217,19 @@ scheduledAt: number
 ```
 
 Timestamp when signal was created/scheduled (only for scheduled/waiting/opened/active/closed/cancelled)
+
+### peakPnl
+
+```ts
+peakPnl: number
+```
+
+Peak PNL percentage at best price during position (_peak.pnlPercentage, only for closed)
+
+### fallPnl
+
+```ts
+fallPnl: number
+```
+
+Fall PNL percentage at worst price during position (_fall.pnlPercentage, only for closed)

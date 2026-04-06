@@ -315,6 +315,73 @@ Grows continuously as price moves away from the peak without setting a new recor
 
 Returns null if no pending signal exists.
 
+### getPositionHighestProfitMinutes
+
+```ts
+getPositionHighestProfitMinutes: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Alias for getPositionDrawdownMinutes — measures how long the position has been
+pulling back from its peak profit level.
+Zero when called at the exact moment the peak was set.
+
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownMinutes
+
+```ts
+getPositionMaxDrawdownMinutes: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the worst loss price was recorded.
+
+Measures how long ago the deepest drawdown point occurred.
+Zero when called at the exact moment the trough was set.
+
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPrice
+
+```ts
+getPositionMaxDrawdownPrice: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the worst price reached in the loss direction during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownTimestamp
+
+```ts
+getPositionMaxDrawdownTimestamp: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the timestamp when the worst loss price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPnlPercentage
+
+```ts
+getPositionMaxDrawdownPnlPercentage: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the worst loss price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPnlCost
+
+```ts
+getPositionMaxDrawdownPnlCost: (symbol: string, context: { strategyName: string; exchangeName: string; }) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the worst loss price was recorded during this position's life.
+
+Returns null if no pending signal exists.
+
 ### getPositionEntryOverlap
 
 ```ts

@@ -418,6 +418,80 @@ Resolves current timestamp via timeMetaService and delegates to
 ClientStrategy.getPositionDrawdownMinutes().
 Returns null if no pending signal exists.
 
+### getPositionHighestProfitMinutes
+
+```ts
+getPositionHighestProfitMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the highest profit price was recorded.
+
+Alias for getPositionDrawdownMinutes — measures how long the position has been
+pulling back from its peak profit level.
+
+Resolves current timestamp via timeMetaService and delegates to
+ClientStrategy.getPositionHighestProfitMinutes().
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownMinutes
+
+```ts
+getPositionMaxDrawdownMinutes: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the number of minutes elapsed since the worst loss price was recorded.
+
+Measures how long ago the deepest drawdown point occurred.
+Zero when called at the exact moment the trough was set.
+
+Resolves current timestamp via timeMetaService and delegates to
+ClientStrategy.getPositionMaxDrawdownMinutes().
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPrice
+
+```ts
+getPositionMaxDrawdownPrice: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the worst price reached in the loss direction during this position's life.
+
+Delegates to ClientStrategy.getPositionMaxDrawdownPrice().
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownTimestamp
+
+```ts
+getPositionMaxDrawdownTimestamp: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the timestamp when the worst loss price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionMaxDrawdownTimestamp().
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPnlPercentage
+
+```ts
+getPositionMaxDrawdownPnlPercentage: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL percentage at the moment the worst loss price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionMaxDrawdownPnlPercentage().
+Returns null if no pending signal exists.
+
+### getPositionMaxDrawdownPnlCost
+
+```ts
+getPositionMaxDrawdownPnlCost: (backtest: boolean, symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }) => Promise<number>
+```
+
+Returns the PnL cost (in quote currency) at the moment the worst loss price was recorded during this position's life.
+
+Delegates to ClientStrategy.getPositionMaxDrawdownPnlCost().
+Returns null if no pending signal exists.
+
 ### dispose
 
 ```ts

@@ -49,3 +49,19 @@ portfolioTotalTrades: number
 ```
 
 Portfolio-wide total trades
+
+### portfolioAvgPeakPnl
+
+```ts
+portfolioAvgPeakPnl: number
+```
+
+Trade-count-weighted average peak PNL across all symbols. Higher is better.
+
+### portfolioAvgFallPnl
+
+```ts
+portfolioAvgFallPnl: number
+```
+
+Trade-count-weighted average fall PNL across all symbols. Closer to 0 is better.

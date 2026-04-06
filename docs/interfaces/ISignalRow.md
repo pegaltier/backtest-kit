@@ -165,6 +165,18 @@ Updated on every tick/candle when price moves toward TP (currentDistance &gt; 0)
 - For LONG: maximum VWAP price seen above effective entry
 - For SHORT: minimum VWAP price seen below effective entry
 
+### _fall
+
+```ts
+_fall: { price: number; timestamp: number; pnlPercentage: number; pnlCost: number; }
+```
+
+Worst price seen in loss direction during the life of this position.
+Initialized at position open with priceOpen/pendingAt (pnl = 0).
+Updated on every tick/candle when price moves toward SL (currentDistance &lt; 0).
+- For LONG: minimum VWAP price seen below effective entry
+- For SHORT: maximum VWAP price seen above effective entry
+
 ### timestamp
 
 ```ts

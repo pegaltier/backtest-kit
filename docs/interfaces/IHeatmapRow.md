@@ -137,3 +137,19 @@ expectancy: number
 ```
 
 Expectancy: (winRate * avgWin) - (lossRate * avgLoss)
+
+### avgPeakPnl
+
+```ts
+avgPeakPnl: number
+```
+
+Average peak PNL percentage across all trades (_peak.pnlPercentage). Higher is better.
+
+### avgFallPnl
+
+```ts
+avgFallPnl: number
+```
+
+Average fall PNL percentage across all trades (_fall.pnlPercentage). Closer to 0 is better.

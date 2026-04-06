@@ -179,6 +179,12 @@ group: docs
 - [getPositionHighestPnlCost](functions/getPositionHighestPnlCost.md)
 - [getPositionHighestProfitBreakeven](functions/getPositionHighestProfitBreakeven.md)
 - [getPositionDrawdownMinutes](functions/getPositionDrawdownMinutes.md)
+- [getPositionHighestProfitMinutes](functions/getPositionHighestProfitMinutes.md)
+- [getPositionMaxDrawdownMinutes](functions/getPositionMaxDrawdownMinutes.md)
+- [getPositionMaxDrawdownPrice](functions/getPositionMaxDrawdownPrice.md)
+- [getPositionMaxDrawdownTimestamp](functions/getPositionMaxDrawdownTimestamp.md)
+- [getPositionMaxDrawdownPnlPercentage](functions/getPositionMaxDrawdownPnlPercentage.md)
+- [getPositionMaxDrawdownPnlCost](functions/getPositionMaxDrawdownPnlCost.md)
 - [getPositionEntryOverlap](functions/getPositionEntryOverlap.md)
 - [getPositionPartialOverlap](functions/getPositionPartialOverlap.md)
 - [hasNoPendingSignal](functions/hasNoPendingSignal.md)
@@ -276,6 +282,7 @@ group: docs
 - [dumpText](functions/dumpText.md)
 - [dumpError](functions/dumpError.md)
 - [dumpJson](functions/dumpJson.md)
+- [runInMockContext](functions/runInMockContext.md)
 
 ## Interfaces
 
@@ -396,6 +403,7 @@ group: docs
 - [WalkerContract](interfaces/WalkerContract.md)
 - [HighestProfitContract](interfaces/HighestProfitContract.md)
 - [MessageModel](interfaces/MessageModel.md)
+- [IRunContext](interfaces/IRunContext.md)
 - [IHeatmapRow](interfaces/IHeatmapRow.md)
 - [ColumnModel](interfaces/ColumnModel.md)
 - [SignalOpenedNotification](interfaces/SignalOpenedNotification.md)
@@ -506,6 +514,7 @@ group: docs
 - [PerformanceMetricType](types/PerformanceMetricType.md)
 - [MessageRole](types/MessageRole.md)
 - [MessageToolCall](types/MessageToolCall.md)
+- [Function$1](types/Function$1.md)
 - [NotificationModel](types/NotificationModel.md)
 - [StrategyActionType](types/StrategyActionType.md)
 - [SignalData](types/SignalData.md)

@@ -107,3 +107,19 @@ expectedYearlyReturns: number
 ```
 
 Expected yearly returns based on average trade duration and PNL, null if unsafe. Higher is better.
+
+### avgPeakPnl
+
+```ts
+avgPeakPnl: number
+```
+
+Average peak PNL percentage across all signals (_peak.pnlPercentage), null if unsafe. Higher is better.
+
+### avgFallPnl
+
+```ts
+avgFallPnl: number
+```
+
+Average fall PNL percentage across all signals (_fall.pnlPercentage), null if unsafe. Lower (more negative) means deeper drawdowns.
