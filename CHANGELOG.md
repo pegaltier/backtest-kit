@@ -1,3 +1,86 @@
+# Max Drawdown Measure (v6.7.0, 06/04/2026)
+
+> Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.7.0)
+
+
+v6.7.0 adds a `_fall` tracking field to every active position — the symmetric counterpart to the existing `_peak` — that records the worst price reached in the loss direction during a position's lifetime. Six new utility methods expose this data for strategy logic, and all statistics models (backtest, live, heatmap) now include average peak/drawdown PNL metrics.
+
+## `_fall` — Max Drawdown Snapshot on `ISignalRow`
+
+Every pending signal now carries a `_fall` object alongside `_peak`:
+
+```ts
+signal._fall  // { price, timestamp, pnlPercentage, pnlCost }
+signal._peak  // { price, timestamp, pnlPercentage, pnlCost }
+```
+
+`_fall` is initialised at position open (`price = priceOpen`, `pnl = 0`) and updated on every tick/candle when price moves toward the stop-loss:
+
+- **LONG**: updated when `currentPrice < _fall.price` (new low below entry)
+- **SHORT**: updated when `currentPrice > _fall.price` (new high above entry)
+
+## New API Methods
+
+Six new functions are exported from `backtest-kit` and available on both `BacktestUtils` and `LiveUtils`:
+
+| Method | Returns | Description |
+|---|---|---|
+| `getPositionHighestProfitMinutes(symbol)` | `number \| null` | Minutes since the peak profit price (alias for `getPositionDrawdownMinutes`) |
+| `getPositionMaxDrawdownMinutes(symbol)` | `number \| null` | Minutes since the worst loss price was recorded |
+| `getPositionMaxDrawdownPrice(symbol)` | `number \| null` | Worst price reached in loss direction |
+| `getPositionMaxDrawdownTimestamp(symbol)` | `number \| null` | Timestamp (ms) when the worst price was recorded |
+| `getPositionMaxDrawdownPnlPercentage(symbol)` | `number \| null` | PnL % at the moment of deepest drawdown |
+| `getPositionMaxDrawdownPnlCost(symbol)` | `number \| null` | PnL in quote currency at deepest drawdown |
+
+All methods return `null` when there is no active position.
+
+```ts
+import {
+  getPositionMaxDrawdownPnlPercentage,
+  getPositionMaxDrawdownMinutes,
+} from "backtest-kit";
+
+const drawdownPct = await getPositionMaxDrawdownPnlPercentage("BTCUSDT");
+// e.g. -5.2 (deepest PnL % reached during this position)
+
+const minutesSinceWorst = await getPositionMaxDrawdownMinutes("BTCUSDT");
+// e.g. 15 (how long ago the trough occurred)
+```
+
+## Statistics Models — `avgPeakPnl` / `avgFallPnl`
+
+`BacktestStatisticsModel`, `LiveStatisticsModel`, and `IHeatmapRow` each gain two new fields:
+
+```ts
+avgPeakPnl: number | null  // avg _peak.pnlPercentage across all trades (higher is better)
+avgFallPnl: number | null  // avg _fall.pnlPercentage across all trades (closer to 0 is better)
+```
+
+`HeatmapStatisticsModel` exposes the portfolio-wide trade-count-weighted versions:
+
+```ts
+portfolioAvgPeakPnl: number | null
+portfolioAvgFallPnl: number | null
+```
+
+## Report Columns
+
+Backtest, live, and heatmap table views now include two new columns: **Peak PNL** and **Max DD PNL**.
+
+## Markdown Report Lines
+
+Backtest and live summary markdown blocks now include:
+
+```
+**Avg Peak PNL:** +8.45% (higher is better)
+**Avg Max Drawdown PNL:** -3.12% (closer to 0 is better)
+```
+
+The heatmap portfolio header line also includes these two metrics inline.
+
+
+
+
 # Walker Strategy Dump Isolation (v6.4.0, 04/04/2026)
 
 > Github [release link](https://github.com/tripolskypetr/backtest-kit/releases/tag/6.4.0)
