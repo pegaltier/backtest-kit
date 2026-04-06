@@ -9,6 +9,7 @@ import { schedule_columns } from "../assets/schedule.columns";
 import { strategy_columns } from "../assets/strategy.columns";
 import { sync_columns } from "../assets/sync.columns";
 import { highest_profit_columns } from "../assets/highest_profit.columns";
+import { max_drawdown_columns } from "../assets/max_drawdown.columns";
 import {
   walker_pnl_columns,
   walker_strategy_columns,
@@ -44,6 +45,8 @@ export const COLUMN_CONFIG = {
   sync_columns,
   /** Columns for highest profit milestone tracking events */
   highest_profit_columns,
+  /** Columns for max drawdown milestone tracking events */
+  max_drawdown_columns,
   /** Walker: PnL summary columns */
   walker_pnl_columns,
   /** Walker: strategy-level summary columns */

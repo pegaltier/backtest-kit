@@ -185,6 +185,13 @@ export const GLOBAL_CONFIG = {
    */
   CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: 250,
   /**
+   * Maximum number of events to keep in max drawdown markdown report storage.
+   * Older events are removed (FIFO) when this limit is exceeded.
+   *
+   * Default: 250 events
+   */
+  CC_MAX_MAX_DRAWDOWN_MARKDOWN_ROWS: 250,
+  /**
    * Maximum number of events to keep in live markdown report storage.
    * Older events are removed (FIFO) when this limit is exceeded.
    *

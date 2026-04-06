@@ -61,6 +61,8 @@ interface IReportTarget {
   sync: boolean;
   /** Enable highest profit milestone event logging */
   highest_profit: boolean;
+  /** Enable max drawdown milestone event logging */
+  max_drawdown: boolean;
 }
 
 /**
@@ -318,6 +320,7 @@ const WILDCARD_TARGET: IReportTarget = {
   walker: true,
   sync: true,
   highest_profit: true,
+  max_drawdown: true,
 };
 
 /**
@@ -368,6 +371,7 @@ export class ReportUtils {
     strategy = false,
     sync = false,
     highest_profit = false,
+    max_drawdown = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_ENABLE, {
       backtest: bt,
@@ -418,6 +422,9 @@ export class ReportUtils {
     }
     if (highest_profit) {
       unList.push(lib.highestProfitReportService.subscribe());
+    }
+    if (max_drawdown) {
+      unList.push(lib.maxDrawdownReportService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -471,6 +478,7 @@ export class ReportUtils {
     strategy = false,
     sync = false,
     highest_profit = false,
+    max_drawdown = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
     lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_DISABLE, {
       backtest: bt,
@@ -520,6 +528,9 @@ export class ReportUtils {
     }
     if (highest_profit) {
       lib.highestProfitReportService.unsubscribe();
+    }
+    if (max_drawdown) {
+      lib.maxDrawdownReportService.unsubscribe();
     }
   };
 }

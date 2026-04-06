@@ -70,9 +70,11 @@ import RiskReportService from "./services/report/RiskReportService";
 import StrategyReportService from "./services/report/StrategyReportService";
 import SyncReportService from "./services/report/SyncReportService";
 import HighestProfitReportService from "./services/report/HighestProfitReportService";
+import MaxDrawdownReportService from "./services/report/MaxDrawdownReportService";
 import StrategyMarkdownService from "./services/markdown/StrategyMarkdownService";
 import SyncMarkdownService from "./services/markdown/SyncMarkdownService";
 import HighestProfitMarkdownService from "./services/markdown/HighestProfitMarkdownService";
+import MaxDrawdownMarkdownService from "./services/markdown/MaxDrawdownMarkdownService";
 import TimeMetaService from "./services/meta/TimeMetaService";
 import PriceMetaService from "./services/meta/PriceMetaService";
 
@@ -212,6 +214,7 @@ const markdownServices = {
   strategyMarkdownService: inject<StrategyMarkdownService>(TYPES.strategyMarkdownService),
   syncMarkdownService: inject<SyncMarkdownService>(TYPES.syncMarkdownService),
   highestProfitMarkdownService: inject<HighestProfitMarkdownService>(TYPES.highestProfitMarkdownService),
+  maxDrawdownMarkdownService: inject<MaxDrawdownMarkdownService>(TYPES.maxDrawdownMarkdownService),
 };
 
 const reportServices = {
@@ -239,6 +242,7 @@ const reportServices = {
   strategyReportService: inject<StrategyReportService>(TYPES.strategyReportService),
   syncReportService: inject<SyncReportService>(TYPES.syncReportService),
   highestProfitReportService: inject<HighestProfitReportService>(TYPES.highestProfitReportService),
+  maxDrawdownReportService: inject<MaxDrawdownReportService>(TYPES.maxDrawdownReportService),
 };
 
 const validationServices = {

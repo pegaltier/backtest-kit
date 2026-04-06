@@ -70,6 +70,8 @@ import SyncMarkdownService from "../services/markdown/SyncMarkdownService";
 import HighestProfitMarkdownService from "../services/markdown/HighestProfitMarkdownService";
 import PriceMetaService from "../services/meta/PriceMetaService";
 import TimeMetaService from "../services/meta/TimeMetaService";
+import { MaxDrawdownReportService } from "../services/report/MaxDrawdownReportService";
+import { MaxDrawdownMarkdownService } from "../services/markdown/MaxDrawdownMarkdownService";
 
 {
     provide(TYPES.loggerService, () => new LoggerService());
@@ -151,6 +153,7 @@ import TimeMetaService from "../services/meta/TimeMetaService";
     provide(TYPES.strategyMarkdownService, () => new StrategyMarkdownService());
     provide(TYPES.syncMarkdownService, () => new SyncMarkdownService());
     provide(TYPES.highestProfitMarkdownService, () => new HighestProfitMarkdownService());
+    provide(TYPES.maxDrawdownMarkdownService, () => new MaxDrawdownMarkdownService());
 }
 
 {
@@ -166,6 +169,7 @@ import TimeMetaService from "../services/meta/TimeMetaService";
     provide(TYPES.strategyReportService, () => new StrategyReportService());
     provide(TYPES.syncReportService, () => new SyncReportService());
     provide(TYPES.highestProfitReportService, () => new HighestProfitReportService());
+    provide(TYPES.maxDrawdownReportService, () => new MaxDrawdownReportService());
 }
 
 {

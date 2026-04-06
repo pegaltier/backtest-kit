@@ -5660,6 +5660,43 @@ declare function stopStrategy(symbol: string): Promise<void>;
  */
 declare function shutdown(): void;
 
+/**
+ * Single max drawdown event recorded for a position.
+ */
+interface MaxDrawdownEvent {
+    /** Unix timestamp in milliseconds when the record was set */
+    timestamp: number;
+    /** Trading pair symbol */
+    symbol: string;
+    /** Strategy name */
+    strategyName: string;
+    /** Signal unique identifier */
+    signalId: string;
+    /** Position direction */
+    position: IPublicSignalRow["position"];
+    /** Unrealized PNL at the time the record was set */
+    pnl: IStrategyPnL;
+    /** Record price reached in the loss direction */
+    currentPrice: number;
+    /** Effective entry price at the time of the update */
+    priceOpen: number;
+    /** Take profit price */
+    priceTakeProfit: number;
+    /** Stop loss price */
+    priceStopLoss: number;
+    /** Whether the event occurred in backtest mode */
+    backtest: boolean;
+}
+/**
+ * Aggregated statistics model for max drawdown events.
+ */
+interface MaxDrawdownStatisticsModel {
+    /** Full list of recorded events (newest first) */
+    eventList: MaxDrawdownEvent[];
+    /** Total number of recorded events */
+    totalEvents: number;
+}
+
 declare const GLOBAL_CONFIG: {
     /**
      * Time to wait for scheduled signal to activate (in minutes)
@@ -5842,6 +5879,13 @@ declare const GLOBAL_CONFIG: {
      */
     CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
     /**
+     * Maximum number of events to keep in max drawdown markdown report storage.
+     * Older events are removed (FIFO) when this limit is exceeded.
+     *
+     * Default: 250 events
+     */
+    CC_MAX_MAX_DRAWDOWN_MARKDOWN_ROWS: number;
+    /**
      * Maximum number of events to keep in live markdown report storage.
      * Older events are removed (FIFO) when this limit is exceeded.
      *
@@ -5995,6 +6039,8 @@ declare const COLUMN_CONFIG: {
     sync_columns: ColumnModel<SyncEvent>[];
     /** Columns for highest profit milestone tracking events */
     highest_profit_columns: ColumnModel<HighestProfitEvent>[];
+    /** Columns for max drawdown milestone tracking events */
+    max_drawdown_columns: ColumnModel<MaxDrawdownEvent>[];
     /** Walker: PnL summary columns */
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     /** Walker: strategy-level summary columns */
@@ -6074,6 +6120,7 @@ declare function getConfig(): {
     CC_MAX_BREAKEVEN_MARKDOWN_ROWS: number;
     CC_MAX_HEATMAP_MARKDOWN_ROWS: number;
     CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
+    CC_MAX_MAX_DRAWDOWN_MARKDOWN_ROWS: number;
     CC_MAX_LIVE_MARKDOWN_ROWS: number;
     CC_MAX_PARTIAL_MARKDOWN_ROWS: number;
     CC_MAX_RISK_MARKDOWN_ROWS: number;
@@ -6129,6 +6176,7 @@ declare function getDefaultConfig(): Readonly<{
     CC_MAX_BREAKEVEN_MARKDOWN_ROWS: number;
     CC_MAX_HEATMAP_MARKDOWN_ROWS: number;
     CC_MAX_HIGHEST_PROFIT_MARKDOWN_ROWS: number;
+    CC_MAX_MAX_DRAWDOWN_MARKDOWN_ROWS: number;
     CC_MAX_LIVE_MARKDOWN_ROWS: number;
     CC_MAX_PARTIAL_MARKDOWN_ROWS: number;
     CC_MAX_RISK_MARKDOWN_ROWS: number;
@@ -6198,6 +6246,7 @@ declare function getColumns(): {
     strategy_columns: ColumnModel<StrategyEvent>[];
     sync_columns: ColumnModel<SyncEvent>[];
     highest_profit_columns: ColumnModel<HighestProfitEvent>[];
+    max_drawdown_columns: ColumnModel<MaxDrawdownEvent>[];
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     walker_strategy_columns: ColumnModel<IStrategyResult>[];
 };
@@ -6227,6 +6276,7 @@ declare function getDefaultColumns(): Readonly<{
     strategy_columns: ColumnModel<StrategyEvent>[];
     sync_columns: ColumnModel<SyncEvent>[];
     highest_profit_columns: ColumnModel<HighestProfitEvent>[];
+    max_drawdown_columns: ColumnModel<MaxDrawdownEvent>[];
     walker_pnl_columns: ColumnModel<SignalData$1>[];
     walker_strategy_columns: ColumnModel<IStrategyResult>[];
 }>;
@@ -12124,6 +12174,8 @@ interface IReportTarget {
     sync: boolean;
     /** Enable highest profit milestone event logging */
     highest_profit: boolean;
+    /** Enable max drawdown milestone event logging */
+    max_drawdown: boolean;
 }
 /**
  * Union type of all valid report names.
@@ -12275,7 +12327,7 @@ declare class ReportUtils {
      *
      * @returns Cleanup function that unsubscribes from all enabled services
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, sync, highest_profit, }?: Partial<IReportTarget>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, sync, highest_profit, max_drawdown, }?: Partial<IReportTarget>) => (...args: any[]) => any;
     /**
      * Disables report services selectively.
      *
@@ -12312,7 +12364,7 @@ declare class ReportUtils {
      * Report.disable();
      * ```
      */
-    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, sync, highest_profit, }?: Partial<IReportTarget>) => void;
+    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, schedule, walker, strategy, sync, highest_profit, max_drawdown, }?: Partial<IReportTarget>) => void;
 }
 /**
  * Report adapter with pluggable storage backend and instance memoization.
@@ -12412,6 +12464,8 @@ interface IMarkdownTarget {
     sync: boolean;
     /** Enable highest profit milestone tracking reports */
     highest_profit: boolean;
+    /** Enable max drawdown milestone tracking reports */
+    max_drawdown: boolean;
 }
 /** Symbol key for the singleshot waitForInit function on MarkdownFileBase instances. */
 declare const WAIT_FOR_INIT_SYMBOL: unique symbol;
@@ -12609,7 +12663,7 @@ declare class MarkdownUtils {
      *
      * @returns Cleanup function that unsubscribes from all enabled services
      */
-    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, strategy, risk, schedule, walker, sync, highest_profit, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
+    enable: ({ backtest: bt, breakeven, heat, live, partial, performance, strategy, risk, schedule, walker, sync, highest_profit, max_drawdown, }?: Partial<IMarkdownTarget>) => (...args: any[]) => any;
     /**
      * Disables markdown report services selectively.
      *
@@ -12647,7 +12701,7 @@ declare class MarkdownUtils {
      * Markdown.disable();
      * ```
      */
-    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, strategy, schedule, walker, sync, highest_profit, }?: Partial<IMarkdownTarget>) => void;
+    disable: ({ backtest: bt, breakeven, heat, live, partial, performance, risk, strategy, schedule, walker, sync, highest_profit, max_drawdown, }?: Partial<IMarkdownTarget>) => void;
 }
 /**
  * Markdown adapter with pluggable storage backend and instance memoization.
@@ -12859,7 +12913,7 @@ declare const Log: LogAdapter;
  * @see ColumnModel for the base interface
  * @see IStrategyTickResultClosed for the signal data structure
  */
-type Columns$a = ColumnModel<IStrategyTickResultClosed>;
+type Columns$b = ColumnModel<IStrategyTickResultClosed>;
 /**
  * Service for generating and saving backtest markdown reports.
  *
@@ -12953,7 +13007,7 @@ declare class BacktestMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$a[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$b[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -12978,7 +13032,7 @@ declare class BacktestMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", true, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$a[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$b[]) => Promise<void>;
     /**
      * Clears accumulated signal data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -14126,7 +14180,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, columns?: Columns$a[]) => Promise<string>;
+    }, columns?: Columns$b[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -14157,7 +14211,7 @@ declare class BacktestUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, path?: string, columns?: Columns$a[]) => Promise<void>;
+    }, path?: string, columns?: Columns$b[]) => Promise<void>;
     /**
      * Lists all active backtest instances with their current status.
      *
@@ -14231,7 +14285,7 @@ declare const Backtest: BacktestUtils;
  * @see ColumnModel for the base interface
  * @see TickEvent for the event data structure
  */
-type Columns$9 = ColumnModel<TickEvent>;
+type Columns$a = ColumnModel<TickEvent>;
 /**
  * Service for generating and saving live trading markdown reports.
  *
@@ -14358,7 +14412,7 @@ declare class LiveMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$9[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$a[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -14383,7 +14437,7 @@ declare class LiveMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$9[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$a[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -15452,7 +15506,7 @@ declare class LiveUtils {
     getReport: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }, columns?: Columns$9[]) => Promise<string>;
+    }, columns?: Columns$a[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -15482,7 +15536,7 @@ declare class LiveUtils {
     dump: (symbol: string, context: {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
-    }, path?: string, columns?: Columns$9[]) => Promise<void>;
+    }, path?: string, columns?: Columns$a[]) => Promise<void>;
     /**
      * Lists all active live trading instances with their current status.
      *
@@ -15552,7 +15606,7 @@ declare const Live: LiveUtils;
  * @see ColumnModel for the base interface
  * @see ScheduledEvent for the event data structure
  */
-type Columns$8 = ColumnModel<ScheduledEvent>;
+type Columns$9 = ColumnModel<ScheduledEvent>;
 /**
  * Service for generating and saving scheduled signals markdown reports.
  *
@@ -15663,7 +15717,7 @@ declare class ScheduleMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$8[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$9[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -15688,7 +15742,7 @@ declare class ScheduleMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$9[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -15778,7 +15832,7 @@ declare class ScheduleUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$8[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$9[]) => Promise<string>;
     /**
      * Saves strategy report to disk.
      *
@@ -15800,7 +15854,7 @@ declare class ScheduleUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$9[]) => Promise<void>;
 }
 /**
  * Singleton instance of ScheduleUtils for convenient scheduled signals reporting.
@@ -15846,7 +15900,7 @@ declare const Schedule: ScheduleUtils;
  * @see ColumnModel for the base interface
  * @see MetricStats for the metric data structure
  */
-type Columns$7 = ColumnModel<MetricStats>;
+type Columns$8 = ColumnModel<MetricStats>;
 /**
  * Service for collecting and analyzing performance metrics.
  *
@@ -15953,7 +16007,7 @@ declare class PerformanceMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$8[]) => Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -15974,7 +16028,7 @@ declare class PerformanceMarkdownService {
      * await performanceService.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
     /**
      * Clears accumulated performance data from storage.
      *
@@ -16082,7 +16136,7 @@ declare class Performance {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$7[]): Promise<string>;
+    }, backtest?: boolean, columns?: Columns$8[]): Promise<string>;
     /**
      * Saves performance report to disk.
      *
@@ -16107,7 +16161,7 @@ declare class Performance {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$7[]): Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$8[]): Promise<void>;
 }
 
 /**
@@ -16538,7 +16592,7 @@ declare const Walker: WalkerUtils;
  * @see ColumnModel for the base interface
  * @see IHeatmapRow for the row data structure
  */
-type Columns$6 = ColumnModel<IHeatmapRow>;
+type Columns$7 = ColumnModel<IHeatmapRow>;
 /**
  * Portfolio Heatmap Markdown Service.
  *
@@ -16673,7 +16727,7 @@ declare class HeatMarkdownService {
      * // | ETHUSDT | +12.3%  | 1.85   | -3.1%  | 38     |
      * ```
      */
-    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
+    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
     /**
      * Generates the heatmap report and writes it to disk.
      *
@@ -16701,7 +16755,7 @@ declare class HeatMarkdownService {
      * await service.dump("my-strategy", "binance", "frame1", true, "./reports");
      * ```
      */
-    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
+    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
     /**
      * Evicts memoized `HeatmapStorage` instances, releasing all accumulated signal data.
      *
@@ -16837,7 +16891,7 @@ declare class HeatUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$6[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$7[]) => Promise<string>;
     /**
      * Saves heatmap report to disk for a strategy.
      *
@@ -16870,7 +16924,7 @@ declare class HeatUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
 }
 /**
  * Singleton instance of HeatUtils for convenient heatmap operations.
@@ -17024,7 +17078,7 @@ declare const PositionSize: typeof PositionSizeUtils;
  * @see ColumnModel for the base interface
  * @see PartialEvent for the event data structure
  */
-type Columns$5 = ColumnModel<PartialEvent>;
+type Columns$6 = ColumnModel<PartialEvent>;
 /**
  * Service for generating and saving partial profit/loss markdown reports.
  *
@@ -17146,7 +17200,7 @@ declare class PartialMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -17171,7 +17225,7 @@ declare class PartialMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -17307,7 +17361,7 @@ declare class PartialUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$5[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$6[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -17344,7 +17398,7 @@ declare class PartialUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
 }
 /**
  * Global singleton instance of PartialUtils.
@@ -17365,7 +17419,7 @@ declare const Partial$1: PartialUtils;
 /**
  * Type alias for column configuration used in highest profit markdown reports.
  */
-type Columns$4 = ColumnModel<HighestProfitEvent>;
+type Columns$5 = ColumnModel<HighestProfitEvent>;
 /**
  * Service for generating and saving highest profit markdown reports.
  *
@@ -17458,7 +17512,7 @@ declare class HighestProfitMarkdownService {
      * @returns Promise resolving to the full markdown string
      * @throws {Error} If `subscribe()` has not been called before this method
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
     /**
      * Generates the highest profit report and writes it to disk.
      *
@@ -17476,7 +17530,7 @@ declare class HighestProfitMarkdownService {
      *   defaults to `COLUMN_CONFIG.highest_profit_columns`
      * @throws {Error} If `subscribe()` has not been called before this method
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
     /**
      * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
      *
@@ -17550,7 +17604,7 @@ declare class HighestProfitUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$4[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$5[]) => Promise<string>;
     /**
      * Generates and saves a markdown report to file.
      *
@@ -17564,7 +17618,7 @@ declare class HighestProfitUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
 }
 /**
  * Global singleton instance of HighestProfitUtils.
@@ -17681,7 +17735,7 @@ declare const Constant: ConstantUtils;
  * @see ColumnModel for the base interface
  * @see RiskEvent for the event data structure
  */
-type Columns$3 = ColumnModel<RiskEvent>;
+type Columns$4 = ColumnModel<RiskEvent>;
 /**
  * Service for generating and saving risk rejection markdown reports.
  *
@@ -17790,7 +17844,7 @@ declare class RiskMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -17815,7 +17869,7 @@ declare class RiskMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -17953,7 +18007,7 @@ declare class RiskUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$3[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$4[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -17990,7 +18044,7 @@ declare class RiskUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
 }
 /**
  * Global singleton instance of RiskUtils.
@@ -18095,7 +18149,7 @@ interface SyncStatisticsModel {
  * @see ColumnModel for the base interface
  * @see SyncEvent for the event data structure
  */
-type Columns$2 = ColumnModel<SyncEvent>;
+type Columns$3 = ColumnModel<SyncEvent>;
 /**
  * Service for generating and saving signal sync markdown reports.
  *
@@ -18204,7 +18258,7 @@ declare class SyncMarkdownService {
      * @returns Promise resolving to the full markdown string
      * @throws {Error} If `subscribe()` has not been called before this method
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Generates the sync report and writes it to disk.
      *
@@ -18222,7 +18276,7 @@ declare class SyncMarkdownService {
      *   defaults to `COLUMN_CONFIG.sync_columns`
      * @throws {Error} If `subscribe()` has not been called before this method
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
     /**
      * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
      *
@@ -18339,7 +18393,7 @@ declare class SyncUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$3[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -18366,7 +18420,7 @@ declare class SyncUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
 }
 /**
  * Global singleton instance of SyncUtils.
@@ -19745,7 +19799,7 @@ declare const Cache: CacheUtils;
  * @see ColumnModel for the base interface
  * @see BreakevenEvent for the event data structure
  */
-type Columns$1 = ColumnModel<BreakevenEvent>;
+type Columns$2 = ColumnModel<BreakevenEvent>;
 /**
  * Service for generating and saving breakeven markdown reports.
  *
@@ -19854,7 +19908,7 @@ declare class BreakevenMarkdownService {
      * console.log(markdown);
      * ```
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Saves symbol-strategy report to disk.
      * Creates directory if it doesn't exist.
@@ -19879,7 +19933,7 @@ declare class BreakevenMarkdownService {
      * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
      * ```
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
     /**
      * Clears accumulated event data from storage.
      * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
@@ -20007,7 +20061,7 @@ declare class BreakevenUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns$1[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$2[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -20044,7 +20098,7 @@ declare class BreakevenUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
 }
 /**
  * Global singleton instance of BreakevenUtils.
@@ -20129,7 +20183,7 @@ declare class LoggerService implements ILogger {
  * @see ColumnModel for the base interface
  * @see StrategyEvent for the event data structure
  */
-type Columns = ColumnModel<StrategyEvent>;
+type Columns$1 = ColumnModel<StrategyEvent>;
 /**
  * Service for accumulating strategy management events and generating markdown reports.
  *
@@ -20408,7 +20462,7 @@ declare class StrategyMarkdownService {
      * @returns Promise resolving to formatted markdown string
      * @throws Error if service not initialized (subscribe() not called)
      */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves a markdown report to disk.
      *
@@ -20427,7 +20481,7 @@ declare class StrategyMarkdownService {
      * @returns Promise that resolves when file is written
      * @throws Error if service not initialized (subscribe() not called)
      */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
     /**
      * Clears accumulated events from storage.
      *
@@ -20576,7 +20630,7 @@ declare class StrategyUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, columns?: Columns[]) => Promise<string>;
+    }, backtest?: boolean, columns?: Columns$1[]) => Promise<string>;
     /**
      * Generates and saves markdown report to file.
      *
@@ -20614,7 +20668,7 @@ declare class StrategyUtils {
         strategyName: StrategyName;
         exchangeName: ExchangeName;
         frameName: FrameName;
-    }, backtest?: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    }, backtest?: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
 }
 /**
  * Global singleton instance of StrategyUtils.
@@ -29091,6 +29145,111 @@ declare class HighestProfitReportService {
     unsubscribe: () => Promise<void>;
 }
 
+/**
+ * Service for logging max drawdown events to the JSONL report database.
+ *
+ * Listens to maxDrawdownSubject and writes each new drawdown record to
+ * Report.writeData() for persistence and analytics.
+ */
+declare class MaxDrawdownReportService {
+    private readonly loggerService;
+    /**
+     * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
+     *
+     * Writes a JSONL record to the `"max_drawdown"` report database via
+     * `Report.writeData`, capturing the full signal snapshot at the moment
+     * the new drawdown record was set:
+     * - `timestamp`, `symbol`, `strategyName`, `exchangeName`, `frameName`, `backtest`
+     * - `signalId`, `position`, `currentPrice`
+     * - `priceOpen`, `priceTakeProfit`, `priceStopLoss` (effective values from the signal)
+     *
+     * `strategyName` and signal-level fields are sourced from `data.signal`
+     * rather than the contract root.
+     *
+     * @param data - `MaxDrawdownContract` payload containing `symbol`,
+     *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
+     *   `frameName`
+     */
+    private tick;
+    /**
+     * Subscribes to `maxDrawdownSubject` to start persisting drawdown records.
+     * Protected against multiple subscriptions via `singleshot` — subsequent
+     * calls return the same unsubscribe function without re-subscribing.
+     *
+     * The returned unsubscribe function clears the `singleshot` state and
+     * detaches from `maxDrawdownSubject`.
+     *
+     * @returns Unsubscribe function; calling it tears down the subscription
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Detaches from `maxDrawdownSubject`, stopping further JSONL writes.
+     *
+     * Calls the unsubscribe closure returned by `subscribe()`.
+     * If `subscribe()` was never called, does nothing.
+     */
+    unsubscribe: () => Promise<void>;
+}
+
+/**
+ * Type alias for column configuration used in max drawdown markdown reports.
+ */
+type Columns = ColumnModel<MaxDrawdownEvent>;
+/**
+ * Service for generating and saving max drawdown markdown reports.
+ *
+ * Listens to maxDrawdownSubject and accumulates events per
+ * symbol-strategy-exchange-frame combination. Provides getData(),
+ * getReport(), and dump() methods matching the HighestProfit pattern.
+ */
+declare class MaxDrawdownMarkdownService {
+    private readonly loggerService;
+    private getStorage;
+    /**
+     * Subscribes to `maxDrawdownSubject` to start receiving `MaxDrawdownContract`
+     * events. Protected against multiple subscriptions via `singleshot`.
+     *
+     * @returns Unsubscribe function; calling it tears down the subscription and
+     *   clears all accumulated data
+     */
+    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+    /**
+     * Detaches from `maxDrawdownSubject` and clears all accumulated data.
+     *
+     * If `subscribe()` was never called, does nothing.
+     */
+    unsubscribe: () => Promise<void>;
+    /**
+     * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
+     */
+    private tick;
+    /**
+     * Returns accumulated max drawdown statistics for the given context.
+     */
+    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<MaxDrawdownStatisticsModel>;
+    /**
+     * Generates a markdown max drawdown report for the given context.
+     */
+    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
+    /**
+     * Generates the max drawdown report and writes it to disk.
+     */
+    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+    /**
+     * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
+     *
+     * - With `payload` — clears only the storage bucket for that combination.
+     * - Without `payload` — clears **all** storage buckets.
+     */
+    clear: (payload?: {
+        symbol: string;
+        strategyName: StrategyName;
+        exchangeName: ExchangeName;
+        frameName: FrameName;
+        backtest: boolean;
+    }) => Promise<void>;
+}
+
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -29113,6 +29272,7 @@ declare const backtest: {
     strategyReportService: StrategyReportService;
     syncReportService: SyncReportService;
     highestProfitReportService: HighestProfitReportService;
+    maxDrawdownReportService: MaxDrawdownReportService;
     backtestMarkdownService: BacktestMarkdownService;
     liveMarkdownService: LiveMarkdownService;
     scheduleMarkdownService: ScheduleMarkdownService;
@@ -29125,6 +29285,7 @@ declare const backtest: {
     strategyMarkdownService: StrategyMarkdownService;
     syncMarkdownService: SyncMarkdownService;
     highestProfitMarkdownService: HighestProfitMarkdownService;
+    maxDrawdownMarkdownService: MaxDrawdownMarkdownService;
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     walkerLogicPublicService: WalkerLogicPublicService;

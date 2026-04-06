@@ -79,6 +79,7 @@ const markdownServices = {
     strategyMarkdownService: Symbol('strategyMarkdownService'),
     syncMarkdownService: Symbol('syncMarkdownService'),
     highestProfitMarkdownService: Symbol('highestProfitMarkdownService'),
+    maxDrawdownMarkdownService: Symbol('maxDrawdownMarkdownService'),
 }
 
 const reportServices = {
@@ -94,6 +95,7 @@ const reportServices = {
     strategyReportService: Symbol('strategyReportService'),
     syncReportService: Symbol('syncReportService'),
     highestProfitReportService: Symbol('highestProfitReportService'),
+    maxDrawdownReportService: Symbol('maxDrawdownReportService'),
 }
 
 const validationServices = {

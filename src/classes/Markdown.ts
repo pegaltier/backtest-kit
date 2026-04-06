@@ -54,6 +54,8 @@ interface IMarkdownTarget {
   sync: boolean;
   /** Enable highest profit milestone tracking reports */
   highest_profit: boolean;
+  /** Enable max drawdown milestone tracking reports */
+  max_drawdown: boolean;
 }
 
 /** Symbol key for the singleshot waitForInit function on MarkdownFileBase instances. */
@@ -78,6 +80,7 @@ const WILDCARD_TARGET: IMarkdownTarget = {
   walker: true,
   sync: true,
   highest_profit: true,
+  max_drawdown: true,
 };
 
 /**
@@ -413,6 +416,7 @@ export class MarkdownUtils {
     walker = false,
     sync = false,
     highest_profit = false,
+    max_drawdown = false,
   }: Partial<IMarkdownTarget> = WILDCARD_TARGET) => {
     backtest.loggerService.debug(MARKDOWN_METHOD_NAME_ENABLE, {
       backtest: bt,
@@ -464,6 +468,9 @@ export class MarkdownUtils {
     }
     if (highest_profit) {
       unList.push(backtest.highestProfitMarkdownService.subscribe());
+    }
+    if (max_drawdown) {
+      unList.push(backtest.maxDrawdownMarkdownService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -518,6 +525,7 @@ export class MarkdownUtils {
     walker = false,
     sync = false,
     highest_profit = false,
+    max_drawdown = false,
   }: Partial<IMarkdownTarget> = WILDCARD_TARGET) => {
     backtest.loggerService.debug(MARKDOWN_METHOD_NAME_DISABLE, {
       backtest: bt,
@@ -568,6 +576,9 @@ export class MarkdownUtils {
     }
     if (highest_profit) {
       backtest.highestProfitMarkdownService.unsubscribe();
+    }
+    if (max_drawdown) {
+      backtest.maxDrawdownMarkdownService.unsubscribe();
     }
   };
 }
