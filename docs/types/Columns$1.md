@@ -6,10 +6,7 @@ group: docs
 # Columns$1
 
 ```ts
-type Columns$1 = ColumnModel<BreakevenEvent>;
+type Columns$1 = ColumnModel<StrategyEvent>;
 ```
 
-Type alias for column configuration used in breakeven markdown reports.
-
-Represents a column model specifically designed to format and display
-breakeven events in markdown tables.
+Type alias for column configuration used in strategy markdown reports.

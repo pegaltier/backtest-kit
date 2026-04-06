@@ -92,7 +92,7 @@ portfolio-level fields will be `null` / `0`.
 ### getReport
 
 ```ts
-getReport: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$6[]) => Promise<string>
+getReport: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$7[]) => Promise<string>
 ```
 
 Generates a markdown heatmap report for the given context.
@@ -104,7 +104,7 @@ symbol, ordered by `sharpeRatio` descending.
 ### dump
 
 ```ts
-dump: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>
+dump: (strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>
 ```
 
 Generates the heatmap report and writes it to disk.

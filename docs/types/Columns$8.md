@@ -6,10 +6,10 @@ group: docs
 # Columns$8
 
 ```ts
-type Columns$8 = ColumnModel<ScheduledEvent>;
+type Columns$8 = ColumnModel<MetricStats>;
 ```
 
-Type alias for column configuration used in scheduled events markdown reports.
+Type alias for column configuration used in performance metrics markdown reports.
 
 Represents a column model specifically designed to format and display
-scheduled and cancelled signal events in markdown tables.
+performance statistics for various trading metrics in markdown tables.

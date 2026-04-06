@@ -84,7 +84,7 @@ model has an empty `eventList` and `totalEvents` of `0`.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$4[]) => Promise<string>
+getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$5[]) => Promise<string>
 ```
 
 Generates a markdown highest profit report for the given context.
@@ -95,7 +95,7 @@ markdown table (newest events first) followed by the total event count.
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>
+dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>
 ```
 
 Generates the highest profit report and writes it to disk.

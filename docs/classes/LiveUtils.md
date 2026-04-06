@@ -600,7 +600,7 @@ Gets statistical data from all live trading events for a symbol-strategy pair.
 ### getReport
 
 ```ts
-getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$9[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; }, columns?: Columns$a[]) => Promise<string>
 ```
 
 Generates markdown report with all events for a symbol-strategy pair.
@@ -608,7 +608,7 @@ Generates markdown report with all events for a symbol-strategy pair.
 ### dump
 
 ```ts
-dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$9[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; }, path?: string, columns?: Columns$a[]) => Promise<void>
 ```
 
 Saves strategy report to disk.

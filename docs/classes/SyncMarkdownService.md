@@ -91,7 +91,7 @@ model has an empty `eventList` and all counters set to `0`.
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$2[]) => Promise<string>
+getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$3[]) => Promise<string>
 ```
 
 Generates a markdown sync report for the given context.
@@ -103,7 +103,7 @@ counters.
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>
+dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>
 ```
 
 Generates the sync report and writes it to disk.

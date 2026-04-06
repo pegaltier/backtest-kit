@@ -105,3 +105,11 @@ highest_profit: boolean
 ```
 
 Enable highest profit milestone tracking reports
+
+### max_drawdown
+
+```ts
+max_drawdown: boolean
+```
+
+Enable max drawdown milestone tracking reports

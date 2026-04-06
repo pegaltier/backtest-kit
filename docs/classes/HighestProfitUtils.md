@@ -29,7 +29,7 @@ Retrieves statistical data from accumulated highest profit events.
 ### getReport
 
 ```ts
-getReport: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, columns?: Columns$4[]) => Promise<string>
+getReport: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, columns?: Columns$5[]) => Promise<string>
 ```
 
 Generates a markdown report with all highest profit events for a symbol-strategy pair.
@@ -37,7 +37,7 @@ Generates a markdown report with all highest profit events for a symbol-strategy
 ### dump
 
 ```ts
-dump: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, path?: string, columns?: Columns$4[]) => Promise<void>
+dump: (symbol: string, context: { strategyName: string; exchangeName: string; frameName: string; }, backtest?: boolean, path?: string, columns?: Columns$5[]) => Promise<void>
 ```
 
 Generates and saves a markdown report to file.

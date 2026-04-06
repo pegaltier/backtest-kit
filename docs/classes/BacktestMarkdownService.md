@@ -61,7 +61,7 @@ Delegates to ReportStorage.getData().
 ### getReport
 
 ```ts
-getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$a[]) => Promise<string>
+getReport: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, columns?: Columns$b[]) => Promise<string>
 ```
 
 Generates markdown report with all closed signals for a symbol-strategy pair.
@@ -70,7 +70,7 @@ Delegates to ReportStorage.generateReport().
 ### dump
 
 ```ts
-dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$a[]) => Promise<void>
+dump: (symbol: string, strategyName: string, exchangeName: string, frameName: string, backtest: boolean, path?: string, columns?: Columns$b[]) => Promise<void>
 ```
 
 Saves symbol-strategy report to disk.
