@@ -134,990 +134,1082 @@ All tests follow consistent patterns:
 
 ## Function writeMemory
 
-The `writeMemory` function lets you store data – like trade decisions or important observations – in a special memory space associated with a particular trading signal. Think of it as creating labeled notes for a specific signal. 
+This function lets you store data in a persistent memory space, essentially creating a named container for your trading logic. You provide a bucket name, a unique ID within that bucket, the actual data you want to store (which can be any object), and a brief description to help you remember what's in there. It’s designed to be used within a trading signal – if no signal is active, it won't save the data and will instead display a warning. The system smartly figures out whether it's running a backtest or live trading environment, adapting accordingly.
 
-It takes a small object as input that includes the name of the memory "bucket," a unique ID for the memory entry itself, the actual data you want to store (which can be any kind of object), and a description to help you remember what the data represents.
-
-The function will automatically figure out if you're in a backtesting simulation or live trading environment. It relies on the execution context to know which signal to attach the memory to; if no signal is active, it won't save the data and will let you know it couldn't proceed.
+The data you store is linked to the signal's context, providing a way to maintain state and information across different parts of your backtesting or live trading process.
 
 
 ## Function warmCandles
 
-The `warmCandles` function helps prepare your backtesting environment by pre-loading historical candlestick data. It fetches candles within a specified date range and saves them for quicker access during backtests. This is particularly useful for large datasets or when dealing with multiple intervals, as it avoids repeatedly downloading the same data. You provide parameters defining the start and end dates for the data you want to cache.
+This function helps prepare your backtesting environment by pre-loading historical candle data. It downloads and stores all the candles for a specified period, from a starting date (`from`) to an ending date (`to`), using a particular time interval. This pre-loading step is useful because it avoids repeatedly fetching the same data during a backtest, which can significantly speed up the process.  You provide parameters to define the date range and interval for the candles you want to cache. Essentially, it’s a way to ensure your backtest has quick access to the historical data it needs.
+
 
 ## Function validate
 
-This function, `validate`, helps you make sure everything is set up correctly before you run a backtest or optimization. It checks if all the entities you're using—like exchanges, trading strategies, and risk management systems—actually exist in the system's registry.
+The `validate` function helps make sure all the pieces of your trading setup are correctly registered before you start any tests or optimizations. 
 
-You can tell it to check specific entities or, if you leave it alone, it will check *everything*.
+It checks that the names of things like exchanges, trading strategies, and risk management components all exist where they're supposed to.
 
-Think of it as a quick sanity check to catch any configuration errors early on, saving you time and frustration later. It remembers previous checks to be efficient too.
+You can tell it to validate specific parts of your setup, or just let it check everything to be completely sure. 
+
+The results of these checks are saved to improve how quickly the validation runs if you run it again. Think of it as a final check before things get underway!
+
 
 ## Function stopStrategy
 
-This function allows you to pause a trading strategy's signal generation. 
-
-It essentially tells the strategy to stop creating new buy or sell signals. Any existing signal that's already active will finish its cycle as planned.
-
-Whether you’re running a backtest or a live trading session, the system will gracefully halt operations at a point where it's safe to do so, like when it's idle or a signal has closed. You provide the trading pair symbol to specify which strategy to stop.
+This function allows you to halt a trading strategy's signal generation. It effectively pauses the strategy, preventing it from creating any new trading signals. Existing, active signals will still run to completion. The system will gracefully stop the backtest or live trading session at a convenient point, such as when it’s idle or after the current signal finishes. You don't need to specify whether you're in backtest or live mode – it figures that out automatically based on the environment it's running in. You simply provide the trading pair's symbol to tell it which strategy to stop.
 
 ## Function shutdown
 
-This function lets you safely end a backtest run. It triggers a signal that lets all parts of your backtest – like data handlers or strategy logic – clean up and finish their work before the program stops. Think of it as a polite way to say "goodbye" to your backtest, ensuring no data gets lost or processes get stuck. It's especially useful when you need to stop the backtest abruptly, like when you press Ctrl+C.
+This function provides a way to cleanly end a backtest run. It sends out a signal that tells all parts of the backtest to prepare for stopping, allowing them to finish any important tasks like saving data or closing connections. Think of it as a polite way to tell the backtest to wrap up, making sure everything is in order before it exits. It's especially useful when you need to stop the backtest process, like when you press Ctrl+C.
 
 ## Function setLogger
 
-You can now control how the backtest-kit framework reports information. This function lets you provide your own logging mechanism, allowing you to direct messages to a file, a console, or any other logging system you prefer. The framework will automatically add helpful details to these log messages, such as the strategy name, the exchange being used, and the trading symbol, making it easier to understand what's happening during backtesting. Simply give the framework an object that handles logging – one that follows the ILogger interface – and it will use that for all its internal reporting.
+You can now control how backtest-kit reports its internal activity by providing your own logger. This lets you direct log messages to a file, a database, or any other logging system you prefer. The framework automatically includes useful details like the strategy name, exchange, and symbol along with each log message, giving you valuable context. Just make sure your custom logger conforms to the `ILogger` interface.
+
 
 ## Function setConfig
 
-This function lets you adjust the overall settings for the backtest-kit framework. You can tweak things like the data handling or how strategies are executed by providing a new configuration object. Think of it as customizing the framework’s behavior. 
+This function lets you adjust how the backtest-kit framework operates, allowing you to fine-tune its behavior.  You can change specific settings within the framework by providing a configuration object, which can include just the parts you want to modify, rather than having to redefine everything.  There’s a flag you can use to bypass certain safety checks, primarily intended for use in testing environments where strict validation isn't always necessary. Essentially, it gives you control over the underlying settings of the backtest-kit system.
 
-The `config` object allows you to selectively change only the settings you need to adjust; you don't have to provide the entire configuration.
-
-There's also an `_unsafe` option. This is primarily for testing environments where you might need to bypass certain validation checks, but use it with caution as it could lead to unexpected behavior if misconfigured.
 
 ## Function setColumns
 
-This function lets you customize the columns that appear in your backtest reports, giving you more control over the information presented. You can adjust the default column definitions to highlight the data most important to you, effectively tailoring the reports to your specific needs.  The function ensures that any changes you make are structurally sound, but a special flag allows skipping these validations when needed, for example, in testing environments.  Basically, it's a way to fine-tune the reporting to showcase exactly what you want to see.
+This function lets you customize the columns that appear in your backtest reports, like those generated for markdown output. You can modify the existing column configurations or add entirely new ones to tailor the reports to your specific needs. It's a powerful way to control what data is displayed and how it's organized.  
 
+If you're working in a testbed environment, you might need to use the `_unsafe` flag to bypass some validation checks – but generally, the system ensures your column definitions are structurally sound.
 
 ## Function searchMemory
 
-The `searchMemory` function lets you find relevant memory entries related to a particular signal. It uses a sophisticated search technique called BM25 to rank results based on how well they match your query. 
+The `searchMemory` function lets you find relevant memory entries based on a search query. It’s designed to quickly retrieve information associated with a signal, using a technique called BM25 to rank the results by how well they match your query.
 
-The function automatically pulls the necessary information—like the symbol and signal ID—from the trading environment it's running in.  
+It automatically figures out if you're running a backtest or live trading and pulls the necessary information, like the trading symbol and signal ID, from the system.  If there isn't a signal currently active, it will alert you and simply return nothing.
 
-If there’s no active signal to search against, it will let you know with a warning but still proceed, returning nothing. 
+The function returns an array of results, each containing the memory's ID, a score indicating how closely it matches your query, and the content of the memory itself. You can specify the type of data stored in the memory to improve type safety.
 
-You provide a simple object containing the bucket name (where your memory is stored) and the search query itself.
+## Function runInMockContext
 
-The result is a list of memory entries, each with a unique ID, a score representing how closely it matches your search, and the content of the memory entry itself. This allows you to prioritize and work with the most relevant results.
+This function lets you execute a piece of code as if it were running within a specific trading environment, but without actually needing a full backtest running. Think of it as a sandbox for your code where you can access things like the current timeframe or exchange details.
 
+You can customize this environment by providing values for the exchange name, strategy name, frame name, symbol, whether it's a backtest or live mode, and the relevant timeframe. If you don’t provide these, it will default to a simple setup useful for testing live-like scenarios.
+
+It’s especially handy for writing tests or scripts that rely on context-specific information without needing the overhead of a complete backtest setup. Just pass in the function you want to run, and it will execute within the defined context, returning whatever the function produces.
 
 ## Function removeMemory
 
-This function helps clean up your backtesting environment by deleting old memory entries. 
+This function helps you clean up data related to past signal calculations. Specifically, it removes a "memory" entry associated with a particular signal. 
 
-It specifically targets memory associated with a particular signal, identified by its ID.
+It finds the relevant symbol and signal ID automatically from where it's being run. 
 
-The function intelligently figures out whether it's running in a backtest or live environment without you needing to specify.
+If there isn't a signal to clean up, it'll let you know with a warning and do nothing. The function adapts its behavior depending on whether you're running a backtest or a live trading session.
 
-If there's no pending signal to work with, it will let you know with a warning and won't proceed with the memory removal.
-
-To use it, you’ll need to provide the name of the bucket where the memory is stored and the unique ID of the memory entry to remove.
+To use it, you need to provide the name of the data bucket and the ID of the memory entry you want to remove.
 
 
 ## Function readMemory
 
-This function lets you retrieve data stored in memory associated with a specific trading signal. Think of it as accessing a record of past events or settings tied to a particular trade.
+The `readMemory` function lets you retrieve data stored in memory related to a specific trading signal. Think of it as a way to access previously saved information needed for calculations or decisions. 
 
-It figures out whether you're in a backtesting or live trading environment.
+It takes an object containing the bucket name (where the data is stored) and the memory ID (the specific data you're looking for). 
 
-To use it, you'll provide the bucket name and a unique identifier for the memory you want to read. If no signal is active, it will notify you with a message and won't return anything. It uses the execution context and the active pending signal to locate the memory.
+This function automatically adapts to whether you’re running a backtest or a live trading session, making it versatile. If no signal is active, you'll get a warning and a null value back, so be sure something is active before attempting to read.
+
 
 ## Function overrideWalkerSchema
 
-This function lets you tweak an existing strategy's walker configuration, which is important for comparing different strategies fairly. Think of it as a way to adjust the rules used for evaluating strategies without completely rebuilding them. You only need to specify the changes you want to make; the rest of the original walker configuration stays the same. It returns a promise that resolves to the updated walker configuration.
+The `overrideWalkerSchema` function lets you adjust an existing walker configuration, which is used for comparing different trading strategies. Think of it as a way to tweak a previously defined plan, but only changing the parts you specify. It takes a partial configuration – just the changes you want to make – and returns a complete, updated walker schema. This is useful when you want to experiment with slight variations on a tested strategy without rebuilding everything from scratch.
+
 
 ## Function overrideStrategySchema
 
-This function lets you modify a trading strategy that's already set up within the backtest-kit framework. Think of it as a way to tweak an existing strategy—you don’t have to recreate it entirely.
+This function lets you modify a trading strategy that's already set up within the backtest-kit framework. Think of it as making targeted adjustments – you can update specific settings without needing to redefine the entire strategy. 
 
-You provide a new configuration, and this function will merge those changes with the strategy's current settings. Only the parts of the strategy you specify will be updated; everything else stays the same. It's useful for making small adjustments or refinements to a strategy without a complete overhaul.
+You provide a partial configuration object, which tells the framework exactly which parts of the strategy you want to change, and the rest stays as it was originally defined. This is helpful for fine-tuning a strategy or applying small updates.
 
 
 ## Function overrideSizingSchema
 
-This function lets you tweak an existing position sizing configuration. Think of it as a way to fine-tune how much capital is allocated to trades. 
+This function allows you to adjust an existing position sizing strategy without replacing it entirely. Think of it as making targeted changes to a sizing schema that's already in place. 
 
-You don't replace the entire sizing schema, but instead provide a partial update—just the settings you want to change. The rest of the original configuration stays the same. It's useful when you need to adjust specific aspects of sizing without starting from scratch.
+You provide a partial sizing configuration – only the settings you want to modify need to be included. 
+
+The original sizing schema will remain mostly intact, with only the provided fields being updated. This is useful for fine-tuning your sizing logic without rewriting everything.
+
 
 ## Function overrideRiskSchema
 
-This function lets you tweak existing risk management settings within the backtest-kit framework. Think of it as a way to fine-tune, not completely replace, a risk configuration that’s already been set up. You only need to specify the parts of the risk schema you want to change; everything else stays the same. This is useful for adjustments without needing to redefine the entire risk profile.
-
+This function lets you modify a risk management configuration that’s already set up in the system. Think of it as a way to fine-tune an existing setting – you can update specific parts of the configuration without having to rebuild the entire thing.  You just provide the details you want to change, and the function applies those changes, leaving the rest of the configuration untouched.  This is useful when you need to adjust aspects of your risk management rules without a complete overhaul. The input is a partial configuration, meaning you only specify the properties you want to update.
 
 ## Function overrideFrameSchema
 
-This function lets you tweak the settings for a specific timeframe you're using in your backtest. Think of it as making small adjustments to how data is organized for a particular timeframe, like changing the frequency of data points. 
-
-It doesn't replace the entire timeframe setup; instead, it only updates the parts you specify. Any settings you don't provide will remain as they were originally defined. This is useful for fine-tuning your backtesting environment without needing to redefine everything from scratch. You provide a partial configuration object, and it returns the updated frame schema.
+This function lets you modify an existing timeframe configuration used in backtesting. Think of it as fine-tuning a timeframe – you can change specific settings without rebuilding the entire timeframe definition. It’s particularly useful when you need to adjust a timeframe's properties after it’s already been set up. The function accepts a partial configuration object, meaning you only need to provide the settings you want to change; everything else stays the same. This provides a flexible way to experiment with different timeframe setups without starting from scratch.
 
 ## Function overrideExchangeSchema
 
-This function lets you modify how the backtest-kit framework interacts with a particular exchange. Think of it as a way to tweak an existing exchange's settings, like its data format or connection details, without completely rebuilding it from scratch. 
+This function lets you modify how the backtest-kit interacts with a specific exchange's data. Think of it as a way to tweak an existing exchange’s settings without rebuilding it from scratch. You can change just the parts you need, like the data frequency or symbol mapping, while keeping the rest of the exchange's configuration intact. It's useful if you want to adapt an exchange schema to your specific needs without a complete overhaul. You provide a partial configuration object, and the function merges it with the original exchange schema.
 
-You provide a piece of the exchange configuration – only the parts you want to change – and the function will update the existing exchange schema.  Anything you don't specify will stay as it was originally defined. This is useful for adapting to changes in exchange data or for custom configurations.
 
 ## Function overrideActionSchema
 
-This function lets you tweak an existing action handler's settings without having to completely replace it. Think of it as making targeted adjustments – you can update specific parts of the handler's configuration, leaving everything else untouched. 
-
-It’s handy for things like changing how events are handled in different environments (like development versus production), or swapping out the code that runs when an action is triggered. This allows you to adjust behavior without needing to rework your overall trading strategy. You simply provide a partial configuration, and the function updates the handler accordingly.
+This function lets you tweak existing action handlers within the backtest-kit framework without completely replacing them. Think of it as a way to make targeted adjustments. You can change specific parts of an action handler's setup, like its logic or callbacks, while leaving the rest untouched. This is helpful when you need to adapt behavior based on the environment (like development versus production) or simply want to experiment with different approaches without altering the core strategy. The function takes a partial configuration object, and it merges that with the existing handler's configuration.
 
 ## Function listenWalkerProgress
 
-This function lets you track the progress of your backtest as each strategy finishes running. It's like setting up a listener that gets notified after every strategy completes within the backtest process. 
+This function allows you to monitor the progress of a backtest run. 
 
-The notifications, or progress events, are delivered in the order they happen, and the function handles them one at a time to avoid any issues with multiple things happening at once. You provide a function that will be called with each event, allowing you to react to the completion of each strategy. This subscription can be canceled by returning the value it returns.
+It sets up a listener that gets triggered after each strategy finishes during the backtest. 
+
+The listener will be called with information about the completed strategy. 
+
+Importantly, the callback function you provide will be executed one at a time, even if it's an asynchronous function, ensuring a smooth and predictable flow of information. To stop listening, simply call the function returned by `listenWalkerProgress`.
 
 ## Function listenWalkerOnce
 
-This function lets you set up a temporary listener for events from a walker. You provide a filter – a rule to decide which events you're interested in – and a callback function that will run *only once* when a matching event comes through.  Once that single event is processed, the listener automatically stops listening. It’s really handy if you need to wait for a specific condition to occur during a walker’s progress and react to it just once. 
+The `listenWalkerOnce` function lets you temporarily monitor the progress of a trading strategy's walker component. It's designed to react to a specific event happening just once. You provide a filter function that defines which events you're interested in, and a callback function that will be executed when a matching event is detected. Once that single event triggers the callback, the listener automatically stops listening, freeing up resources. This is perfect for situations where you need to wait for a certain condition to be met within the walker's process. 
 
-The `filterFn` determines which events trigger your callback. The `fn` is the function that gets executed with the details of that single matching event. The function returns a function to manually unsubscribe.
+It takes two arguments: a function that decides which events to listen for, and the function to execute once a matching event is found.  The function returns a function which, when called, unsubscribes the listener.
+
 
 ## Function listenWalkerComplete
 
-This function lets you listen for when a backtest run finishes. 
+This function lets you listen for when the backtest walker finishes running all its strategies. It’s useful if you need to know when the entire backtesting process is complete. 
 
-It's useful for knowing when all your strategies have been tested.
-
-When the run is complete, a special event is sent to your provided callback function. 
-
-Importantly, the events are handled one at a time, even if your callback uses asynchronous operations, ensuring that the order of events is preserved and preventing multiple callbacks from running simultaneously. This function returns a function you can call to unsubscribe from these completion events.
+The function gives you a callback that gets triggered when the walker is done. Importantly, even if your callback does something that takes time (like an asynchronous operation), the events will be processed one at a time in the order they came in, ensuring a predictable sequence. It also manages the order of the events to prevent any unexpected issues caused by multiple events happening simultaneously. To stop listening, the function returns another function that you can call to unsubscribe.
 
 ## Function listenWalker
 
-The `listenWalker` function lets you monitor the progress of your trading strategies as they run within a backtest. It's like setting up a notification system that tells you when each strategy finishes its calculations.
+This function lets you keep track of what's happening as a trading strategy runs within a backtest. It provides updates after each strategy finishes executing.
 
-This function sends updates one after another, ensuring that your code handling those updates doesn't accidentally run multiple strategies at the same time. 
+Think of it as a way to monitor the progress of your backtest, receiving information about each strategy as it completes.
 
-You provide a function (`fn`) that will be called for each strategy's completion, and `listenWalker` will handle the rest, keeping things organized and preventing unexpected issues. This allows you to track the execution of your strategies and perform actions based on their results.
-
+Importantly, the updates are handled one at a time, even if your monitoring code takes some time to process each one, ensuring nothing gets missed or overlaps. The function returns another function that you can use to unsubscribe from these updates when you no longer need them.
 
 ## Function listenValidation
 
-This function lets you keep an eye on any problems that pop up during the risk validation process – that’s when your trading signals are being checked for potential issues.
+This function lets you keep an eye on potential problems during risk validation. It's like setting up a listener that gets notified whenever an error occurs while checking signals. This is really helpful for spotting and fixing issues during testing or live trading.
 
-It provides a way to receive notifications whenever a risk validation function encounters an error.
+The errors are handled in the order they happen, even if your error handling code takes some time to run. To prevent unexpected behavior, the process is designed to run things one at a time. You give it a function that will be called when an error occurs, and it returns another function that you can use to stop listening.
 
-Think of it as setting up a listener to catch those errors as they happen.
-
-The errors are handled one at a time, even if your error handling function takes some time to complete, which helps prevent unexpected behavior. To stop listening, the function returns another function which you can call.
 
 ## Function listenSyncOnce
 
-`listenSyncOnce` lets you hook into specific trading signals, but it only runs your code *once* for each matching signal. This is really handy when you need to quickly make adjustments or synchronize with other systems—for example, to make sure an order is fully processed before something else happens.
+This function lets you listen for specific synchronization events and react to them just once. Think of it as setting up a temporary listener that only fires when a particular condition is met. 
 
-It works by providing a filter function (`filterFn`) which determines which signals trigger your callback. When a matching signal arrives, your callback function (`fn`) will execute.
-
-If your callback involves asynchronous operations (like promises), the backtest framework will pause signal processing until your callback finishes, ensuring everything happens in the right order. There's a warning flag (`warned`) for potentially advanced use cases. You receive a function that you can call to unsubscribe from the signal.
+It’s particularly useful when you need to coordinate with other systems, because it waits for your callback function to finish before continuing with the backtest.  You can specify what events you're interested in with a filter function.  If your function returns a promise, the backtest will pause until that promise resolves, ensuring everything is synchronized. Once the callback has run, the listener is automatically removed, so you don't have to worry about cleanup.
 
 ## Function listenSync
 
-This function lets you hook into events that happen when signals are being synchronized, like when a trade is about to be opened or closed, but it’s handled in a way that ensures things stay in order. It’s designed to help you keep your trading system in sync with other systems that might be involved.
-
-Essentially, you provide a function (`fn`) that will be called whenever a synchronization event occurs. If your function takes a little time to finish, like if it's making a network request, the trading process will pause until your function is done. 
-
-This is great for situations where you need to confirm something or update information in another system before the trade actually happens. The `warned` parameter offers additional configuration options, but is currently unpopulated.
-
+This function lets you react to events as they happen during trading signal synchronization, like when a signal is about to be opened or closed. It's particularly helpful if you need to coordinate with other systems or processes.  The key is that any pending trading actions will pause until your function finishes executing – this ensures everything stays in sync. You provide a function that will be called whenever a synchronization event occurs, and that function can even handle asynchronous operations. A warning parameter is available but currently undefined. The function returns another function which when called will unsubscribe you from the event listener.
 
 ## Function listenStrategyCommitOnce
 
-This function lets you react to specific changes happening with your trading strategies, but only once. You provide a filter to identify the exact type of strategy change you're interested in, and a function to execute when that change happens. After the function runs once, it automatically stops listening, which is handy for things like waiting for a strategy to be initialized or updated. It's a clean way to respond to a single event and then move on.
+This function allows you to temporarily "listen" for specific strategy changes within your backtest. You provide a filter – essentially a rule – to identify the exact events you're interested in. When an event matches that rule, a callback function you define will run just once. After that single execution, the listener automatically stops, so you don't have to worry about cleaning it up. It's perfect for reacting to a one-time event like the initial setup of a strategy.
+
+The filter determines which events trigger the callback.
+The callback function then processes the specific event it matches.
+
 
 ## Function listenStrategyCommit
 
-This function lets you keep an eye on what's happening with your trading strategy – specifically, changes to things like stop-loss and take-profit levels, and when signals are cancelled or closed. It gives you a heads-up when actions like adjusting a trailing stop-loss, moving a stop to breakeven, or closing a position at a profit or loss level occur. 
+This function lets you keep an eye on what's happening with your trading strategies. It allows you to register a callback function that will be triggered whenever certain actions occur, like when a scheduled trade is cancelled, a trade is closed, or adjustments are made to stop-loss or take-profit levels. The callback function will receive information about the specific event that triggered it.
 
-Crucially, any actions you take in response to these events will be processed one at a time, making sure everything happens in a controlled order.  You provide a function that gets called when these events happen, and the function you provide will be executed in a safe, sequential way.
+Importantly, these events are handled in the order they come in, and even if your callback function does some work asynchronously, the framework ensures that it completes before the next event is processed. This prevents conflicts and makes sure everything runs smoothly. You can unsubscribe from these events when you no longer need them by returning a function from `listenStrategyCommit`.
 
 
 ## Function listenSignalOnce
 
-This function lets you react to specific trading signals just once. You tell it what kind of signal you’re looking for – for example, a certain price level being reached – and it will notify your code only when that signal happens. After that one notification, it automatically stops listening, so you don't have to worry about cleaning things up. This is helpful when you need to trigger an action based on a particular event happening just one time.
-
-It takes two pieces of information: a filter that determines which signals you want to watch and a function that will be executed when the matching signal arrives. Once that signal appears and the callback runs, the subscription is automatically cancelled.
+This function lets you temporarily listen for specific signal events from your trading strategy. You provide a filter that defines which events you’re interested in, and a function to execute when a matching event occurs.  The function automatically stops listening after that one event, which is handy if you only need to react to a particular condition once. Think of it as a quick, temporary subscription to a specific signal.
 
 
 ## Function listenSignalLiveOnce
 
-The `listenSignalLiveOnce` function lets you tap into live trading signals, but only for a single event. It's like setting up a temporary alert that fires just once when a specific condition is met. You tell it what condition to look for (using the `filterFn`) and what action to take (the `fn` callback). Once that one event triggers the callback, the alert disappears – you don't have to manually unsubscribe. This is helpful for quick checks or one-off reactions to live market data during backtesting.
-
-The function returns another function, which you can use to stop listening to signals early if needed.
+This function lets you subscribe to live trading signals, but with a twist: it only delivers one event and then automatically stops listening. Think of it as a quick, single-use subscription. You provide a filter to specify which signals you're interested in – only signals matching that filter will trigger the callback function you define. This is especially helpful for things like taking a single snapshot of data from a live trading simulation. Once the event is received and the callback executed, the subscription is automatically cancelled, preventing further processing of signals.
 
 
 ## Function listenSignalLive
 
-The `listenSignalLive` function lets you hook into real-time trading signals generated during a live backtest. Think of it as subscribing to a stream of updates from your trading strategy as it’s running.
-
-It takes a function that will be called whenever a new signal event occurs. This function receives an object containing details about that signal.
-
-Importantly, this only works with signals created by `Live.run()`.
-
-The events are handled one after another, so you’re guaranteed to receive them in the order they happened. This function also returns a function that you can call to unsubscribe from the signal stream.
+The `listenSignalLive` function allows you to receive real-time updates from a live trading strategy execution.  It’s designed for when you need to react to signals as they happen during a live run.  You provide a function that will be called each time a new signal is generated, with the signal data being passed as an argument.  Importantly, these signals are processed one after another, guaranteeing order, and they are only available when the trading strategy is actively running with `Live.run()`. This function returns a cleanup function that can be called to unsubscribe from the signals.
 
 
 ## Function listenSignalBacktestOnce
 
-This function lets you temporarily listen for specific signals generated during a backtest run. Think of it as setting up a one-time alert for when a certain condition happens during the simulation. 
-
-You provide a filter – a rule to determine which events you're interested in – and a function to execute when that rule is met. Once the function runs, it automatically stops listening, ensuring it only triggers once. It's a clean way to react to specific events during a backtest without lingering subscriptions.
+This function lets you temporarily hook into the backtesting process to react to specific events. You provide a filter—essentially a rule—to determine which events you're interested in. Once an event matches your filter, a callback function you provide will run just once, and then the connection is automatically closed. It's a clean way to observe a single event during a backtest run without lingering subscriptions.
 
 
 ## Function listenSignalBacktest
 
-The `listenSignalBacktest` function lets you tap into the flow of events during a backtest. Think of it as setting up a listener that gets notified whenever a signal is generated during a backtest run. You provide a function that will be called each time a signal appears, and that function will receive information about the signal itself. Importantly, these events are processed one at a time, guaranteeing they arrive in the order they occurred. This function is specifically designed to work with events that come from a `Backtest.run()` execution. It gives you a way to react to what’s happening during the backtest process.
+This function lets you tap into the flow of a backtest and react to what’s happening as it runs. It's like setting up an observer that gets notified whenever the backtest generates a signal event.
 
-It returns a function that can be called to unsubscribe from the listener.
+You provide a function that will be called with each event—essentially, you’re defining what you want to do with each notification. These events come directly from a `backtest.run()` execution, ensuring they are tied to the actual testing process.
 
+Importantly, the events are handled one at a time, in the order they arrive, so your reaction function will be executed sequentially. This allows for predictable and controlled responses to the backtest's progress. When you no longer need to listen for these events, the function returns another function that you can call to unsubscribe.
 
 ## Function listenSignal
 
-This function lets you listen for updates from your trading strategy, like when a position is opened, closed, or actively trading. It ensures these updates are handled one at a time, even if your handling function takes some time to complete, preventing any conflicts. You provide a function that will be called whenever a signal event happens, and this function will receive data about the event, such as the current state of your strategy. The function returns another function you can call to unsubscribe from these updates.
+The `listenSignal` function lets you tap into all the signals generated during a backtest, such as when a trade is idle, opened, active, or closed. It's a convenient way to monitor what's happening with your trading strategy. 
+
+Importantly, the events are processed one at a time, in the order they arrive, even if the function you provide to handle them takes some time to complete. This ensures that your callback function won't run concurrently with other events, preventing potential issues. 
+
+You provide a function as an argument to `listenSignal`; this function is then called each time a signal event occurs, giving you access to detailed information about that event. The `listenSignal` function itself returns a function that you can call to unsubscribe from these signals later.
 
 
 ## Function listenSchedulePingOnce
 
-This function lets you set up a temporary listener for ping events, focusing on only the events that meet a specific criteria. It's like saying, "Hey, I only care about these particular ping events, and I need them handled just once." Once it finds an event that matches your requirements, it runs your provided function to deal with it and then silently stops listening. This is helpful when you need to react to a single, specific situation triggered by these ping events.
+This function lets you react to specific ping events, but only once. It’s like setting up a temporary listener that will trigger a function when a particular condition is met.
 
-You give it two things: a filter to identify the events you’re interested in, and a function to execute when the right event is found. The function takes care of subscribing and unsubscribing, so you don’t have to manage that yourself.
+The `filterFn` helps you define exactly which ping events you're interested in – only those that match your criteria will trigger the callback. Once the callback function has run once for a matching event, the listener automatically stops listening, so you don’t have to worry about managing the subscription yourself. This is perfect for situations where you need to react to something happening just one time. 
+
+You provide a function that determines which events are relevant (`filterFn`) and another function that handles the event when it's matched (`fn`). The result is a function that you can call to unsubscribe the listener.
 
 ## Function listenSchedulePing
 
-This function lets you listen for periodic "ping" signals that are sent while a scheduled signal is being monitored, essentially while it's waiting to become active. Think of it as a way to get regular updates on the status of a scheduled signal. 
-
-You provide a function that will be called every minute with information about these ping events. This allows you to build custom monitoring or tracking logic around a scheduled signal's lifecycle. It's useful for ensuring things are proceeding as expected during the waiting period.
-
+The `listenSchedulePing` function lets you receive updates about scheduled signals as they're being monitored, specifically while they're waiting to become active. Think of it as a heartbeat signal – it sends a notification every minute to let you know the scheduled signal is still being watched. You provide a function that gets called with each of these updates, allowing you to implement custom monitoring or track the progress of the scheduled signal's lifecycle. This subscription can be cancelled by the function it returns.
 
 ## Function listenRiskOnce
 
-This function lets you react to specific risk rejection events, but only once. It's like setting up a temporary alert for a particular condition. 
+The `listenRiskOnce` function lets you monitor risk rejection events and react to them, but only once. Think of it as setting up a temporary listener that waits for a specific condition to be met, performs an action, and then disappears. You provide a filter to determine which events you’re interested in, and a function to execute when that event occurs. Once the event is processed, the listener automatically stops listening, ensuring you don't get repeatedly triggered by the same condition.
 
-You provide a filter that defines what events you’re interested in, and a callback function that will run when that event occurs. Once the event is handled, the subscription automatically ends, so you don’t have to worry about cleaning up. It’s perfect for situations where you need to respond to a certain risk event just one time and then move on.
+This is a great way to handle situations like waiting for a particular risk level to be triggered before initiating a specific action, and then cleaning up the listener afterwards. 
 
+It returns a function that you can call to stop the listener early if you need to.
 
 ## Function listenRisk
 
-This function allows you to be notified whenever a trading signal is blocked because it violates a risk rule. 
+This function lets you be notified whenever a trading signal is blocked because it fails a risk check. 
 
-Think of it as a way to react only when something goes wrong with your risk management. 
+Think of it as a way to react to situations where your trading strategy would violate your risk rules.
 
-You'll only receive notifications for rejected signals, not for those that pass, ensuring you aren’t overwhelmed with unnecessary updates. The system guarantees that these notifications are handled one at a time, in the order they arrive, even if your callback function needs to do some asynchronous work. To stop listening for these risk rejection events, simply call the function returned by `listenRisk`.
+It's designed to be efficient – you'll only receive these notifications when a risk validation *fails*, not when everything is working as expected. 
 
+The notifications are handled in the order they arrive, and your callback function will be executed one at a time, even if it's a complex or time-consuming operation. This ensures that risk management isn't bypassed by asynchronous code.
+
+To use it, you provide a function that will be called with the details of the rejected risk event. The function you provide will also return a function to unsubscribe from the risk rejection event.
 
 ## Function listenPerformance
 
-The `listenPerformance` function lets you monitor how your trading strategies are performing in terms of speed and efficiency. It provides a way to receive updates about the time it takes to complete different actions during the backtesting process.
+This function lets you keep an eye on how long different parts of your trading strategy take to run. It listens for "performance events" – basically snapshots of timing data collected during the execution of your strategy.
 
-Think of it as a way to profile your strategy, helping you pinpoint areas that might be slowing it down. These performance updates are delivered in a specific order, even if the callback function you provide takes some time to process.
+Think of it as a way to profile your code and pinpoint slow areas that might be hurting your backtesting results. The callback function you provide will be called whenever a performance event happens, allowing you to log, analyze, or react to these events.
 
-To ensure smooth operation, the function uses a queue to handle these updates, preventing multiple callbacks from running simultaneously. You give it a function, and it will call that function whenever a performance event occurs. When you’re done listening, the function returns another function to unsubscribe.
+A key feature is that the callbacks are processed one at a time, even if they're asynchronous, ensuring reliable and sequential event handling. This queued approach prevents issues from multiple callbacks running simultaneously.
+
 
 ## Function listenPartialProfitAvailableOnce
 
-This function allows you to react to specific profit milestones reached during a backtest, but only once. You provide a filter that defines what conditions you're looking for, and a function to execute when that condition is met. Once the condition is triggered and the function runs, the listener automatically stops, so you won't receive any further notifications. It's a handy way to react to a particular profit target being hit and then move on.
+This function lets you set up a one-time alert based on your trading strategy's profit levels. It listens for specific events indicating a partial profit has been reached, but only triggers your callback function once and then stops listening. Think of it as a quick, targeted notification for a particular profit condition you’re watching.
+
+You provide a filter to define exactly what events should trigger the notification, and then a function to execute when that specific event occurs. After the function runs once, the subscription is automatically canceled, preventing further callbacks. This is handy for situations where you only need to react to an event once.
+
+The filter function determines which events are of interest, and the callback function handles the actual action when the event happens.
 
 
 ## Function listenPartialProfitAvailable
 
-This function lets you be notified whenever your backtest reaches a specific profit milestone, like 10%, 20%, or 30% gain. It's useful for tracking progress and triggering actions based on those milestones. Importantly, the events are handled one at a time, even if your code to handle them takes some time to run, ensuring things don’t get messy. You provide a function that will be called with details about the partial profit event when it happens. The function returns a function that allows you to unsubscribe from these events later.
+This function lets you be notified when a trade hits specific profit milestones, like 10%, 20%, or 30% gain. It ensures that when a profit milestone is reached, your code receives an event. Importantly, it handles these events one at a time to prevent any issues if your code takes a bit of time to process each notification. You provide a function that gets called with details about the trade and the profit level reached. The function you provide also returns a cleanup function that can be used to unsubscribe.
+
 
 ## Function listenPartialLossAvailableOnce
 
-This function lets you set up a listener that will trigger a specific action only once when a particular condition related to partial loss levels is met. Think of it as a temporary alert – it waits for a specific event to happen, then runs your code and stops listening. You define what constitutes that specific event with a filter function. The callback function you provide will be executed just the one time when the filter matches. It’s handy for reacting to unusual or critical loss situations without having to manage ongoing subscriptions.
+This function lets you react to specific changes in your trading account’s partial loss level, but only once. You provide a rule – a filter – to identify the exact events you’re interested in, and a function that will be run when that event occurs. Once the event matches your rule, the provided function executes and the listener automatically stops listening. It's great for responding to a particular loss condition just one time, then moving on.
+
+You define what conditions trigger the reaction with the `filterFn`, and the function you want to execute when that condition is met with `fn`.
 
 ## Function listenPartialLossAvailable
 
-This function lets you keep track of how much your trading strategy has lost, reporting progress at key milestones like 10%, 20%, and 30% losses. It ensures that these updates are delivered one at a time, even if the code you provide to handle them takes some time to run. Essentially, it's a way to be notified of loss levels and makes sure the notifications happen in a controlled, sequential order. You provide a function that will be called each time a loss milestone is reached, and this function will receive details about the current partial loss. The function returns another function that you can call to unsubscribe from these updates.
+This function lets you monitor your trading strategy's losses as they happen. It will notify you when the loss level hits specific milestones, like 10%, 20%, or 30% loss. 
+
+Crucially, the events are handled in the order they occur, even if your callback function takes some time to complete.  To ensure things run smoothly and avoid problems from too many things happening at once, it uses a system that processes these notifications one after another.
+
+You simply provide a function that will be called each time a milestone is reached, and this function will receive information about the event.  When you’re done listening, you can unsubscribe using the function that’s returned.
+
+## Function listenMaxDrawdownOnce
+
+This function lets you react to specific maximum drawdown events in your backtest, but only once. You provide a condition – a filter – to define which drawdown events you’re interested in, and a function that will be executed when that condition is met. Once the condition is met and the function runs, the listener automatically stops listening, making it perfect for scenarios where you need to respond to a particular drawdown situation and then move on. It’s designed for one-time reactions to drawdown occurrences.
+
+You essentially tell it "listen for drawdown events that meet this criteria, and when you find one, do this action, and then stop listening."
+
+## Function listenMaxDrawdown
+
+The `listenMaxDrawdown` function allows you to monitor and react to changes in maximum drawdown levels as a trading strategy or simulation progresses. It sets up a listener that will notify you whenever a new maximum drawdown is reached.
+
+This is particularly helpful if you need to adjust your strategy based on drawdown milestones, or if you want to implement risk management rules that respond to drawdown changes.
+
+The listener works by queuing up events so that your callback function is executed one at a time, even if your callback involves asynchronous operations. This ensures events are processed in the order they occur and avoids potential issues caused by simultaneous execution. To stop listening, the function returns a cleanup function that you can call to unsubscribe.
 
 ## Function listenHighestProfitOnce
 
-This function lets you set up a temporary listener that reacts to the highest profit events, but only once. You provide a rule – a filter – to define which events you're interested in. Once an event matching that rule appears, the provided callback function will run, and then the listener automatically stops listening. It’s handy when you need to wait for a particular profit condition to happen and then take action, but don't want to keep listening afterward.
+This function lets you set up a temporary listener that reacts to specific, high-profit trading events. You provide a condition – a filter – that determines which events you're interested in. Once an event meets that condition, a function you specify will run once to handle it. After that single execution, the listener automatically stops listening, so it's perfect for scenarios where you need to react to something specific and then move on.
 
-Essentially, it's a way to say "Hey, let me know when *this* happens, and then forget about it."
+It's a convenient way to wait for a particular profit opportunity to arise and then take action without needing to manage the subscription manually.
 
-The `filterFn` determines which events trigger the callback, and the `fn` is what actually gets executed when a matching event occurs.
+**Parameters:**
 
+*   `filterFn`:  A test that determines whether an event should trigger the callback.
+*   `fn`: The function that will be called once when an event passes the filter.
 
 ## Function listenHighestProfit
 
-This function lets you listen for when a trading strategy achieves a new, highest profit level. It’s like setting up an alert that triggers whenever a strategy does exceptionally well.
+This function lets you be notified whenever a trading strategy hits a new peak profit level. It's like setting up an alert system for your most successful moments.
 
-The events are handled in the order they happen, even if your callback function takes some time to complete.
+The function will call your provided callback whenever that happens, ensuring the events are processed one at a time, even if your callback takes some time to complete. 
 
-To avoid any issues, the callback function is processed one at a time, in a queue.
+This is handy for things like recording achievements or adjusting your strategy based on how well it's performing.
 
-This is particularly handy if you want to keep track of a strategy’s best performance or dynamically adjust your trading strategy based on milestones.
-
-You provide a function (`fn`) that will be called with information about the new highest profit whenever it occurs. The function you provide will be returned when you unsubscribe.
+To use it, you simply give it a function that will handle each "highest profit" notification. The function returns another function that you can call later to unsubscribe from the events.
 
 ## Function listenExit
 
-The `listenExit` function allows you to be notified when a backtest or live trading process encounters a fatal error and is stopping. These are serious errors that aren’t recoverable and will halt the process. 
+This function lets you be notified when a serious, unrecoverable error occurs during background processes like live trading, backtesting, or data walking. 
 
-It's similar to listening for errors, but specifically designed for situations where the process is ending unexpectedly.
+Think of it as an emergency alert for your trading system – these are the errors that halt everything.
 
-The callback you provide will be executed sequentially, even if it involves asynchronous operations, ensuring errors are handled in the order they occurred. A special wrapper ensures only one error handler runs at a time, preventing potential conflicts.
+Unlike the regular error listener, this one signals events that cause the whole process to stop.
+
+It ensures events are handled one after another, even if your response involves asynchronous operations. This prevents issues that could arise from multiple callbacks running at the same time. To use it, provide a function that will be executed when a critical error happens. The function will receive an error object to help diagnose the problem.
 
 
 ## Function listenError
 
-The `listenError` function lets you set up a listener to catch errors that happen during your trading strategy's run, but aren't critical enough to stop everything. Think of it as a safety net for hiccups like temporary API connection problems. When such an error occurs, the provided callback function will be triggered to handle it. Importantly, these errors won't crash your backtest; the strategy will keep running. The errors are processed one at a time, ensuring a controlled response even if the error handling logic is complex.
+This function allows you to monitor and respond to errors that occur during your trading strategy's execution, particularly those that are designed to be handled and don't halt the entire process. Think of it as a safety net for potential hiccups like temporary API connection problems.
+
+You provide a function that will be called whenever such an error happens, and it ensures these errors are handled one at a time in the order they arise. This prevents unexpected behavior caused by multiple errors firing simultaneously. The function you provide is automatically unsubscribed when you no longer need to listen for these errors.
+
 
 ## Function listenDoneWalkerOnce
 
-This function lets you react to when a background task finishes, but only once. You provide a filter to specify which completed tasks you're interested in, and then a function that will run when a matching task is done.  The system takes care of automatically stopping the listening after the first match, so you don't have to worry about cleanup. Think of it as a simple way to be notified about a specific background job finishing, and then forgetting about it.
+This function lets you react to the completion of background tasks within the backtest-kit framework, but only once. You provide a filter to specify which completion events you're interested in, and a function that gets executed when a matching event occurs.  Critically, after that one execution, the subscription is automatically removed, so you won't be notified again. Think of it as a short-lived listener for a specific event. It helps keep your code clean by automatically handling the cleanup of the subscription.
 
 
 ## Function listenDoneWalker
 
-This function lets you monitor when background tasks within a trading strategy have finished running. It’s useful if you need to know when a specific process is complete before moving on to the next step.
+This function lets you listen for when a background task within the backtest-kit framework finishes. Think of it as a way to know when something is done running behind the scenes.
 
-Essentially, you provide a function (`fn`) that will be called whenever a background task finishes.
+It provides a way to react to the completion of these background tasks, ensuring that any actions you take in response happen one at a time, even if those actions involve asynchronous operations. This helps prevent issues that can arise from things happening simultaneously.
 
-The important thing to remember is that these completion events are handled in the order they occur and your provided function will be executed sequentially, even if it's an asynchronous operation. This prevents unexpected issues from running things out of order or concurrently.
-
-To stop listening for these events, the function returns another function that you can call to unsubscribe.
+You provide a function that will be called when a task is complete, and this function will receive information about the finished task. The function you provide will be executed sequentially. 
 
 
 ## Function listenDoneLiveOnce
 
-`listenDoneLiveOnce` lets you react to when a background task finishes, but only once. You provide a filter – a way to specify which tasks you're interested in – and a function that will run when a matching task completes. The function will execute just one time and then automatically stop listening, so you don't have to worry about unsubscribing. This is great for actions you only need to perform once per background process.
+This function lets you react to when a background task, started with `Live.background()`, finishes. 
+
+It's designed for situations where you need to know when something is done, but you only need to react once.
+
+You provide a filter – a way to specify which completed tasks you’re interested in – and a function to run when a matching task finishes.  The function will automatically unsubscribe itself after the callback is executed once, so you don't need to worry about cleaning up your subscription. Think of it as a temporary listener that only fires once for a specific event.
 
 
 ## Function listenDoneLive
 
-This function lets you monitor when background tasks started with `Live.background()` finish running. 
+This function allows you to monitor when background tasks initiated by `Live.background()` finish running. It provides a way to be notified about the completion of these asynchronous operations as they happen. Importantly, the notifications are delivered in the order they occur, and your callback function (the `fn` you provide) will be executed one at a time, even if it involves asynchronous operations itself, ensuring sequential processing. Think of it as a way to react to each completed background task reliably and in sequence.
 
-It provides a way to be notified as these tasks complete, ensuring events are handled one after another, even if your processing involves asynchronous operations. 
-
-Think of it as setting up a listener that gets triggered when a background job is done, and it makes sure things happen in the right order. You provide a function (`fn`) which will be called with details about the completed task each time one finishes. The function you provide will return another function which you can call to unsubscribe from these notifications.
-
+To stop listening for these events, the function returns another function which you should call when you no longer need the notifications.
 
 ## Function listenDoneBacktestOnce
 
-This function lets you react to when a background backtest finishes, but only once. You provide a filter—a way to specify which backtest completions you're interested in—and a function to run when a matching backtest is done. The function will automatically unsubscribe after the callback is executed, so you don't have to worry about cleaning up. Think of it as setting up a temporary listener for a specific backtest result.
+This function lets you listen for when a background backtest finishes, but in a special way: it only runs your code *once* and then automatically stops listening. You provide a filter – a way to specify exactly which backtest completions you're interested in. When a backtest finishes and matches your filter, your provided callback function gets executed just one time, handling the event. After that, it stops listening, so you don't have to manage the subscription yourself. 
+
+It's really handy for tasks like cleaning up resources or triggering a specific action only after a single background backtest concludes.
 
 
 ## Function listenDoneBacktest
 
-This function lets you be notified when a backtest finishes running in the background. It’s like setting up a listener that gets triggered when the backtest is done. 
+This function lets you be notified when a background backtest finishes running. It's like setting up a listener that waits for a specific task to complete.
 
-The listener will handle events in the order they happen, even if the function you provide takes some time to complete. To keep things stable, the completion events are processed one at a time.
+When the backtest is done, the function you provide will be called. Importantly, these notifications happen one at a time, even if your function takes some time to execute – this ensures things don't get jumbled up.
 
-You provide a function (`fn`) that will be called when the backtest is finished; this function receives information about the completed backtest as its argument. The function you provide returns another function that you can use to unsubscribe from these completion events.
+You provide a function that will be executed when the backtest is complete. The function receives information about the event. 
+The function you provide returns a function that can unsubscribe from the backtest done events.
 
 ## Function listenBreakevenAvailableOnce
 
-This function lets you set up a listener that reacts to changes in breakeven protection, but only once. You provide a filter to specify exactly what kind of change you're interested in, and a function that will be executed when that change occurs. Once the function runs, the listener automatically stops, so you don't have to worry about cleaning it up. Think of it as a way to react to a specific, one-time breakeven condition.
+This function allows you to temporarily monitor breakeven protection events and react to them just once. You provide a filter to specify which events you’re interested in, and a function to execute when a matching event occurs.  After the callback runs once, the monitoring automatically stops, so you don't need to worry about cleaning up subscriptions. It's perfect for situations where you need to respond to a particular breakeven condition just one time.
+
+For example, you could use it to trigger a specific action once the breakeven price reaches a certain level.
 
 
 ## Function listenBreakevenAvailable
 
-This function lets you monitor when a trade's stop-loss automatically adjusts to the entry price – essentially, when the profit covers the transaction costs. You provide a function that will be called whenever this happens, and this function will be executed one after another, even if it takes some time to complete. It ensures that these breakeven events are handled in the order they occur, without potentially running into conflicts.
-
+This function lets you get notified whenever a trade's stop-loss is automatically moved to the entry price, essentially protecting your profits. It's triggered when a trade has gained enough profit to cover any transaction costs associated with it. These notifications are handled one at a time, even if the callback you provide takes a while to complete, ensuring things don't get out of order. You provide a function that will be called each time this event occurs, and the function receives details about the trade that reached breakeven. The function you give will also return a function to unsubscribe from the event.
 
 ## Function listenBacktestProgress
 
-This function lets you monitor the progress of a backtest as it runs. It's particularly useful when you need to keep track of what's happening behind the scenes during a lengthy backtest process.
+This function lets you monitor the progress of a backtest as it runs. You provide a function that will be called whenever a progress update is available.
 
-You provide a function that will be called whenever a progress update is available. 
+The updates are delivered one at a time, even if your callback function takes some time to complete. This helps prevent issues that could arise if many updates were processed simultaneously.
 
-The updates are delivered in the order they happen, and even if your monitoring function takes some time to process each update, the backtest won’t be interrupted. The system ensures events are handled one after the other to avoid any problems with concurrent execution. This returns a function that unsubscribes the listener.
+Think of it as a way to get periodic snapshots of how the backtest is doing while it's working. The function returns another function which you can call to unsubscribe from the updates.
 
 
 ## Function listenActivePingOnce
 
-This function helps you react to specific active ping events, but only once. 
-
-You give it a way to identify the events you're interested in (a filter function) and a function to run when one of those events happens. 
-
-Once that event is found and your function runs, the subscription is automatically canceled, preventing further executions. It's perfect for situations where you need to wait for a particular condition to be met within the active ping stream and then take action.
+This function lets you temporarily listen for specific active ping events and react to them just once. You provide a filter to define which events you're interested in, and a function to run when a matching event occurs. Once that first event is processed, the listener automatically stops, ensuring you don’t keep reacting to events you've already handled. Think of it as a quick, one-time alert for a particular condition.
 
 
 ## Function listenActivePing
 
-This function lets you keep an eye on active signals within your backtesting environment. It listens for signals that are actively being monitored, sending you updates every minute. 
+This function allows you to be notified whenever there's a change in active ping signals. Think of it as subscribing to updates on what signals are currently active.
 
-Think of it as a way to track the lifecycle of your signals and build strategies that react to changes in their status. 
+These updates happen every minute and give you insight into the lifecycle of your signals.
 
-The updates are delivered one at a time, even if your response involves some processing time, ensuring things happen in the right order. It’s a reliable way to build dynamic logic around your active signals. You provide a function that gets called each time a ping event happens, allowing you to react to the signal's activity.
+It's a way to react to changes in your trading signals dynamically.
+
+Crucially, the updates are handled one at a time, ensuring that any processing you do (even if it's asynchronous) won’t interfere with other updates. You just provide a function that will be called with the details of the ping event each time an update occurs.
+
 
 ## Function listWalkerSchema
 
-This function gives you a peek at all the trading strategies or “walkers” that are currently set up and ready to be used within the backtest-kit framework. It pulls together a list of them, so you can see what’s available. Think of it as a way to check which strategies are loaded or to generate a list for user interfaces that need to display options. It’s especially handy when you’re troubleshooting or building tools that interact with the available trading strategies.
+This function gives you a complete list of all the different "walkers" that are set up within the backtest-kit system. Think of walkers as modular components that analyze and process data during a backtest. You can use this to see exactly what's happening under the hood, generate documentation, or even build custom interfaces to interact with your trading strategies. It essentially provides a snapshot of all registered walkers.
 
 ## Function listStrategySchema
 
-This function helps you see all the trading strategies that your backtest-kit setup knows about. Think of it as a way to get a complete inventory of your available strategies. It returns a list of details for each strategy, making it easy to check what's been added or to build tools that show users a menu of strategy options. You can use this to confirm your strategies are registered correctly or to display them in a user interface.
+This function lets you see a complete list of all the trading strategies that have been set up in your backtest-kit environment. Think of it as a way to check what strategies are available for testing. It's really helpful if you’re trying to figure out what’s going on behind the scenes, building a way to display your strategies, or just generally exploring your setup. The results are provided as a list of strategy schemas, giving you details about each strategy.
 
 
 ## Function listSizingSchema
 
-This function helps you see all the different ways you've set up how your orders are sized. It gathers all the sizing schemas you've previously added using `addSizing()`. Think of it as a way to check your work or build tools that adapt to your order sizing strategies. It returns a list of these sizing configurations, so you can examine them.
+This function helps you see all the different ways your trading strategies are sized up for trades. It pulls together all the sizing configurations you've previously set up using `addSizing()`. Think of it as a way to get a complete overview of how your trading decisions are scaled – great for troubleshooting, understanding how your system works, or creating helpful displays. It returns these configurations as a list you can work with.
 
 ## Function listRiskSchema
 
-This function lets you see all the risk schemas that are currently in use within your backtest kit setup. Think of it as a way to get a complete inventory of how risk is being managed. It returns a list of all the risk configurations that you've added using the `addRisk()` function. This can be incredibly helpful when you’re troubleshooting, creating documentation, or building user interfaces that need to understand and display these risk parameters.
-
+This function allows you to see all the risk schemas that are currently set up in your backtest. Think of it as a way to get a complete inventory of the risk configurations you've defined. It's handy for checking what's in place, generating documentation, or building user interfaces that need to display this risk information. The result is a list, with each item describing one registered risk schema.
 
 ## Function listMemory
 
-This function helps you see all the stored data related to a specific signal. 
+This function helps you see all the stored memories related to a specific data bucket. It essentially shows you what information has been saved and associated with a particular signal. 
 
-Think of it as looking through a digital memory bank associated with a particular trading signal. 
+It automatically figures out whether you’re in a backtesting or live trading environment.
 
-It automatically figures out whether you're in a backtesting or live trading environment.
+The function needs one input: the name of the data bucket you want to inspect. 
 
-If no signal is currently active, you’ll see a message letting you know, and the function will return an empty list. 
+If there’s no active signal to look at, it will let you know with a message, and you’ll get back an empty list.
 
-You provide a bucket name, and the function returns an array of objects, each containing a unique memory ID and the content associated with it.
 
 ## Function listFrameSchema
 
-This function helps you discover all the different data structures (we call them "frames") that your backtesting system understands. It essentially provides a catalog of all the frame schemas that have been defined and made available. Think of it as a way to see what kind of data your backtest is working with and how it's organized. This is particularly useful if you're building tools to inspect or visualize your backtesting setup or if you need to understand the full range of data available for analysis.
+This function provides a way to discover all the different data structures, or "frames," that your backtest kit is using. Think of it as a catalog of the different data layouts you're working with. It returns a list of these frame schemas, allowing you to inspect their structure and contents.  This can be valuable when you’re troubleshooting, generating documentation, or creating tools that need to understand the various data formats involved in your trading strategies.  Essentially, it's how you find out what types of data your backtest kit is handling.
+
 
 ## Function listExchangeSchema
 
-This function helps you discover all the exchanges your backtest-kit setup knows about. It returns a list of details for each registered exchange, like what data it expects and how it's structured. Think of it as a way to see exactly which data sources your backtesting system is using. This is handy if you’re troubleshooting, documenting your setup, or creating a user interface that needs to adapt to different exchanges.
+This function helps you discover all the exchanges that your backtest-kit setup recognizes. It returns a list containing information about each exchange, like what kind of data it expects and how it's structured. Think of it as a way to see what trading platforms your backtest-kit knows about. You might use this to make sure everything is set up correctly, to build a dropdown menu of exchanges in a user interface, or to understand what data formats are expected. It essentially provides a comprehensive overview of the exchanges registered within your backtest-kit environment.
+
 
 ## Function hasTradeContext
 
-This function simply tells you if the system is ready for trading actions. It verifies that both the execution and method contexts are currently active. Think of it as a quick check to see if you can safely use functions that interact with the exchange, like retrieving historical data, calculating prices, or formatting values. If it returns `true`, you're good to go; otherwise, wait for the system to be fully initialized.
+This function helps you determine if you’re in a situation where you can actually execute trades. It essentially verifies that all the necessary conditions—both the execution context and the method context—are present. If both are active, it means you're ready to use functions like retrieving historical data (candles), calculating prices, formatting values, or accessing date information within the trading process. Think of it as a quick check to make sure you're in the right environment before trying to perform actions related to a trade.
+
 
 ## Function hasNoScheduledSignal
 
-This function checks if there's a currently scheduled signal for a specific trading symbol, like 'BTCUSDT'. It returns `true` if no signal is scheduled, meaning it's safe to proceed with generating or acting on a signal. Think of it as the opposite of a function that would check *for* a scheduled signal. It figures out whether you’re in a backtesting environment or live trading automatically, so you don’t have to worry about that. You can use this to ensure signals aren't created at unexpected times.
-
-The function takes a symbol (the trading pair) as input, like 'BTCUSDT'.
+This function checks if there's currently a scheduled trading signal for a specific trading pair, like BTC-USD or ETH-BTC. It returns `true` if no such scheduled signal exists, and `false` if one is active. Think of it as the opposite of a function that *would* check for a scheduled signal – this one confirms there isn't one. This is particularly useful when you’re building the logic to generate new trading signals because you want to make sure you aren't accidentally creating signals on top of existing ones. The function figures out whether it's running in a backtesting environment or a live trading scenario automatically.
 
 
 ## Function hasNoPendingSignal
 
-This function checks if there's a pending signal currently active for a specific trading pair, like BTC-USDT. It returns `true` if no signal is pending, and `false` otherwise. Think of it as the opposite of `hasPendingSignal` – you can use it to make sure signals aren't generated when one is already waiting to be triggered. It also figures out whether you're in backtesting or live trading mode without you needing to specify it. You provide the symbol as input, which is the trading pair you're interested in.
+This function helps you determine if a trading signal is currently waiting for a chance to be executed for a specific asset, like BTC/USDT. It returns `true` when no such signal exists – essentially, nothing is pending. Think of it as the opposite of checking for a pending signal; it's useful when you want to make sure you aren't accidentally generating a new signal when one is already in place. This function cleverly adapts to whether your system is running a backtest or live trading, so you don’t have to worry about that distinction. You simply provide the symbol of the trading pair you're interested in.
 
 ## Function getWalkerSchema
 
-The `getWalkerSchema` function helps you find details about a specific trading strategy, or "walker," within your backtest setup. It's like looking up a blueprint for how a particular strategy operates.
-
-You give it the name of the walker you're interested in, and it returns a structured description of that walker.
-
-This description includes things like the data it needs, how it makes decisions, and what actions it takes – essentially, all the key information about that strategy. It lets you understand exactly what a walker is doing.
+This function lets you look up the configuration details for a specific trading strategy, or "walker," within the backtest-kit system. Think of it as checking what settings are available for a particular strategy. You provide the name of the strategy you're interested in, and it returns a structured definition describing how that strategy is configured. This definition tells you what parameters it uses and what kind of data it expects.
 
 
 ## Function getTotalPercentClosed
 
-The `getTotalPercentClosed` function helps you understand how much of a trading position remains open. It tells you the percentage of the original position that hasn't been closed, with 100 meaning the entire position is still active and 0 meaning it's completely closed. This function is smart about handling situations where you've added to a position over time (Dollar-Cost Averaging), making sure the calculation is accurate even with partial closures. It works seamlessly whether you're running a backtest or a live trade, as it automatically figures out the environment it’s in.
+This function helps you understand how much of your position remains open for a specific trading pair. It gives you a percentage value: 100 means you haven't closed any part of the position, while 0 means it’s completely closed. 
 
-You just need to provide the trading symbol (like BTC/USD) to get the result.
+The function smartly handles situations where you’ve added to your position over time using dollar-cost averaging (DCA), considering partial closures accurately. 
+
+It automatically determines whether it's running in a backtesting or live trading environment.
+
+You just need to provide the trading pair symbol, such as "BTCUSDT," to get the percentage.
 
 ## Function getTotalCostClosed
 
-This function calculates the total cost basis in dollars for a currently open position you're holding. It's particularly useful for understanding your average entry price, especially if you've been adding to your position over time through dollar-cost averaging (DCA). 
-
-The function takes the trading symbol (like BTC/USD) as input and returns the calculated cost.
-
-It cleverly figures out whether you're running a backtest or live trading and adjusts its calculations accordingly.
+This function helps you figure out how much you've spent on a specific trading pair, like BTC/USD. It looks at all your past transactions, even if you've closed parts of your position along the way – that’s useful if you’ve been buying a little bit at a time (dollar-cost averaging). The function smartly adapts to whether you’re running a test backtest or a live trading session, making it flexible for different scenarios. To use it, you just need to tell it which trading pair you’re interested in.
 
 ## Function getTimestamp
 
-This function provides a way to get the current timestamp within your trading strategy. 
+The `getTimestamp` function gives you the current time. 
 
-It's a handy tool because it adapts to the mode you're running in. When you're backtesting, it gives you the timestamp for the specific timeframe being analyzed. If you're running live, it gives you the actual, current time.
+It’s handy for knowing exactly when a calculation or trade is happening.
+
+If you're running a backtest, it will provide the timestamp associated with the historical data being analyzed. Otherwise, it gives you the actual, current time.
+
 
 ## Function getSymbol
 
-This function lets you find out what symbol you're currently trading within your backtest. It’s a simple way to retrieve the trading symbol, returning it as a promise that resolves to a string. Essentially, it tells you which asset you’re focused on for the backtest.
+This function simply retrieves the trading symbol currently being used within the backtest environment. It's like asking "what are we trading right now?" and it returns that information as a promise that resolves to a string representing the symbol. You can use this when you need to know which asset the backtest is currently focused on.
 
 ## Function getStrategySchema
 
-The `getStrategySchema` function lets you find information about a specific trading strategy that's been set up in your backtest-kit. It's like looking up the blueprint for how a strategy works. You simply provide the strategy's unique name, and the function will return a detailed schema describing its inputs, outputs, and overall structure. This helps you understand and potentially modify or debug strategies within your trading system.
+This function lets you access the blueprint, or schema, for a specific trading strategy that's been set up within the backtest-kit framework. Think of it as looking up the detailed definition of how a particular strategy operates. You provide the strategy's unique name, and it returns a structured object outlining all its components and how they’re expected to work – things like input parameters, data requirements, and execution logic. This is useful for understanding, validating, or programmatically manipulating strategies.
 
 
 ## Function getSizingSchema
 
-This function lets you access pre-defined strategies for determining how much of your assets to use for each trade. It’s like having a menu of sizing approaches, such as fixed fractional or keltner channels.
+This function helps you access pre-defined strategies for determining how much of your capital to allocate to each trade. Think of it as looking up a specific recipe for trade sizing. You provide a name that identifies the sizing strategy you want, and it returns the detailed configuration for that strategy. This configuration outlines how the strategy will calculate trade size based on factors like account balance and volatility.
 
-You give it a name – a specific identifier – and it returns the details of that sizing schema. This allows your backtesting environment to use established sizing rules without needing to hardcode them yourself. It’s a handy way to keep your backtesting logic organized and reusable.
 
 ## Function getScheduledSignal
 
-This function lets you check if a scheduled signal is currently running for a specific trading pair. It essentially tells you if a predetermined signal, designed to trigger trades at a certain time, is active right now. If no such signal is scheduled, it won't return anything – it'll be like the signal doesn't exist. The framework intelligently figures out whether you're in a backtesting environment or a live trading scenario, so you don't have to worry about configuring it differently. You just need to tell it which trading pair (like BTC/USDT) you’re interested in.
+This function allows you to retrieve the currently planned or active trading signal for a specific asset. Think of it as checking what the strategy is set to do next. 
+
+It's designed to work whether you're running a test backtest or a live trading session, automatically adjusting based on the environment.
+
+If there isn't a scheduled signal for the specified asset at the moment, it will simply return nothing (null).
+
+You just need to provide the trading pair's symbol to use this function and it will handle the rest.
 
 ## Function getRiskSchema
 
-This function helps you find the specific details of a risk you've defined within your backtesting system. Think of it like looking up a recipe – you give it the name of the risk (like "Volatility") and it gives you back the blueprint for how to calculate and manage it. It's how you access the structured information about how a particular risk is measured and controlled. You use the unique name you gave the risk to request its schema.
+This function lets you fetch details about a specific risk assessment type that's been set up in the system. Think of it as looking up the blueprint for how a certain type of risk is evaluated. You provide the name, or identifier, of the risk you're interested in, and the function returns a structured description outlining how that risk is measured and managed. It helps ensure consistent risk analysis across different scenarios.
+
 
 ## Function getRawCandles
 
-The `getRawCandles` function helps you retrieve historical candlestick data for a specific trading pair and timeframe. You can control how many candles you want to get, and you can also specify a start and end date for your request. 
+This function allows you to retrieve historical candle data for a specific trading pair and timeframe. You can control how many candles you get and the time period they cover. 
 
-It's designed to be flexible, allowing you to use different combinations of start date, end date, and candle limit. The function automatically handles date calculations and ensures the data fetched doesn't look into the future, preventing bias in your analysis.
+The function prioritizes accuracy and avoids looking into the future by respecting the current execution context.
 
-Here's how you can use the parameters:
+You can specify a start and end date along with a limit for the number of candles, or just a limit, in which case the function will automatically determine the time range. 
 
-*   You can provide a start date, end date, and a limit for the number of candles.
-*   Or just give a start date and end date, and the function will determine the number of candles needed.
-*   You can also specify an end date and limit, and the function will calculate the start date.
-*   If you only provide a limit, the function will fetch candles starting from a default point in the past.
+It's designed to be flexible, letting you fetch candles based on a starting date, an ending date, a limit on the number, or a combination of these. The end date must always be within a valid range.
 
-The `symbol` parameter identifies the trading pair (like BTCUSDT), and the `interval` defines the candlestick timeframe (options include 1-minute, 3-minute, hourly intervals, and more). The function returns an array of candlestick data.
+Here's a breakdown of what the parameters do:
+
+*   `symbol`: The trading pair you're interested in, like "BTCUSDT".
+*   `interval`: The time frame for each candle, such as "1m" for one-minute candles or "1h" for one-hour candles.
+*   `limit`:  How many candles you want to retrieve.
+*   `sDate`: The starting date for your data, given in milliseconds.
+*   `eDate`: The ending date for your data, given in milliseconds.
 
 ## Function getPositionPnlPercent
 
-This function helps you understand how profitable your open positions are right now. It calculates the percentage profit or loss on your current holdings, taking into account things like how you’ve entered positions (like dollar-cost averaging), any partial closes, and even factors in potential slippage and fees.
+This function helps you understand how your trading strategy is performing in real-time. It calculates the unrealized profit or loss as a percentage, taking into account factors like partial trades, dollar-cost averaging, slippage, and trading fees. 
 
-If you don't have any open positions currently being managed, it will return null.
-
-It smartly figures out whether it's running in a backtesting environment or a live trading scenario, and it also automatically gets the current market price to do the calculation. You just need to provide the symbol of the trading pair (like BTCUSDT).
+Essentially, it tells you how much money you've potentially gained or lost on your open positions, considering all the nuances of trading. If no trades are currently open, it will return null. The function intelligently adapts to whether you're running a backtest or live trading and automatically gets the current market price. You just need to provide the symbol of the trading pair, like "BTCUSDT".
 
 ## Function getPositionPnlCost
 
-This function helps you understand how much profit or loss you're currently holding on a trade. It calculates the unrealized profit or loss in dollars for a specific trading pair, considering factors like partial closes, the cost of your initial investment, and even potential slippage and fees. 
+This function helps you understand how much profit or loss you're currently holding on a trade. It calculates the unrealized profit or loss in dollars for a specific trading pair, based on the difference between your purchase price and the current market price. 
 
-Essentially, it tells you what your current position is worth compared to what you paid for it. 
+The calculation considers various factors like partial closes, dollar-cost averaging, slippage, and fees to provide a more accurate picture of your position. 
 
-If there's no active trade to calculate the PNL for, the function will return null. It handles automatically figuring out whether you're in a backtest or live trading environment, and it also retrieves the current market price for you. You just need to provide the symbol of the trading pair you are interested in.
+If you don't have an open position for that trading pair, it will return null. The function automatically determines if it's running in a backtest or live environment and retrieves the current market price for you. You simply need to provide the symbol of the trading pair you're interested in.
+
 
 ## Function getPositionPartials
 
-This function helps you understand how your trading strategy has already closed parts of its positions. It retrieves a list of partial profit and loss takes that have been triggered, giving you insight into the strategy's behavior.
+getPositionPartials helps you understand how your trading strategy has been closing out positions incrementally. It provides a list detailing each partial profit or loss event that has occurred for a specific trading symbol.
 
-If no trades are in progress, it won't return anything. If the strategy has already taken some partial profits or losses, you’ll get a list detailing each one.
+Think of it as a history of how much of your position has been closed, at what price, and what the cost basis was at that point.
 
-Each entry in the list will tell you whether it was a profit or loss take, the percentage of the position closed, the price at which it happened, the cost basis at that time, and the number of entries involved. You provide the symbol of the trading pair you're interested in to retrieve this information.
+If no signal is active, or if no partial closes have happened, it will return an empty list rather than nothing at all. This function uses the symbol you provide to track these partial events.
+
 
 ## Function getPositionPartialOverlap
 
-This function helps you avoid accidentally closing out parts of your positions multiple times at nearly the same price. It checks if the current market price is close enough to a previously executed partial closing price.
+This function helps prevent accidentally closing your position partially at the same price multiple times. It checks if the current market price falls within a small range around any previously established partial close prices.
 
-Essentially, it's designed to prevent redundant trades.
+Essentially, it’s a safety measure to avoid redundant trades.
 
-You provide the trading pair symbol and the current price, and optionally a configuration for the allowed tolerance range.
+You provide the trading symbol and the current price. Optionally, you can specify a custom tolerance range (a “ladder”) to define how close the current price needs to be to a previous partial close price before it's considered a potential duplicate. If no previous partial closes exist, it will return false.
 
-The function will return `true` if the current price falls within an acceptable range of a previously closed partial position, indicating a potential overlap. Otherwise, it returns `false`, meaning there's no need to execute another partial closing action. It only works if you've already executed some partial closes.
+## Function getPositionMaxDrawdownTimestamp
+
+This function helps you find out when a specific trading position experienced its biggest loss. It tells you the exact timestamp – a numerical representation of the date and time – marking the point where the position's value dipped the lowest.
+
+If there aren't any active trading signals related to that position, the function will return nothing.
+
+To use it, you need to provide the symbol of the trading pair (like 'BTCUSDT').
+
+## Function getPositionMaxDrawdownPrice
+
+getPositionMaxDrawdownPrice helps you understand the potential downside risk of a specific trading position. 
+
+It calculates and returns the lowest price your position experienced while it was open. 
+
+Essentially, it shows you how far "in the red" your position went at its worst point.
+
+If there's no active trading signal for the given symbol, the function will return null, indicating it can't calculate a drawdown. You provide the symbol, like "BTCUSDT", to specify which position's drawdown you want to know.
+
+
+## Function getPositionMaxDrawdownPnlPercentage
+
+This function lets you check the maximum drawdown expressed as a percentage of profit/loss for a specific trading symbol. It essentially tells you how far in the red your position went at its lowest point, relative to its profits.
+
+If there isn't an active signal for that symbol, the function will return null, meaning the data isn't available.
+
+You provide the trading symbol (like 'BTC-USDT') as input to get this drawdown percentage.
+
+## Function getPositionMaxDrawdownPnlCost
+
+This function helps you understand the financial impact of a trade’s most significant downturn. Specifically, it calculates the profit and loss (in the currency of the traded asset) at the exact point when the position experienced its lowest value. Think of it as pinpointing the cost incurred during the worst moment for that particular trade. 
+
+It only works if there’s an active trading signal for the specified asset. If not, it won't provide a result and will return null. You just need to provide the symbol, like "BTC-USDT", to get the data.
+
+
+## Function getPositionMaxDrawdownMinutes
+
+This function helps you understand how far back in time your position experienced its biggest loss. It tells you the number of minutes that have passed since the lowest point of your position's value. Think of it as a way to gauge how long ago things got really tough for your trade.
+
+The value will be zero if the lowest point just occurred. 
+
+If there’s no open trade currently, the function won’t have any data to work with and will return null.
+
+You’ll need to provide the trading pair symbol (like "BTCUSDT") to know which position's drawdown you're interested in.
+
 
 ## Function getPositionLevels
 
-`getPositionLevels` helps you see the prices at which your trades for a specific asset are set up.
+getPositionLevels allows you to retrieve the prices at which your position was built up through dollar-cost averaging (DCA). It gives you a history of the prices used for each buy order related to a specific trading pair.
 
-It returns an array of prices, showing your initial entry price and any subsequent prices added when using the commitAverageBuy function for a dollar-cost averaging strategy.
+If no trade is in progress, the function will return null. If a trade started but no additional DCA buys were made, you'll get an array containing only the original entry price. Otherwise, the array will list the original price and all subsequent prices used when committing to average your buy.
 
-If there's no active trade signal, it will return null. If you only made one trade, you'll get an array containing just your initial entry price. 
-
-The function requires you to specify the trading pair, like "BTCUSDT", to retrieve the relevant price levels.
+To use it, simply provide the trading pair symbol (like 'BTCUSDT') to see the relevant price levels.
 
 
 ## Function getPositionInvestedCount
 
-This function tells you how many times you've adjusted your initial investment for a particular trading pair. 
+getPositionInvestedCount helps you track how many times you've added to a position using a dollar-cost averaging (DCA) strategy. It tells you the number of DCA entries made for the current signal – a value of 1 means it’s the initial investment, and it increases each time you commit to a new average buy. If there isn't a pending signal, the function will return null. This function intelligently adapts to whether you’re in a backtest or a live trading environment. To use it, simply provide the trading pair symbol, like "BTCUSDT".
 
-It counts up each time you use `commitAverageBuy()` to incrementally add to your position.
-
-A value of 1 means you only have the initial investment; higher numbers indicate additional DCA steps. 
-
-If there's no active trading signal, it will return null. 
-
-The function figures out whether it's running in a backtest or a live trading environment automatically.
-
-You provide the trading pair's symbol to find this information.
 
 ## Function getPositionInvestedCost
 
-This function helps you figure out how much money you've invested in a particular trading pair. 
+This function helps you figure out how much money you’ve put into a particular trade. It calculates the total cost basis, in dollars, for the current pending signal. 
 
-It calculates the total cost basis, which is the sum of all the entry costs for a pending trade. Think of it as the total amount spent to get into the trade.
+Think of it as adding up all the costs associated with buying into the trade – specifically, the costs that were set when the trade was initially committed. 
 
-If there isn't a pending trade for that symbol, it will return null.
-
-The function knows whether it's running a backtest or live trading because it automatically detects the current environment. You just need to provide the symbol of the trading pair you're interested in.
-
+If there isn’t a pending signal currently, the function will return null. It automatically adapts to whether you’re running a backtest or a live trading session, so you don’t need to worry about that. To use it, you simply provide the symbol of the trading pair you're interested in, like "BTC-USDT".
 
 ## Function getPositionHighestProfitTimestamp
 
-This function helps you find out exactly when a trading position achieved its highest profit. 
-
-It looks back at the position's history and tells you the timestamp – essentially the date and time – when the price was most favorable for that trade.
-
-If there's no existing signal for the position, it won't be able to provide a timestamp and will return null.
-
-You need to give it the trading pair symbol, like 'BTCUSDT', to specify which position you’re interested in.
-
+This function helps you find out exactly when a specific trading position reached its highest profit point. It looks at a particular trading pair, like BTC/USDT, and tells you the timestamp – a precise date and time – when that position was at its most profitable. If there's no record of a potential trading signal for that symbol, the function will let you know by returning null. Essentially, it's a way to pinpoint moments of peak performance for your trades.
 
 ## Function getPositionHighestProfitPrice
 
-This function helps you find the highest price achieved while you were in profit during a trade. 
+This function helps you find the highest price achieved while you were in a profitable position. It starts by remembering the price you entered the trade at.
 
-It starts by remembering the price you bought or sold at. As the market moves, it constantly updates that highest price if a long position is tracking prices above the entry price or a short position is tracking prices below the entry price. 
+For long positions, it continuously updates to track the highest price seen above your entry price, essentially aiming for the take-profit level.  Short positions work similarly, but track the lowest price seen below your entry price.
 
-You provide the trading pair symbol to tell the function which trade to analyze. It will always give you a value, even if it's just the initial entry price, as long as a trade signal is active.
+The function returns this peak profit price and will always have a value because it’s initialized with the entry price when a position is opened. You give it the symbol of the trading pair you’re interested in to get the relevant data.
+
+
+## Function getPositionHighestProfitMinutes
+
+This function tells you how long ago a trading position reached its highest profit point. Think of it as measuring how far a position has fallen from its best performance. 
+
+It returns the number of minutes that have passed since that peak profit was achieved.
+
+The value will be zero if the function is called at the very moment the peak profit was recorded. 
+
+If there's no active trading signal for the specified symbol, the function will return null. You need to provide the symbol of the trading pair (like 'BTCUSDT') to use this function.
 
 ## Function getPositionHighestProfitBreakeven
 
-This function helps you figure out if a trade could have reached a point where it broke even, considering the highest profit it achieved. 
+This function checks if a trading position could have reached its breakeven point based on the highest profit achieved. It analyzes the trading data to determine if the highest price reached was high enough for the position to break even.
 
-It checks for a specific trade (symbol) and sees if, at the peak of its potential profit, it was mathematically possible to reach a break-even point.
+Essentially, it’s a way to validate the potential profitability of a trade.
 
-If there isn’t a trade currently being tracked, the function will let you know by returning null.
+If there's no active trading signal for a specific symbol, the function will return null, indicating there's nothing to evaluate.
 
-You'll need to provide the trading pair's symbol (like BTCUSDT) to check.
+You'll need to provide the trading pair symbol as input, for example "BTCUSDT".
+
 
 ## Function getPositionHighestPnlPercentage
 
-This function helps you understand how profitable a specific trade has been. It looks at a past trading position and tells you the highest percentage gain it achieved at any point during its lifespan. You give it the symbol of the trading pair, like 'BTCUSDT', and it returns a number representing that peak profit percentage. If there's no trading data available for that symbol, it won't return a value.
+This function helps you understand how well a specific trade performed. It looks at a trading position—like buying and selling Bitcoin—and tells you the highest percentage profit it ever achieved during its lifetime. Essentially, it shows you the peak of the trade's success. 
+
+If there's no trading signal associated with the position, the function will return null, meaning there's no data to analyze. You just need to provide the trading pair's symbol, like 'BTCUSDT', to get this information.
 
 ## Function getPositionHighestPnlCost
 
-This function lets you find out the highest cost incurred during a trading position’s life, specifically at the point where the best profit was achieved. It tells you how much it cost to reach that peak profit, expressed in the quote currency. If there's no signal to analyze for the given trading pair, the function won't return a value. You only need to provide the symbol of the trading pair you are interested in, such as "BTC-USDT".
+This function helps you understand the financial history of a specific trading pair. It tells you the total cost (in the quote currency, like USD or EUR) that was incurred when the position reached its highest profit point. 
+
+Think of it as finding out how much it initially cost to get to the peak profitability of a trade.
+
+If there's no trading signal associated with the position, the function will return null. 
+
+You'll need to provide the symbol of the trading pair you're interested in, such as "BTC-USD".
 
 ## Function getPositionEstimateMinutes
 
-getPositionEstimateMinutes helps you understand how long a trading position is expected to last. It tells you the estimated duration in minutes, based on the signal that triggered the trade.
+This function helps you understand how long a trading position might last. It calculates the estimated duration in minutes for a pending signal. 
 
-If there's no active signal currently, the function will return nothing. You'll need to provide the trading pair symbol (like BTC-USDT) to get the estimate. Essentially, it's a quick way to see the expected lifespan of a currently open position.
+Essentially, it tells you how long the system expects a trade to be open before it automatically closes due to a time limit.
 
+If there’s no pending signal, it will return null. 
+
+You provide the trading symbol (like BTCUSDT) to get the estimated duration for that specific pair.
 
 ## Function getPositionEntryOverlap
 
-getPositionEntryOverlap helps you avoid accidentally placing multiple DCA orders at roughly the same price. It checks if the current market price aligns with any of your existing DCA entry levels, considering a small tolerance range around each level. 
+This function helps ensure you don't accidentally create overlapping or duplicate DCA entries. It checks if the current price is close to a price level you’ve already set up for a Dollar-Cost Averaging (DCA) strategy. 
 
-Essentially, it prevents you from creating duplicate orders within a defined price zone.
+Essentially, it prevents you from buying the same price range multiple times.
 
-The function returns `true` if the current price falls within the acceptable range of a pre-existing DCA level, and `false` if no pending signals exist. You can also customize the tolerance range used for the check. The parameters include the trading pair symbol, the current price to examine, and an optional tolerance zone configuration.
+The function will return `true` if the current price falls within a small range around one of your existing DCA levels, meaning an overlap is detected. If there are no previously defined levels, it will return `false`. 
+
+You can adjust how close is considered "too close" using the `ladder` parameter, which lets you control the tolerance percentage.
 
 ## Function getPositionEntries
 
-getPositionEntries lets you peek at the history of how a trade was built, specifically the prices and costs of each step. It's useful for understanding a position's construction, especially if you're using Dollar Cost Averaging (DCA).
-
-The function returns a list of entries – each one representing a purchase in a trade, like the initial buy or a subsequent DCA step. 
-
-If there's no ongoing trade, it won’t return anything. If you only bought once without any DCA, you'll get a list containing just that single entry. 
-
-For each entry, you’ll see the price at which it was executed and how much money was used for that purchase. You simply provide the trading symbol (like BTC/USD) to get the information.
+This function lets you see the details of how a position was built, whether it was a single trade or a series of DCA (Dollar Cost Averaging) buys. It gives you a list of each price and the amount spent at each step of building up that position. If there's no active trade being built, it won't return anything. If the trade was just one initial purchase, it will return a list containing only that single entry. You provide the trading symbol (like "BTC/USD") to specify which position's history you're looking for.
 
 ## Function getPositionEffectivePrice
 
-This function helps you figure out the average entry price for your current trading position. It calculates a weighted average, considering any previous buys (DCA) and partial closes you might have made. 
+This function helps you understand the average price at which you've acquired a position for a specific trading pair. It calculates a weighted average, considering any previous partial closes and any subsequent DCA (Dollar-Cost Averaging) entries. If no open position exists, it will return null. The calculation uses a special method called a harmonic mean, which gives more weight to lower prices, providing a more accurate reflection of your overall cost basis. This function works seamlessly whether you’re running a backtest or a live trading strategy.
 
-Essentially, it gives you a more accurate picture of your cost basis than just the initial price. 
-
-If there's no active trade signal, the function will return null. It works seamlessly whether you’re running a backtest or a live trade.
-
-To use it, you simply provide the symbol of the trading pair you’re interested in.
+It takes the symbol of the trading pair as input, for example, "BTCUSDT".
 
 
 ## Function getPositionDrawdownMinutes
 
-This function tells you how long, in minutes, a trade has been losing value since it reached its highest profit point. 
+getPositionDrawdownMinutes tells you how much time has passed since your current trading position reached its best possible price. 
 
-Think of it as measuring how far a trade has fallen from its peak. 
+Think of it as a measure of how far your position has fallen from its highest point.
 
-The value starts at zero when the trade initially makes its highest profit, and then increases as the price moves downward.
+The number represents the minutes elapsed—it starts at zero when the position hits its peak profit and increases as the price declines.
 
-If there isn't an active trade, the function won't be able to calculate a drawdown and will return null.
+If there's no active signal for the specified trading pair, the function will return null. 
 
-You provide the trading pair symbol (like 'BTCUSDT') to see the drawdown for that specific trade.
-
+You’ll need to provide the symbol of the trading pair, such as 'BTCUSDT', to get this drawdown information.
 
 ## Function getPositionCountdownMinutes
 
-This function helps you figure out how much time is left before a trading position expires. It calculates the time remaining based on when the position was initially flagged and an estimated expiration time. 
+This function helps you figure out how much time is left before a trading position needs attention. 
 
-If the estimated time has already passed, the function will return zero, ensuring you never see a negative countdown.
+It calculates the countdown in minutes until a position's estimated expiration.
 
-If no pending signal exists for the specific trading symbol, the function will indicate this by returning null. You'll need to provide the symbol, like 'BTC-USDT', to get the countdown information.
+If a position isn't actively pending, the function will return null, indicating no countdown is currently in effect.
+
+You provide the trading symbol (like "BTCUSDT") to determine the countdown for that specific position. 
+
+The countdown will never be a negative number; it will always be zero or a positive value representing the remaining time.
 
 ## Function getPendingSignal
 
-This function helps you find out what signal your trading strategy is currently waiting on. 
-
-It looks for a pending signal, which is essentially an instruction to trade.
-
-If there’s no signal waiting, it will tell you by returning nothing. 
-
-You just need to tell it which trading pair you're interested in, like "BTCUSDT". It handles whether you’re in a backtesting environment or live trading automatically.
+This function lets you check if a trading strategy has an open, pending signal. It gives you details about that signal, if one exists, including information like its type and parameters. If no signal is pending, it will simply return nothing. You provide the trading pair symbol, like "BTCUSDT", to specify which asset you're checking for. It works whether you're running a backtest or a live trade without needing to specify which mode it is.
 
 
 ## Function getOrderBook
 
 This function lets you retrieve the order book for a specific trading pair, like BTCUSDT. 
 
-It gets the order book data from the exchange you're connected to. 
+It pulls data from the exchange you're using.
 
-The function takes the trading symbol as input, and optionally lets you specify how many levels of the order book you want to retrieve. If you don't specify a depth, it uses a default value. 
+You can optionally specify how many levels of the order book you want to see; if you don't provide a number, it defaults to a maximum depth.
 
-The timing of the request is handled automatically based on the current trading context, whether you're in a backtest or live trading environment. The exchange might use the timing information for backtesting purposes, or simply ignore it when trading live.
+The function accounts for timing, adjusting its behavior based on whether you're in a backtesting or live trading environment.
 
 
 ## Function getNextCandles
 
-This function lets you retrieve future candles for a specific trading pair and time interval. 
-
-Think of it as requesting a set of candles that come *after* the point in time the backtest is currently at.
-
-You provide the symbol like "BTCUSDT," the desired interval like "1h" (one hour), and how many candles you need. 
-
-It uses the underlying exchange's system to get these future candles.
+This function helps you retrieve future candles for a specific trading pair and time interval. It's designed to get candles that come *after* the current time in your backtest or trading environment, ensuring you're looking ahead rather than at historical data. You simply provide the symbol (like "BTCUSDT"), the candle interval (such as "1m" for one-minute candles), and the number of candles you want to retrieve.  The function then uses the underlying exchange's methods to find those future candles.
 
 
 ## Function getMode
 
-This function simply tells you whether the backtest-kit is currently running in backtest mode or live mode. It's like checking if you're practicing with historical data or actually trading. The function returns a promise that resolves to either "backtest" or "live", so you can use this information to adjust your strategies accordingly.
+This function tells you whether the trading framework is currently running in backtest mode or live mode. It returns a promise that resolves to either "backtest" or "live," allowing your code to adapt its behavior based on the environment it's operating in. This is useful for things like displaying different user interfaces or using different data sources.
 
 ## Function getFrameSchema
 
-This function lets you find out the structure and expected data types for a specific frame used in your backtest. Think of it as looking up the blueprint for how a particular piece of information is organized within your trading simulation. You provide the name of the frame, and it returns a detailed description of what that frame contains. This is useful for understanding the data you’re working with and ensuring everything is set up correctly.
+The `getFrameSchema` function helps you find the blueprint for a specific data frame within your backtest setup. Think of it like looking up the definition of a particular type of data – it gives you the structure and expected contents. You provide the name of the frame you're interested in, and the function returns a detailed description of what that frame should look like, including the types of data it holds. This is useful for validating your data or understanding the expected format for a particular part of your trading strategy.
 
 ## Function getExchangeSchema
 
-The `getExchangeSchema` function helps you access information about specific exchanges supported by the backtest-kit framework. You provide the name of the exchange you're interested in, and it returns a detailed schema describing things like its data format, supported order types, and other exchange-specific characteristics. This schema allows your backtesting strategies to understand and interact correctly with the chosen exchange. Think of it as looking up the blueprint for how a particular exchange works within the backtest-kit system.
+This function helps you get the specific details and structure for a particular cryptocurrency exchange that backtest-kit knows about. Think of it as looking up the blueprint for how a certain exchange works within the testing environment. You provide the name of the exchange you’re interested in, and it returns a description of how that exchange is modeled, outlining things like the available markets and data formats it expects. It’s a useful way to understand the technical requirements for using a particular exchange in your backtesting scenarios.
 
 
 ## Function getDefaultConfig
 
-This function provides you with a set of default settings used by the backtest-kit framework. Think of it as a template – it shows you all the configurable options and what their initial values are. It’s helpful if you want to understand the framework’s behavior out of the box or if you're building your own custom configuration. You can look at this default configuration as a starting point for your own tailored setups.
+This function provides a set of predefined settings used by the backtest-kit trading framework. Think of it as a starting point for your own configurations – it gives you a clear picture of all the available options and their initial values. You can use these default values as a guide when customizing the framework to fit your specific trading strategies and needs. It's a handy way to understand what's possible and how the system is set up out of the box.
 
 ## Function getDefaultColumns
 
-This function provides a set of predefined column configurations used for generating reports. It essentially gives you a blueprint of what columns are typically used and how they're structured when building trading reports. Think of it as a quick way to see the default options for displaying data in your backtest results, performance metrics, risk assessments, and more. It's useful for understanding what's available and potentially customizing your own column setups.
+This function gives you a peek at the standard column setup used when creating markdown reports. It provides a pre-configured object outlining all the columns that are typically included, like those for strategy performance, risk metrics, and event details. Think of it as a template—you can examine it to understand the structure and available options for customizing your reports before you actually build them. The returned object is read-only, so it can't be modified directly.
 
 ## Function getDate
 
-This function, `getDate()`, gives you the current date based on where your trading logic is running. If you're running a backtest, it will return the date associated with the timeframe you're analyzing. If you're running in a live trading environment, it returns the actual, real-time date. It's a simple way to know what date you’re working with.
+This function allows you to retrieve the current date within your trading strategy. 
+
+It's context-aware, meaning the date it provides depends on whether you're running a backtest or live trading. 
+
+During a backtest, it will give you the date associated with the timeframe you're analyzing.  When you're trading live, it returns the actual current date.
+
 
 ## Function getContext
 
-This function gives you access to the details of the current method being run within the backtest. Think of it as a way to peek behind the scenes and understand the environment the code is operating in – things like the current time step or any specific data available at that point. It returns an object filled with relevant information about the method's execution.
+This function provides a way to access the surrounding environment of your trading logic. Think of it as a peek behind the curtain – it gives you information about where and how your code is running within the backtest-kit framework. The result is a special object holding details about the current method's execution.
 
 ## Function getConfig
 
-This function lets you peek at the configuration settings being used by the backtest-kit. It gives you a snapshot of all the important settings, like how often things are checked, limits on data requests, and various parameters controlling trading behavior. It's a read-only view – any changes you make won't actually affect the running backtest, ensuring the configuration remains stable. Think of it as a way to understand exactly how the backtest is set up without the risk of making unwanted adjustments.
+This function provides access to the core settings that control how backtest-kit operates. It gathers various parameters influencing things like data fetching, signal generation, order management, and reporting. Think of it as a snapshot of the framework's internal rules and limits. This snapshot is a copy, so any changes you make won't affect the actual running configuration. It's useful for understanding the framework’s behavior or for checking what values are currently in effect.
 
 ## Function getColumns
 
-This function lets you see what columns are being used to generate your backtest reports. It provides a snapshot of the current column configuration, which includes things like columns for strategy results, risk metrics, and performance data. Think of it as a way to peek at how your report is structured without changing anything. Because it returns a copy, you can examine the column definitions safely without risk of affecting the actual configuration.
+This function provides access to the column configurations used for generating reports within the backtest-kit framework. It essentially gives you a snapshot of how your data will be displayed in reports, covering areas like closed trades, heatmap data, live ticks, partial fills, breakeven events, performance metrics, risk events, scheduled tasks, strategy events, synchronization events, maximum profit, maximum drawdown, walker profit and loss, and strategy results. This is useful if you want to understand how your data is being structured and presented, or if you need to examine the column definitions themselves. Importantly, it provides a copy, so changes you make won’t affect the core configuration.
 
 ## Function getCandles
 
-This function retrieves historical price data, presented as candles, from a connected exchange. 
-
-You can use it to grab data for a specific trading pair, like BTCUSDT, and for a defined time interval, such as 5-minute candles. 
-
-It allows you to request a certain number of candles, letting you control how much historical data you pull. The data is retrieved starting from the current time and going backward.
-
+This function helps you get historical trade data from a trading exchange. You tell it which trading pair (like BTCUSDT) you're interested in and how many trades back you want to see. The function then pulls that trade history from the exchange and provides it to you in an organized way. Essentially, it’s like requesting a log of all the transactions that occurred for a specific asset over a certain time.
 
 ## Function getBreakeven
 
-This function helps you determine if a trade has become profitable enough to cover transaction fees and slippage. It takes the trading symbol and the current price as input. Essentially, it checks if the price has moved sufficiently in a positive direction to offset the costs associated with the trade. The calculation considers a built-in threshold based on predefined percentages for slippage and fees, making it easy to assess the trade's profitability. The function intelligently adapts to whether you're running a backtest or a live trade.
+This function helps determine if a trade has become profitable enough to cover its costs. It examines the current price of a trading pair and compares it to a calculated threshold, which accounts for potential slippage and trading fees. Essentially, it tells you if the price has moved sufficiently in a positive direction to break even on the initial investment. The function automatically adapts to whether it’s being used in a backtesting simulation or a live trading environment.
+
+You provide the trading pair's symbol and the current price as input. It will then return `true` if the price has exceeded the breakeven point, and `false` otherwise.
 
 
 ## Function getBacktestTimeframe
 
-This function helps you find out the dates and times available for backtesting a specific trading pair, like BTCUSDT. It fetches the timeframe data for a given symbol, returning an array of dates that represent the period for which historical data is available. Essentially, it tells you what time range you can use to test your trading strategies. You provide the symbol of the trading pair you're interested in, and it returns a list of dates.
+This function helps you find out the dates that your backtest is using for a specific trading pair, like BTCUSDT. It returns a list of dates that define the timeframe for the backtest of that symbol. You simply provide the symbol of the trading pair you’re interested in, and it will give you the dates used in the backtest. This is useful for understanding the scope and period covered by your backtest results.
+
 
 ## Function getAveragePrice
 
-This function, `getAveragePrice`, helps you figure out the average price of a trading pair like BTCUSDT. It calculates this using a method called VWAP, which considers both the price and how much of the asset was traded. It looks at the most recent five minutes of trading data, specifically the high, low, and closing prices, along with the volume traded at each point.
+This function helps you find the VWAP, or Volume Weighted Average Price, for a specific trading pair. It looks at the last five minutes of trading data, considering both the price and the volume of each trade.
 
-If there wasn't any trading activity during that period, it will simply calculate the average of the closing prices instead. You just need to tell it which symbol you are interested in, such as "BTCUSDT".
+Essentially, it calculates a price that reflects how much trading activity has occurred at different price points. If there's no trading volume data available, it falls back to calculating a simple average of the closing prices instead.
+
+To use it, just provide the symbol for the trading pair you're interested in, like "BTCUSDT". The function then returns a promise that resolves to the calculated average price.
 
 ## Function getAggregatedTrades
 
-This function retrieves a list of aggregated trades for a specific trading pair, like BTCUSDT. It pulls this data from the exchange your backtest kit is connected to.
+This function retrieves a list of aggregated trades for a specific trading pair, like BTCUSDT. It pulls this data directly from the exchange you're connected to. 
 
-You can request a limited number of trades with the 'limit' parameter, or if you don't specify a limit, it will fetch trades within a defined time window. The trades are pulled in reverse chronological order, starting from the current time the backtest is using.
+If you don't specify a limit, it will gather trades from within the last window of time. 
 
+If you *do* provide a limit, the function will fetch enough trades to meet that number, moving backwards in time to get them. This is useful if you only need a certain number of trades for analysis or calculations.
 
 ## Function getActionSchema
 
-This function lets you look up the details of a specific action within your backtesting setup. Think of it as a way to understand exactly what a particular action—like placing an order or calculating a signal—is supposed to do, including the expected inputs and outputs. You provide the name of the action, and it returns a structured description outlining its behavior. This is helpful for validating your actions or understanding how different components interact.
+This function helps you find the details about a specific action your trading strategy uses. Think of it as looking up the blueprint for how that action should be executed. You give it the action's name, and it returns a description of what that action involves, including the data it requires. It's like checking the specifications to make sure everything is set up correctly.
 
 
 ## Function formatQuantity
 
-This function helps you display the correct amount of a cryptocurrency or asset when placing orders. It takes a trading pair like "BTCUSDT" and a number representing the quantity you want to trade. It then automatically adjusts the number of decimal places based on the specific rules of the exchange you're using, ensuring your order looks correct and is accepted. Essentially, it handles the sometimes tricky details of formatting quantities for trading.
+This function helps you display the correct quantity of a trading pair, making sure the number of decimal places aligns with the specific exchange's requirements. It takes the trading pair symbol, like "BTCUSDT," and the numerical quantity you want to display. The function then handles the details of formatting that quantity correctly, so you don't have to worry about manually calculating the right number of decimals. Think of it as a convenient way to present quantities consistently with how the exchange itself would display them.
 
 
 ## Function formatPrice
 
-This function helps you display prices correctly for different trading pairs. It takes a trading symbol, like "BTCUSDT", and a price value, then formats the price to match the specific rules of that exchange. This ensures the price is displayed with the right number of decimal places, which is crucial for accurate and user-friendly trading interfaces. Basically, it handles the complexities of how different exchanges represent prices for you.
+This function helps you display prices correctly for different trading pairs. It takes a symbol like "BTCUSDT" and a raw price number, then formats the price to match the specific rules of the exchange. This ensures the displayed price has the right number of decimal places, which is important for clarity and accuracy when presenting trading data. Essentially, it takes care of the formatting details so you don't have to.
+
 
 ## Function dumpText
 
-The `dumpText` function lets you write raw text data, like logs or specific reports, associating them with a particular trading signal. It automatically knows which signal to link the data to, pulling that information from the currently active signal.  If there isn't an active signal at the time, it will notify you with a warning, and won't proceed with saving the data. You provide a structured object with details like the bucket name, a unique dump identifier, the actual text content, and a short description. This function is useful for saving temporary information related to a specific signal.
+The `dumpText` function allows you to save textual data related to a specific trading signal. Think of it as a way to record observations or insights connected to a particular signal’s activity. 
+
+It automatically figures out which signal it's associated with, so you don't need to provide that information directly. 
+
+If there isn't an active signal available, it will notify you, but won't save the data. You provide the data itself—what you want to save—along with a descriptive name (`dumpId`) and an explanation of what the text represents (`description`). This helps keep things organized and understandable later on.
 
 
 ## Function dumpTable
 
-This function helps you display data in a clear, organized table format. It’s designed to work with data already grouped into a "bucket" and associated with a specific signal. 
+This function helps you display data in a structured table format, specifically tied to a signal being tracked. 
 
-It automatically figures out the column headers by looking at all the keys used in your data. 
+It takes an array of objects, each representing a row in your table, and presents them neatly. 
 
-If a signal isn't active, it will let you know with a warning instead of trying to display anything. Essentially, it's a handy way to visualize data within the backtest-kit framework.
-
+The function automatically figures out the column names by looking at all the keys used in your data. It also intelligently pulls the signal identifier from the current process, so you don't have to specify it directly. If there’s no signal being tracked, it will let you know with a warning instead of proceeding.
 
 ## Function dumpRecord
 
-The `dumpRecord` function helps you save a simplified view of your trading data, like a snapshot of specific information, to a storage location. Think of it as recording a particular event with associated details. It automatically figures out which trading signal it relates to, pulling the signal identifier from the current context. If no signal is active, it will let you know and won't proceed with saving the record. You provide a name for the storage bucket, a unique ID for the dump, the data you want to save as a flat key-value structure, and a description explaining what the data represents.
+The `dumpRecord` function lets you save a piece of data – think of it as a record of information – associated with a specific trading signal. It's designed to help you keep track of details related to a particular signal's activity.
 
+It automatically figures out which signal it belongs to, so you don't have to specify that directly. If no signal is currently active, it'll just let you know with a warning and won't save anything.
+
+You provide a record, which is essentially a collection of key-value pairs, and a descriptive message about what that record represents. This function helps organize and preserve important data points linked to your trading signals.
 
 ## Function dumpJson
 
-The `dumpJson` function helps you save complex data structures as JSON formatted text, specifically linking them to a particular trading signal. Think of it as a way to record detailed information about a decision or action within your backtesting process.
+The `dumpJson` function lets you save complex data structures as formatted JSON within your backtest. It automatically associates this JSON data with the current trading signal. 
 
-It takes a set of details—including a bucket name, a unique identifier for the dump, the JSON data itself, and a descriptive message—to create this record. The function automatically figures out which trading signal this data relates to.
+If a signal isn't actively being processed, it will notify you but won't proceed with saving the data. 
 
-If there isn’t an active signal to associate with, it will let you know by logging a warning instead of proceeding. This ensures your data is always connected to the right context.
+You'll provide a name for the data (bucketName), a unique identifier (dumpId), the actual data as a JavaScript object, and a description to explain what the JSON represents. The function then takes care of the rest, ensuring the JSON is stored correctly linked to the signal.
 
 
 ## Function dumpError
 
-The `dumpError` function is a tool to help you report and track errors that happen during your backtesting process. It takes information about the error – like a bucket name, a unique ID for the error, the error message itself, and a more detailed description – and sends it somewhere for later review. Importantly, it automatically links the error to the specific trading signal that was active when it occurred. If there isn't an active signal at the time, it will just let you know with a warning.
+The `dumpError` function helps you record and track errors related to specific trading signals. It sends an error description, along with a bucket and dump ID, to a storage location. 
+
+It automatically figures out the signal it’s connected to, so you don't have to manually specify it. If there isn't a signal currently being processed, it will let you know with a warning instead of trying to save the error information. Essentially, this provides a way to systematically log and understand errors that happen during your backtesting or live trading.
 
 
 ## Function dumpAgentAnswer
 
-This function helps you save a complete record of an agent's conversation, including all the messages exchanged. It automatically links this record to the currently active trading signal, so you can easily track the agent's behavior in a specific scenario. If there isn't an active trading signal, it will let you know with a warning but won't save the data. 
+This function helps you save a complete record of an agent's conversation. It takes all the messages exchanged, along with a description, and stores them with a unique identifier.
 
-You provide the function with information like the bucket name, a unique ID for the dump, the list of messages in the conversation, and a brief description to explain what the dump represents. This is really useful for debugging, auditing, or just generally understanding how your agents are performing.
+Essentially, it's like creating a snapshot of a conversation within the backtest-kit system.
+
+The function automatically figures out which signal the conversation belongs to, so you don't have to specify it directly. If no signal is active, it'll let you know with a warning but won’t save anything.
+
+You provide the function with a data object containing the bucket name, the dump ID, the messages themselves, and a brief explanation of what the dump represents.
 
 
 ## Function commitTrailingTakeCost
 
-This function lets you set a specific take-profit price for a trade. It's designed to simplify adjusting your take-profit level, automatically calculating the percentage change needed based on your initial take-profit distance. The system handles knowing whether it's running a backtest or a live trading session and gets the current market price to ensure accurate calculations. You just need to provide the trading pair and the desired take-profit price.
+This function helps you update the trailing take-profit price to a specific level. It's a shortcut for setting the take-profit, calculating the necessary percentage shift from the original take-profit distance. The system figures out whether it's running in a backtest or live environment, and it automatically determines the current market price to make the calculation. You simply provide the trading pair symbol and the new, desired take-profit price.
 
 ## Function commitTrailingTake
 
-This function lets you fine-tune the trailing take-profit distance for your trades. It's designed to work with pending signals and updates the take-profit based on a percentage shift from the initial take-profit level you set.
+The `commitTrailingTake` function lets you dynamically adjust your take-profit levels for open trades. It's specifically designed to handle trailing take-profits, which automatically move the take-profit point as the price moves favorably.
 
-It’s really important to understand that this adjustment always works from the original take-profit distance, not the current, potentially adjusted one. This prevents small errors from building up if you call this function multiple times.
+It's really important to remember that this function always bases its calculations on the *original* take-profit distance you set initially, not any adjustments made along the way. This keeps things accurate and prevents errors from building up over time.
 
-The function prioritizes being conservative – if you try to set a take-profit that's further away, it will only accept it if it brings the take-profit closer to the entry price. Think of it like this: for long positions, it will only lower the take-profit; for short positions, it will only raise it.
+If you’re making multiple adjustments, the function prioritizes more conservative take-profit distances, meaning it only updates the take-profit if the new setting is closer to your entry price. For long positions, that means the take-profit can only move closer to your entry. For short positions, the take-profit can only move further away. 
 
-It handles whether it's running in a backtest or live environment automatically, so you don't have to worry about that.
+You control the adjustment size using the `percentShift` parameter, which ranges from -100 to 100.
 
-You’ll provide the symbol being traded, the percentage adjustment you want to make, and the current market price to consider.
-
+The function automatically adapts to whether it's running in a backtesting or live trading environment. It takes the trading pair symbol, percentage adjustment, and current price as inputs.
 
 ## Function commitTrailingStopCost
 
-This function lets you update the trailing stop-loss order for a specific trading pair to a fixed price. It simplifies the process by automatically calculating the correct percentage shift needed from the original stop-loss distance, meaning you don't need to do those calculations yourself. It also handles whether you're running a backtest or live trading and retrieves the current price to ensure the adjustment is accurate. 
-
-You just need to provide the symbol of the trading pair and the price you want the new stop-loss to be set at. The function will then take care of the rest, updating the trailing stop-loss appropriately.
+This function lets you change the trailing stop-loss price for a specific trading pair to a fixed amount. It's a simpler way to adjust the stop-loss than manually calculating the percentage shift, as it handles the details of converting the absolute price to the correct percentage. The function figures out whether it's being used in a backtest or a live trading environment, and it also automatically retrieves the current price to make the calculation accurate. You just need to provide the symbol of the trading pair and the desired new stop-loss price. 
 
 
 ## Function commitTrailingStop
 
-This function lets you fine-tune the trailing stop-loss for a pending trade.
+The `commitTrailingStop` function lets you fine-tune the distance of your trailing stop-loss order. Think of it as a way to dynamically adjust how far your stop-loss is from your entry price, but with a crucial rule: it always calculates changes based on the *original* stop-loss distance you set initially.
 
-It's designed to keep your stop-loss evolving as the price moves, protecting your profits. The key thing to remember is that it always calculates adjustments based on the *original* stop-loss distance you set, not the current trailing stop-loss value. This avoids small errors from building up over time.
+This is important because it avoids small errors from adding up over time, which could lead to unexpected behavior. 
 
-If you provide a smaller percentage shift, it's always adopted. Negative shifts tighten your stop-loss (moving it closer to the entry price), while positive shifts loosen it (moving it farther away).
+If you want to tighten your stop-loss (move it closer to your entry), you use a negative percentage shift. To widen it (give it more breathing room), use a positive percentage shift.
 
-For long positions, the stop-loss can only move upwards. For short positions, it can only move downwards. The function intelligently determines whether you’re running a backtest or a live trade based on the context it’s running in.
+Keep in mind, if you adjust the stop-loss, the system only makes changes if the new stop-loss distance actually provides better protection - it won't move your stop-loss in a direction that would decrease your potential profit. For long positions, your stop-loss can only move further away from the entry price, and for short positions, it can only move closer.
 
-You'll need to provide the trading pair symbol, the percentage adjustment you want to make to the original stop-loss, and the current market price.
+The function handles whether you're in a backtest or live trading environment automatically.
+
+You provide the symbol of the trading pair, the percentage adjustment you want to apply, and the current market price to evaluate the new stop-loss distance.
+
 
 ## Function commitPartialProfitCost
 
-This function lets you close a portion of your trading position when you’ve made a profit, based on a specific dollar amount. It's a shortcut – you tell it how many dollars you want to recover, and it figures out what percentage of your original investment that represents. 
+This function helps you automatically close a portion of your trade when it's profitable. You specify the dollar amount you want to recover as profit, and the system handles the rest, calculating the necessary percentage of your position to close. 
 
-Essentially, it helps you gradually secure profits as your trade moves in a favorable direction, working towards your take profit target. The function handles details like determining the current price and adapting to whether you're in a backtesting or live trading environment, so you don't have to worry about those.
+It's designed to work seamlessly whether you’re backtesting or live trading, and it automatically gets the current price to determine the correct execution. Think of it as a shortcut for taking profits incrementally.
 
-You provide the trading symbol and the dollar amount you want to close, and the function takes care of the rest.
+To use it, you'll need to provide the trading pair symbol and the desired dollar amount to close. Remember, the price has to be moving in a favorable direction toward your take profit target.
 
 
 ## Function commitPartialProfit
 
-This function lets you automatically close a portion of your open trades when they're moving toward your target profit. It’s designed to help you lock in some gains as your trade progresses favorably.
+The `commitPartialProfit` function lets you automatically close a portion of your open trade when the price moves favorably towards your take profit target. It allows you to secure some profits along the way.
 
-You specify the trading symbol and the percentage of the trade you want to close, for example, closing 25% of the position. The function ensures the price is heading in the direction of your take profit before executing the partial close. 
+You specify the trading symbol and the percentage of the position you want to close, like 25% or 50%.
 
-It intelligently handles whether it's running in a testing environment (backtest) or a live trading situation.
+The function handles whether it's running in a backtesting simulation or a live trading environment, so you don't have to worry about that. 
 
 
 ## Function commitPartialLossCost
 
-This function helps you automatically close a portion of your trading position when it's experiencing a loss. It lets you specify the exact dollar amount you want to reduce the position by, and the system will figure out what percentage of your investment that represents. Essentially, it's a shortcut to manage losses while aiming toward your stop-loss price. 
-
-The function handles the details, figuring out the current price and adapting to whether you're in a backtesting or live trading environment. To use it, just provide the symbol of the trading pair and the dollar amount you want to reduce the position by.
+This function helps you partially close your trading position when the price is moving in a direction that would trigger your stop-loss. It simplifies the process by allowing you to specify the dollar amount you want to close, and it automatically calculates the percentage of your position that represents. It handles the technical details of figuring out whether you're in a backtest or live trading environment and also retrieves the current price to make the calculation accurate. You provide the symbol of the trading pair and the dollar amount you want to close, and the function takes care of the rest.
 
 
 ## Function commitPartialLoss
 
-The `commitPartialLoss` function lets you automatically close a portion of your open trade when the price is moving against you, essentially heading toward your stop-loss level. It's designed to help manage risk by reducing your exposure. 
+This function lets you automatically close a portion of an open trade when the price is trending in a way that approaches your stop-loss level. 
 
-You specify the symbol of the trading pair and the percentage of your position you want to close. This function intelligently handles whether it's running in a backtesting environment or a live trading scenario. It's a straightforward way to react to unfavorable price movement and limit potential losses.
+Essentially, it's a way to reduce your risk by partially exiting a position when things aren't going your way.
+
+You specify the trading symbol and the percentage of the trade you want to close, and the function handles whether it's running in a backtesting environment or a live trading scenario.
+
+It's important to remember that this function only works when the price is moving in the direction of your stop-loss, meaning it's triggering a response to potential losses.
 
 
 ## Function commitClosePending
 
-This function allows you to manually close a pending order without interrupting your trading strategy. It essentially clears an existing signal, effectively cancelling a pending trade. Think of it as a way to quickly adjust your position without halting the strategy's operation or preventing it from generating new signals. You can optionally provide a close ID to help track these user-initiated closures. The framework automatically knows whether it's running a backtest or a live trading session.
-
+This function lets you manually close an existing pending order within your trading strategy, without interrupting the strategy's normal operation. It's useful when you need to intervene and close a position that's already in the process of being executed. Think of it as a way to manually cancel a pending order. It won't affect any future signals the strategy generates, or any signals already scheduled. You can optionally provide a close ID to help track the reason for the closure, especially helpful when moving between backtesting and live trading. The framework automatically recognizes whether you're in a backtest or a live trading environment.
 
 ## Function commitCancelScheduled
 
-This function lets you cancel a previously scheduled trading signal without interrupting the overall strategy. Think of it as a way to retract a pending order – it removes the signal waiting for a specific price to trigger, but the strategy itself keeps running and can still produce new signals. It's specifically designed to not affect any existing orders or stop the strategy from generating further signals, and it works the same way whether you're in a backtest or live trading environment. You can optionally provide a cancellation ID to keep track of when and why you canceled the signal.
+This function lets you cancel a previously scheduled trading signal without interrupting your overall strategy. Think of it as a way to retract a planned action.
+
+It specifically targets signals that are waiting for a price to trigger them – it won't affect any signals already in action or prevent the strategy from generating new signals.
+
+You can optionally provide a cancellation ID to help you keep track of cancellations, especially useful if you're managing many scheduled signals. The framework automatically adjusts its behavior based on whether it's running a backtest or a live trade.
 
 ## Function commitBreakeven
 
-This function helps you manage your trading risk by automatically adjusting your stop-loss order. 
-
-Essentially, it moves your stop-loss to your entry price – meaning you're no longer at risk of losing more than you initially invested – once the price has moved favorably enough to cover your trading fees and a small buffer.
-
-It works seamlessly whether you're backtesting a strategy or trading live and handles fetching the current price for you. You just need to tell it which trading pair you're working with.
+This function helps manage your trades by automatically adjusting the stop-loss order. It moves the stop-loss to the original entry price once the trade has reached a certain profit level, essentially eliminating risk. This level is calculated to account for potential slippage and trading fees, ensuring the move happens only when the profit is truly secured. The function handles whether it's running in a backtest or live environment and gets the current price for you, simplifying the process. You just need to specify the trading pair symbol for the trade you want to manage.
 
 ## Function commitAverageBuy
 
-The `commitAverageBuy` function helps you build dollar-cost averaging (DCA) strategies. It lets you add new purchase orders to your position's history, essentially spreading out your investments over time. Each purchase is recorded at the current market price, and the average price you've paid for the asset is automatically updated. You'll also get a notification confirming the new purchase has been added. The function automatically handles whether it's running in a backtest or a live trading environment and gets the current price for you. You just need to specify the trading pair's symbol, and optionally, a cost value.
+The `commitAverageBuy` function lets you add a new purchase to your dollar-cost averaging (DCA) strategy. It essentially records a buy order at the current market price and adds it to the history of your position. The function automatically calculates and updates the average purchase price for the position, helping you track your overall cost. It also sends out a signal indicating a new average buy has been committed, so other parts of your system can react. You only need to provide the trading symbol; the function takes care of getting the price and handling whether you're in a backtest or live trading environment. You can optionally specify a cost value, although its purpose isn't explicitly described.
 
 ## Function commitActivateScheduled
 
-This function lets you trigger a previously scheduled signal before the price hits the expected open price. 
+This function lets you trigger a pre-planned trading signal before the expected price. 
 
-Essentially, you're telling the system to activate that signal right now.
+Think of it as a way to manually say "okay, execute this order now" instead of waiting for a specific price point.
 
-It’s useful when you need to manually force an activation, perhaps due to external factors.
+It's useful when you want to adjust your strategy based on external information or just react faster than the standard logic.
 
-The function handles whether you’re in a backtest or a live trading environment automatically.
+You specify which trading pair you're working with, and optionally include an activation ID to keep track of when you manually triggered the signal. The system automatically handles whether it’s running a backtest or a live trade.
 
-You can optionally provide an activation ID to help track why you manually activated the signal. The symbol is required to identify which trading pair the signal is associated with.
 
 ## Function checkCandles
 
-The `checkCandles` function helps ensure your historical candle data is properly aligned with the intended time intervals. It performs a check on the timestamps of your candles, ensuring they are consistent and accurate. This function accesses the stored candle data directly from the persistent storage, bypassing any intermediate layers. Essentially, it's a way to verify the integrity of your historical price data for backtesting purposes. You’ll provide parameters to specify how the validation should be performed.
+The `checkCandles` function ensures your historical candle data is properly aligned with the expected time intervals. It's a utility for verifying the integrity of your data, directly accessing files stored for persistence. If your trading strategy relies on specific timeframes, this function helps guarantee those intervals are consistent, preventing unexpected behavior in your backtests. Think of it as a health check for your historical data.
+
 
 ## Function addWalkerSchema
 
-This function lets you add a new "walker" to your backtesting system. Think of a walker as a way to run and compare different trading strategies against the same historical data. It's like setting up a competition between your strategies, using a consistent yardstick to measure how well each one performs.
-
-You provide a configuration object, which defines how that walker should operate. This defines the specifics of how the backtests will be executed and the performance will be assessed.
+The `addWalkerSchema` function lets you register a "walker," which is a way to compare the performance of different trading strategies against each other using the same historical data. Think of it as setting up a structured experiment where you're testing multiple strategies and then looking at how they stack up based on a chosen performance measurement. You provide a configuration object, the `walkerSchema`, to define how the walker should run its comparisons.
 
 ## Function addStrategySchema
 
-This function lets you tell the backtest-kit about a new trading strategy you've built. Think of it as registering your strategy so the system knows how to use it. When you register a strategy, the framework will automatically check to make sure it's set up correctly – things like verifying the price data, making sure take profit and stop loss orders make sense, and handling potential signal timing issues.  It also helps prevent signals from being sent too frequently and ensures that your strategy's data is saved safely even if something unexpected happens during live trading. You provide a configuration object describing your strategy, and that's all it takes to get it running within the backtest-kit.
+This function lets you tell the backtest-kit about a new trading strategy you've built. Think of it as registering your strategy so the framework knows how to use it.
+
+When you register a strategy, the framework checks to make sure it's set up correctly, including verifying the signals it produces and preventing it from sending signals too frequently. 
+
+It also ensures that your strategy’s data can be safely saved even if something unexpected happens during a live trade.
+
+You provide a configuration object describing your strategy’s rules and logic.
 
 ## Function addSizingSchema
 
-This function lets you tell the backtest kit how to determine the size of your trades. It’s about defining rules for how much capital you'll allocate to each trade based on factors like risk tolerance and volatility. You’ll provide a sizing schema—essentially a blueprint—that outlines the method for calculating position sizes, the risk parameters involved, and any limits you want to place on those sizes. This schema can use methods like fixed percentages, Kelly criterion, or ATR-based calculations, allowing for various trading styles and risk management approaches.
+This function lets you tell the backtest-kit framework how to determine the size of your trades. Think of it as registering a plan for how much capital you want to allocate to each trade.
+
+You provide a sizing configuration, which details things like your risk tolerance, the method you'll use to calculate position size (like a percentage of your capital, or a more sophisticated Kelly criterion), and any limits on how large a position you want to take. 
+
+Essentially, it’s how you instruct the backtest-kit on how to manage risk and determine position sizes during a backtest.
+
 
 ## Function addRiskSchema
 
-This function lets you set up how your trading strategies manage risk. 
+This function lets you define how your trading strategies will manage risk. Think of it as setting up the rules of engagement to prevent overexposure and ensure stability. 
 
-Think of it as defining limits and rules to prevent overexposure and ensure stability. 
+You can specify limits on the total number of positions your strategies can hold simultaneously. 
 
-You can specify things like the maximum number of trades allowed at once, implement your own custom checks for portfolio health, and even define actions to take when a trade is flagged as too risky. 
+It also allows for more complex risk checks beyond simple position limits – things like analyzing portfolio diversification or looking at correlations between assets. 
 
-Importantly, risk management is shared across multiple strategies, giving you a comprehensive view of overall risk exposure and facilitating cross-strategy analysis. The system keeps track of all active positions, which allows your custom checks to access and evaluate them.
+Furthermore, you can set up actions that happen when a trading signal is rejected or approved based on these risk checks.
+
+Importantly, multiple strategies can share a single risk management system, so you get a complete view of your overall risk exposure and can apply cross-strategy constraints. The system keeps track of all active positions to inform these risk assessments.
 
 ## Function addFrameSchema
 
-This function lets you tell the backtest-kit about a new timeframe you want to use for your simulations. Think of it as defining a specific "window" of time you'll be analyzing, like "daily data from January 1st to March 31st." 
+This function lets you tell the backtest-kit about a new timeframe you want to use. Think of it as registering a way to generate the specific dates and intervals your backtest will run on, like daily, weekly, or monthly data. 
 
-You'll provide a configuration object that describes when your timeframe starts and stops, how frequently it updates (e.g., every day, every hour), and a function to handle any special events during timeframe generation. This allows you to customize how your backtest data is structured.
+You provide a schema object which details the start and end dates for your backtest, the frequency of the intervals (e.g., daily, weekly), and a function that will be called when timeframes are generated. It's how you customize the time period and resolution of your historical data analysis.
+
 
 ## Function addExchangeSchema
 
-This function lets you tell the backtest-kit about a new data source for an exchange. Think of it as registering where the framework should look for historical price data and other exchange-specific information. When you add an exchange schema, the framework knows how to fetch candles, format prices, and even calculate things like VWAP based on recent trading activity. You'll need to provide a configuration object that describes the exchange's characteristics.
+This function lets you tell the backtest-kit framework about a new data source for trading. Think of it as registering where the historical price data for an exchange comes from. 
+
+You'll provide details about the exchange, including how to fetch historical candles (price data over time), how to format prices and trade sizes, and how to calculate a common indicator called VWAP (Volume Weighted Average Price). Essentially, it helps the system understand and use data from a specific trading platform.
+
 
 ## Function addActionSchema
 
-This function lets you tell the backtest-kit framework about a special action you want it to perform during a backtest. Think of actions as ways to automatically react to things happening in your trading strategy – like sending a notification when you hit a profit target, or logging key events for analysis.
+This function lets you register a custom action within the backtest-kit framework. Think of actions as a way to hook into significant events happening during your backtesting process, like when a signal is generated or a profit is taken.
 
-You register these actions using a configuration object that defines how they should work.
+You can use these actions to do things like update state in a tool like Redux, send notifications to Slack or Telegram, log events, track performance metrics, or trigger other custom logic.
 
-Each time your trading strategy runs, the framework will use these registered actions to respond to events such as trade signals, reaching breakeven points, or profits and losses. This lets you connect your backtest to external services or automate tasks based on the trading activity.
+Each action gets created specifically for a particular strategy and timeframe combination, and it receives all the relevant data generated during that run, giving you a lot of context to work with.
+
+To use it, you pass in a configuration object describing how the action should behave.
