@@ -122,8 +122,8 @@ export class LiveReportService {
         pnlPriceClose: data.pnl.priceClose,
         totalPartials: data.signal?.totalPartials,
         cost: data.signal?.cost,
-        peakPnl: data.signal?._peak.pnlPercentage,
-        fallPnl: data.signal?._fall.pnlPercentage,
+        peakPnl: data.signal?._peak?.pnlPercentage,
+        fallPnl: data.signal?._fall?.pnlPercentage,
       }, { ...searchOptions, signalId: data.signal?.id });
     } else if (data.action === "opened") {
       await Report.writeData("live", {
@@ -172,8 +172,8 @@ export class LiveReportService {
         pnlPriceClose: data.pnl.priceClose,
         totalPartials: data.signal?.totalPartials,
         cost: data.signal?.cost,
-        peakPnl: data.signal?._peak.pnlPercentage,
-        fallPnl: data.signal?._fall.pnlPercentage,
+        peakPnl: data.signal?._peak?.pnlPercentage,
+        fallPnl: data.signal?._fall?.pnlPercentage,
       }, { ...searchOptions, signalId: data.signal?.id });
     } else if (data.action === "closed") {
       const durationMs = data.closeTimestamp - data.signal?.pendingAt;
@@ -206,8 +206,8 @@ export class LiveReportService {
         closeReason: data.closeReason,
         duration: durationMin,
         closeTime: data.closeTimestamp,
-        peakPnl: data.signal?._peak.pnlPercentage,
-        fallPnl: data.signal?._fall.pnlPercentage,
+        peakPnl: data.signal?._peak?.pnlPercentage,
+        fallPnl: data.signal?._fall?.pnlPercentage,
       }, { ...searchOptions, signalId: data.signal?.id });
     } else if (data.action === "cancelled") {
       await Report.writeData("live", {
