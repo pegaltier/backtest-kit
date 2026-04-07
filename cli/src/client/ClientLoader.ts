@@ -167,6 +167,13 @@ const CREATE_BASE_REQUIRE_FN = (self: ClientLoader, seen: Set<string>) => {
         const child = self.fork(resolved);
         return child.import(resolved, seen);
       }
+      const importPathsKey = Object.keys(importPathsMap).find((key) => id === key || id.startsWith(`${key}/`));
+      if (importPathsKey) {
+        const subPath = id.slice(importPathsKey.length);
+        const resolved = path.join(importPathsMap[importPathsKey], subPath);
+        const child = self.fork(path.dirname(resolved));
+        return child.import(resolved, seen);
+      }
       return baseRequire(id);
     },
   });
