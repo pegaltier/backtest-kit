@@ -13,6 +13,7 @@ import { syncSubject } from "../../../config/emitters";
 import SignalSyncContract from "../../../contract/SignalSync.contract";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in sync markdown reports.
@@ -62,7 +63,7 @@ const CREATE_FILE_NAME_FN = (
  * Maintains a chronological list of signal-open and signal-close events.
  */
 class ReportStorage {
-  private _eventList: SyncEvent[] = [];
+   _eventList: SyncEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -249,10 +250,10 @@ class ReportStorage {
  * unsubscribe();
  * ```
  */
-export class SyncMarkdownService {
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export const SyncMarkdownService = singleton(class {
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName, backtest) => new ReportStorage(symbol, strategyName, exchangeName, frameName, backtest)
   );
@@ -323,7 +324,7 @@ export class SyncMarkdownService {
    * @param data - Discriminated union `SignalSyncContract`
    *   (`SignalOpenContract | SignalCloseContract`)
    */
-  private tick = async (data: SignalSyncContract) => {
+  public tick = async (data: SignalSyncContract) => {
     this.loggerService.log("syncMarkdownService tick", { data });
 
     const createdAt = new Date(getContextTimestamp()).toISOString();
@@ -487,6 +488,8 @@ export class SyncMarkdownService {
       this.getStorage.clear();
     }
   };
-}
+})
+
+export type TSyncMarkdownService = InstanceType<typeof SyncMarkdownService>;
 
 export default SyncMarkdownService;

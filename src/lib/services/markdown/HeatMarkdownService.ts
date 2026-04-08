@@ -17,6 +17,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in heatmap markdown reports.
@@ -117,7 +118,7 @@ function isUnsafe(value: number | null): boolean {
  */
 class HeatmapStorage {
   /** Internal storage of closed signals per symbol */
-  private symbolData: Map<string, IStrategyTickResultClosed[]> = new Map();
+   symbolData: Map<string, IStrategyTickResultClosed[]> = new Map();
 
   constructor(
     readonly exchangeName: ExchangeName,
@@ -171,7 +172,7 @@ class HeatmapStorage {
    * @param signals - Array of closed signals for this symbol (newest first)
    * @returns `IHeatmapRow` with all aggregated statistics; unavailable metrics are `null`
    */
-  private calculateSymbolStats(
+   calculateSymbolStats(
     symbol: string,
     signals: IStrategyTickResultClosed[]
   ): IHeatmapRow {
@@ -551,15 +552,15 @@ class HeatmapStorage {
  * await service.dump("my-strategy", "./reports");
  * ```
  */
-export class HeatMarkdownService {
+export const HeatMarkdownService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.
    * Each exchangeName + frameName + backtest mode combination gets its own isolated heatmap storage instance.
    */
-  private getStorage = memoize<(exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => HeatmapStorage>(
+  public getStorage = memoize<(exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => HeatmapStorage>(
     ([exchangeName, frameName, backtest]) => CREATE_KEY_FN(exchangeName, frameName, backtest),
     (exchangeName, frameName, backtest) => new HeatmapStorage(exchangeName, frameName, backtest)
   );
@@ -619,7 +620,7 @@ export class HeatMarkdownService {
    * @param data - Union tick result from `signalEmitter`; only
    *   `IStrategyTickResultClosed` payloads are processed
    */
-  private tick = async (data: IStrategyTickResult) => {
+  public tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("heatMarkdownService tick", {
       data,
     });
@@ -813,6 +814,8 @@ export class HeatMarkdownService {
     }
   };
 
-}
+});
+
+export type THeatMarkdownService = InstanceType<typeof HeatMarkdownService>;
 
 export default HeatMarkdownService;

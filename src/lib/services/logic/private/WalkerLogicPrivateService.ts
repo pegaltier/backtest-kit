@@ -4,7 +4,7 @@ import TYPES from "../../../core/types";
 import { WalkerMetric, WalkerName } from "../../../../interfaces/Walker.interface";
 import { StrategyName } from "../../../../interfaces/Strategy.interface";
 import BacktestLogicPublicService from "../public/BacktestLogicPublicService";
-import BacktestMarkdownService from "../../markdown/BacktestMarkdownService";
+import { TBacktestMarkdownService } from "../../markdown/BacktestMarkdownService";
 import WalkerSchemaService from "../../schema/WalkerSchemaService";
 import { WalkerContract } from "../../../../contract/Walker.contract";
 import {
@@ -175,7 +175,7 @@ export class WalkerLogicPrivateService {
   readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
   readonly backtestLogicPublicService =
     inject<BacktestLogicPublicService>(TYPES.backtestLogicPublicService);
-  readonly backtestMarkdownService = inject<BacktestMarkdownService>(
+  readonly backtestMarkdownService = inject<TBacktestMarkdownService>(
     TYPES.backtestMarkdownService
   );
   readonly walkerSchemaService = inject<WalkerSchemaService>(

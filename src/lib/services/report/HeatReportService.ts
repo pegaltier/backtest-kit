@@ -6,6 +6,7 @@ import { singleshot } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
+import { singleton } from "di-singleton";
 
 const HEAT_REPORT_METHOD_NAME_SUBSCRIBE = "HeatReportService.subscribe";
 const HEAT_REPORT_METHOD_NAME_UNSUBSCRIBE = "HeatReportService.unsubscribe";
@@ -39,9 +40,9 @@ const HEAT_REPORT_METHOD_NAME_TICK = "HeatReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export class HeatReportService {
+export const HeatReportService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal tick events and logs closed signals to the database.
@@ -51,7 +52,7 @@ export class HeatReportService {
    *
    * @internal
    */
-  private tick = async (data: IStrategyTickResult) => {
+  public tick = async (data: IStrategyTickResult) => {
     this.loggerService.log(HEAT_REPORT_METHOD_NAME_TICK, { data });
 
     if (data.action !== "closed") {
@@ -141,6 +142,8 @@ export class HeatReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type THeatReportService = InstanceType<typeof HeatReportService>
 
 export default HeatReportService;

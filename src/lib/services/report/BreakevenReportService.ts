@@ -7,6 +7,7 @@ import { breakevenSubject } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import { singleton } from "di-singleton";
 
 const BREAKEVEN_REPORT_METHOD_NAME_SUBSCRIBE = "BreakevenReportService.subscribe";
 const BREAKEVEN_REPORT_METHOD_NAME_UNSUBSCRIBE = "BreakevenReportService.unsubscribe";
@@ -40,9 +41,9 @@ const BREAKEVEN_REPORT_METHOD_NAME_TICK = "BreakevenReportService.tickBreakeven"
  * await reportService.unsubscribe();
  * ```
  */
-export class BreakevenReportService {
+export const BreakevenReportService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes breakeven events and logs them to the database.
@@ -51,7 +52,7 @@ export class BreakevenReportService {
    *
    * @internal
    */
-  private tickBreakeven = async (data: {
+  public tickBreakeven = async (data: {
     symbol: string;
     data: IPublicSignalRow;
     currentPrice: number;
@@ -146,6 +147,8 @@ export class BreakevenReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TBreakevenReportService = InstanceType<typeof BreakevenReportService>;
 
 export default BreakevenReportService;

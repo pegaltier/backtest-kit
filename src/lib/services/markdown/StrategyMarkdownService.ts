@@ -26,6 +26,7 @@ import {
 } from "../../../contract/StrategyCommit.contract";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in strategy markdown reports.
@@ -101,7 +102,7 @@ const CREATE_FILE_NAME_FN = (
  * @internal
  */
 class ReportStorage {
-  private _eventList: StrategyEvent[] = [];
+   _eventList: StrategyEvent[] = [];
 
   /**
    * Creates a new ReportStorage instance.
@@ -313,7 +314,7 @@ class ReportStorage {
  * @see StrategyReportService for immediate event persistence to JSON files
  * @see Strategy for the high-level utility class that wraps this service
  */
-export class StrategyMarkdownService {
+export const StrategyMarkdownService = singleton(class {
   readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
@@ -324,7 +325,7 @@ export class StrategyMarkdownService {
    *
    * @internal
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -1388,6 +1389,8 @@ export class StrategyMarkdownService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TStrategyMarkdownService = InstanceType<typeof StrategyMarkdownService>
 
 export default StrategyMarkdownService;

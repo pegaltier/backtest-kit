@@ -5,6 +5,7 @@ import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
+import { singleton } from "di-singleton";
 
 const PERFORMANCE_REPORT_METHOD_NAME_SUBSCRIBE = "PerformanceReportService.subscribe";
 const PERFORMANCE_REPORT_METHOD_NAME_UNSUBSCRIBE = "PerformanceReportService.unsubscribe";
@@ -38,9 +39,9 @@ const PERFORMANCE_REPORT_METHOD_NAME_TRACK = "PerformanceReportService.track";
  * await reportService.unsubscribe();
  * ```
  */
-export class PerformanceReportService {
+export const PerformanceReportService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes performance tracking events and logs them to the database.
@@ -49,7 +50,7 @@ export class PerformanceReportService {
    *
    * @internal
    */
-  private track = async (event: PerformanceContract) => {
+  public track = async (event: PerformanceContract) => {
     this.loggerService.log(PERFORMANCE_REPORT_METHOD_NAME_TRACK, { event });
 
     await Report.writeData("performance", {
@@ -116,6 +117,8 @@ export class PerformanceReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TPerformanceReportService = InstanceType<typeof PerformanceReportService>;
 
 export default PerformanceReportService;

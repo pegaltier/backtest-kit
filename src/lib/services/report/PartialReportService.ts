@@ -8,6 +8,7 @@ import { partialProfitSubject, partialLossSubject } from "../../../config/emitte
 import { Report } from "../../../classes/Report";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import { singleton } from "di-singleton";
 
 const PARTIAL_REPORT_METHOD_NAME_SUBSCRIBE = "PartialReportService.subscribe";
 const PARTIAL_REPORT_METHOD_NAME_UNSUBSCRIBE = "PartialReportService.unsubscribe";
@@ -43,9 +44,9 @@ const PARTIAL_REPORT_METHOD_NAME_TICK_LOSS = "PartialReportService.tickLoss";
  * await reportService.unsubscribe();
  * ```
  */
-export class PartialReportService {
+export const PartialReportService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes partial profit events and logs them to the database.
@@ -54,7 +55,7 @@ export class PartialReportService {
    *
    * @internal
    */
-  private tickProfit = async (data: {
+  public tickProfit = async (data: {
     symbol: string;
     data: IPublicSignalRow;
     currentPrice: number;
@@ -115,7 +116,7 @@ export class PartialReportService {
    *
    * @internal
    */
-  private tickLoss = async (data: {
+  public tickLoss = async (data: {
     symbol: string;
     data: IPublicSignalRow;
     currentPrice: number;
@@ -215,6 +216,8 @@ export class PartialReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TPartialReportService = InstanceType<typeof PartialReportService>;
 
 export default PartialReportService;

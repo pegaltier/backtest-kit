@@ -12969,179 +12969,6 @@ declare const Log: LogAdapter;
  * @see IStrategyTickResultClosed for the signal data structure
  */
 type Columns$b = ColumnModel<IStrategyTickResultClosed>;
-/**
- * Service for generating and saving backtest markdown reports.
- *
- * Features:
- * - Listens to signal events via onTick callback
- * - Accumulates closed signals per strategy using memoized storage
- * - Generates markdown tables with detailed signal information
- * - Saves reports to disk in logs/backtest/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new BacktestMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       service.tick(result);
- *     }
- *   }
- * });
- *
- * // After backtest, generate and save report
- * await service.saveReport("my-strategy");
- * ```
- */
-declare class BacktestMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Processes tick events and accumulates closed signals.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Only processes closed signals - opened signals are ignored.
-     *
-     * @param data - Tick result from strategy execution (opened or closed) with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     service.tick(result);
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", true);
-     * console.log(stats.sharpeRatio, stats.winRate);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BacktestStatisticsModel>;
-    /**
-     * Generates markdown report with all closed signals for a symbol-strategy pair.
-     * Delegates to ReportStorage.generateReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all closed signals
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", true);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$b[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/backtest")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Save to default path: ./dump/backtest/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", true);
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", true, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$b[]) => Promise<void>;
-    /**
-     * Clears accumulated signal data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: true });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-    /**
-     * Subscribes to backtest signal emitter to receive tick events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from backtest signal emitter to stop receiving tick events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
 
 /**
  * Utility class for backtest operations.
@@ -14341,184 +14168,6 @@ declare const Backtest: BacktestUtils;
  * @see TickEvent for the event data structure
  */
 type Columns$a = ColumnModel<TickEvent>;
-/**
- * Service for generating and saving live trading markdown reports.
- *
- * Features:
- * - Listens to all signal events via onTick callback
- * - Accumulates all events (idle, opened, active, closed) per strategy
- * - Generates markdown tables with detailed event information
- * - Provides trading statistics (win rate, average PNL)
- * - Saves reports to disk in logs/live/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new LiveMarkdownService();
- *
- * // Add to strategy callbacks
- * addStrategy({
- *   strategyName: "my-strategy",
- *   callbacks: {
- *     onTick: (symbol, result, backtest) => {
- *       if (!backtest) {
- *         service.tick(result);
- *       }
- *     }
- *   }
- * });
- *
- * // Later: generate and save report
- * await service.dump("my-strategy");
- * ```
- */
-declare class LiveMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to live signal emitter to receive tick events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from live signal emitter to stop receiving tick events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes tick events and accumulates all event types.
-     * Should be called from IStrategyCallbacks.onTick.
-     *
-     * Processes all event types: idle, opened, active, closed.
-     *
-     * @param data - Tick result from strategy execution with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * callbacks: {
-     *   onTick: (symbol, result, backtest) => {
-     *     if (!backtest) {
-     *       service.tick(result);
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all live trading events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(stats.sharpeRatio, stats.winRate);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<LiveStatisticsModel>;
-    /**
-     * Generates markdown report with all events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$a[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/live")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Save to default path: ./dump/live/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$a[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for live trading operations.
@@ -15662,168 +15311,6 @@ declare const Live: LiveUtils;
  * @see ScheduledEvent for the event data structure
  */
 type Columns$9 = ColumnModel<ScheduledEvent>;
-/**
- * Service for generating and saving scheduled signals markdown reports.
- *
- * Features:
- * - Listens to scheduled and cancelled signal events via signalLiveEmitter
- * - Accumulates all events (scheduled, cancelled) per strategy
- * - Generates markdown tables with detailed event information
- * - Provides statistics (cancellation rate, average wait time)
- * - Saves reports to disk in logs/schedule/{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new ScheduleMarkdownService();
- *
- * // Service automatically subscribes to signalLiveEmitter on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("my-strategy");
- * ```
- */
-declare class ScheduleMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to signal emitter to receive scheduled signal events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from signal emitter to stop receiving scheduled signal events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes tick events and accumulates scheduled/opened/cancelled events.
-     * Should be called from signalEmitter subscription.
-     *
-     * Processes only scheduled, opened and cancelled event types.
-     *
-     * @param data - Tick result from strategy execution with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tick;
-    /**
-     * Gets statistical data from all scheduled signal events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(stats.cancellationRate, stats.avgWaitTime);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<ScheduleStatisticsModel>;
-    /**
-     * Generates markdown report with all scheduled events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$9[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/schedule")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     *
-     * // Save to default path: ./dump/schedule/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path: ./custom/path/my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$9[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for scheduled signals reporting operations.
@@ -15956,147 +15443,6 @@ declare const Schedule: ScheduleUtils;
  * @see MetricStats for the metric data structure
  */
 type Columns$8 = ColumnModel<MetricStats>;
-/**
- * Service for collecting and analyzing performance metrics.
- *
- * Features:
- * - Listens to performance events via performanceEmitter
- * - Accumulates metrics per strategy
- * - Calculates aggregated statistics (avg, min, max, percentiles)
- * - Generates markdown reports with bottleneck analysis
- * - Saves reports to disk in logs/performance/{strategyName}.md
- *
- * @example
- * ```typescript
- * import { listenPerformance } from "backtest-kit";
- *
- * // Subscribe to performance events
- * listenPerformance((event) => {
- *   console.log(`${event.metricType}: ${event.duration.toFixed(2)}ms`);
- * });
- *
- * // After execution, generate report
- * const stats = await Performance.getData("my-strategy");
- * console.log("Bottlenecks:", stats.metricStats);
- *
- * // Save report to disk
- * await Performance.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class PerformanceMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create PerformanceStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to performance emitter to receive performance events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new PerformanceMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from performance emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new PerformanceMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes performance events and accumulates metrics.
-     * Should be called from performance tracking code.
-     *
-     * @param event - Performance event with timing data
-     */
-    private track;
-    /**
-     * Gets aggregated performance statistics for a symbol-strategy pair.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Performance statistics with aggregated metrics
-     *
-     * @example
-     * ```typescript
-     * const stats = await performanceService.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log("Total time:", stats.totalDuration);
-     * console.log("Slowest operation:", Object.values(stats.metricStats)
-     *   .sort((a, b) => b.avgDuration - a.avgDuration)[0]);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PerformanceStatisticsModel>;
-    /**
-     * Generates markdown report with performance analysis.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const markdown = await performanceService.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$8[]) => Promise<string>;
-    /**
-     * Saves performance report to disk.
-     *
-     * @param symbol - Trading pair symbol
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * // Save to default path: ./dump/performance/my-strategy.md
-     * await performanceService.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path
-     * await performanceService.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
-    /**
-     * Clears accumulated performance data from storage.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Performance class provides static methods for performance metrics analysis.
@@ -16283,163 +15629,6 @@ type StrategyColumn = ColumnModel<IStrategyResult>;
  * @see SignalData for the signal data structure
  */
 type PnlColumn = ColumnModel<SignalData$1>;
-/**
- * Service for generating and saving walker markdown reports.
- *
- * Features:
- * - Listens to walker events via tick callback
- * - Accumulates strategy results per walker using memoized storage
- * - Generates markdown tables with detailed strategy comparison
- * - Saves reports to disk in logs/walker/{walkerName}.md
- *
- * @example
- * ```typescript
- * const service = new WalkerMarkdownService();
- * const results = await service.getData("my-walker");
- * await service.dump("my-walker");
- * ```
- */
-declare class WalkerMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a walker.
-     * Each walker gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to walker emitter to receive walker progress events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from walker emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes walker progress events and accumulates strategy results.
-     * Should be called from walkerEmitter.
-     *
-     * @param data - Walker contract from walker execution
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * walkerEmitter.subscribe((data) => service.tick(data));
-     * ```
-     */
-    private tick;
-    /**
-     * Gets walker results data from all strategy results.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param walkerName - Walker name to get data for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @returns Walker results data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const results = await service.getData("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(results.bestStrategy, results.bestMetric);
-     * ```
-     */
-    getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }) => Promise<WalkerCompleteContract>;
-    /**
-     * Generates markdown report with all strategy results for a walker.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param walkerName - Walker name to generate report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @param strategyColumns - Column configuration for strategy comparison table
-     * @param pnlColumns - Column configuration for PNL table
-     * @returns Markdown formatted report string
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     * const markdown = await service.getReport("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
-    /**
-     * Saves walker report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param walkerName - Walker name to save report for
-     * @param symbol - Trading symbol
-     * @param metric - Metric being optimized
-     * @param context - Context with exchangeName and frameName
-     * @param path - Directory path to save report (default: "./dump/walker")
-     * @param strategyColumns - Column configuration for strategy comparison table
-     * @param pnlColumns - Column configuration for PNL table
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Save to default path: ./dump/walker/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" });
-     *
-     * // Save to custom path: ./custom/path/my-walker.md
-     * await service.dump("my-walker", "BTCUSDT", "sharpeRatio", { exchangeName: "binance", frameName: "1d" }, "./custom/path");
-     * ```
-     */
-    dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
-    /**
-     * Clears accumulated result data from storage.
-     * If walkerName is provided, clears only that walker's data.
-     * If walkerName is omitted, clears all walkers' data.
-     *
-     * @param walkerName - Optional walker name to clear specific walker data
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerMarkdownService();
-     *
-     * // Clear specific walker data
-     * await service.clear("my-walker");
-     *
-     * // Clear all walkers' data
-     * await service.clear();
-     * ```
-     */
-    clear: (walkerName?: WalkerName) => Promise<void>;
-}
 
 /**
  * Utility class for walker operations.
@@ -16648,199 +15837,6 @@ declare const Walker: WalkerUtils;
  * @see IHeatmapRow for the row data structure
  */
 type Columns$7 = ColumnModel<IHeatmapRow>;
-/**
- * Portfolio Heatmap Markdown Service.
- *
- * Subscribes to signalEmitter and aggregates statistics across all symbols per strategy.
- * Provides portfolio-wide metrics and per-symbol breakdowns.
- *
- * Features:
- * - Real-time aggregation of closed signals
- * - Per-symbol statistics (Total PNL, Sharpe Ratio, Max Drawdown, Trades)
- * - Portfolio-wide aggregated metrics per strategy
- * - Markdown table report generation
- * - Safe math (handles NaN/Infinity gracefully)
- * - Strategy-based navigation using memoized storage
- *
- * @example
- * ```typescript
- * const service = new HeatMarkdownService();
- *
- * // Service automatically tracks all closed signals per strategy
- * const stats = await service.getData("my-strategy");
- * console.log(`Portfolio Total PNL: ${stats.portfolioTotalPnl}%`);
- *
- * // Generate and save report
- * await service.dump("my-strategy", "./reports");
- * ```
- */
-declare class HeatMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.
-     * Each exchangeName + frameName + backtest mode combination gets its own isolated heatmap storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to signal emitter to receive tick events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from signal emitter to stop receiving tick events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Handles a single tick event emitted by `signalEmitter`.
-     *
-     * Filters out every action except `"closed"` — idle, scheduled, waiting,
-     * opened, active, and cancelled ticks are silently ignored.
-     * For closed signals, routes the payload to the appropriate `HeatmapStorage`
-     * via `getStorage(exchangeName, frameName, backtest)` and calls `addSignal`.
-     *
-     * @param data - Union tick result from `signalEmitter`; only
-     *   `IStrategyTickResultClosed` payloads are processed
-     */
-    private tick;
-    /**
-     * Returns aggregated portfolio heatmap statistics for the given context.
-     *
-     * Delegates to the `HeatmapStorage` instance identified by
-     * `(exchangeName, frameName, backtest)`. If no signals have been accumulated
-     * yet for that combination, the returned `symbols` array will be empty and
-     * portfolio-level fields will be `null` / `0`.
-     *
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier (e.g. `"1m-btc"`)
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @returns Promise resolving to `HeatmapStatisticsModel` with per-symbol rows
-     *   sorted by `sharpeRatio` descending and portfolio-wide aggregates
-     * @throws {Error} If `subscribe()` has not been called before this method
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * const stats = await service.getData("binance", "frame1", true);
-     *
-     * console.log(`Total symbols: ${stats.totalSymbols}`);
-     * console.log(`Portfolio PNL: ${stats.portfolioTotalPnl}%`);
-     *
-     * stats.symbols.forEach(row => {
-     *   console.log(`${row.symbol}: ${row.totalPnl}% (${row.totalTrades} trades)`);
-     * });
-     * ```
-     */
-    getData: (exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<HeatmapStatisticsModel>;
-    /**
-     * Generates a markdown heatmap report for the given context.
-     *
-     * Delegates to `HeatmapStorage.getReport`. The resulting string includes a
-     * portfolio summary line followed by a markdown table with one row per
-     * symbol, ordered by `sharpeRatio` descending.
-     *
-     * @param strategyName - Strategy name rendered in the report heading
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier (e.g. `"1m-btc"`)
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param columns - Column definitions controlling the table layout;
-     *   defaults to `COLUMN_CONFIG.heat_columns`
-     * @returns Promise resolving to the full markdown string
-     * @throws {Error} If `subscribe()` has not been called before this method
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     * const markdown = await service.getReport("my-strategy", "binance", "frame1", true);
-     * console.log(markdown);
-     * // # Portfolio Heatmap: my-strategy
-     * //
-     * // **Total Symbols:** 5 | **Portfolio PNL:** +45.3% | **Portfolio Sharpe:** 1.85 | **Total Trades:** 120
-     * //
-     * // | Symbol | Total PNL | Sharpe | Max DD | Trades |
-     * // | ---    | ---       | ---    | ---    | ---    |
-     * // | BTCUSDT | +15.5%  | 2.10   | -2.5%  | 45     |
-     * // | ETHUSDT | +12.3%  | 1.85   | -3.1%  | 38     |
-     * ```
-     */
-    getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
-    /**
-     * Generates the heatmap report and writes it to disk.
-     *
-     * Delegates to `HeatmapStorage.dump`. The filename follows the pattern:
-     * - Backtest: `{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
-     * - Live:     `{strategyName}_{exchangeName}_live-{timestamp}.md`
-     *
-     * @param strategyName - Strategy name used in the report heading and filename
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier (e.g. `"1m-btc"`)
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param path - Directory to write the file into; defaults to `"./dump/heatmap"`
-     * @param columns - Column definitions for table formatting;
-     *   defaults to `COLUMN_CONFIG.heat_columns`
-     * @throws {Error} If `subscribe()` has not been called before this method
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatMarkdownService();
-     *
-     * // Save to default path
-     * await service.dump("my-strategy", "binance", "frame1", true);
-     *
-     * // Save to custom path
-     * await service.dump("my-strategy", "binance", "frame1", true, "./reports");
-     * ```
-     */
-    dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
-    /**
-     * Evicts memoized `HeatmapStorage` instances, releasing all accumulated signal data.
-     *
-     * - With `payload` — clears only the storage bucket identified by
-     *   `(payload.exchangeName, payload.frameName, payload.backtest)`;
-     *   subsequent calls to `getData` / `getReport` / `dump` for that combination
-     *   will start from an empty state.
-     * - Without `payload` — clears **all** storage buckets across every
-     *   exchange / frame / mode combination.
-     *
-     * Also called internally by the unsubscribe closure returned from `subscribe()`.
-     *
-     * @param payload - Optional scope to restrict which bucket is cleared;
-     *   omit to clear everything
-     *
-     * @example
-     * ```typescript
-     * // Clear one specific context
-     * await service.clear({ exchangeName: "binance", frameName: "frame1", backtest: true });
-     *
-     * // Clear all contexts
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for portfolio heatmap operations.
@@ -17134,179 +16130,6 @@ declare const PositionSize: typeof PositionSizeUtils;
  * @see PartialEvent for the event data structure
  */
 type Columns$6 = ColumnModel<PartialEvent>;
-/**
- * Service for generating and saving partial profit/loss markdown reports.
- *
- * Features:
- * - Listens to partial profit and loss events via partialProfitSubject/partialLossSubject
- * - Accumulates all events (profit, loss) per symbol-strategy pair
- * - Generates markdown tables with detailed event information
- * - Provides statistics (total profit/loss events)
- * - Saves reports to disk in dump/partial/{symbol}_{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new PartialMarkdownService();
- *
- * // Service automatically subscribes to subjects on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class PartialMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to partial profit/loss signal emitters to receive events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from partial profit/loss signal emitters to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes profit events and accumulates them.
-     * Should be called from partialProfitSubject subscription.
-     *
-     * @param data - Profit event data with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickProfit;
-    /**
-     * Processes loss events and accumulates them.
-     * Should be called from partialLossSubject subscription.
-     *
-     * @param data - Loss event data with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickLoss;
-    /**
-     * Gets statistical data from all partial profit/loss events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol to get data for
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(stats.totalProfit, stats.totalLoss);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PartialStatisticsModel>;
-    /**
-     * Generates markdown report with all partial events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol to generate report for
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol to save report for
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/partial")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     *
-     * // Save to default path: ./dump/partial/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing partial profit/loss reports and statistics.
@@ -17475,147 +16298,6 @@ declare const Partial$1: PartialUtils;
  * Type alias for column configuration used in highest profit markdown reports.
  */
 type Columns$5 = ColumnModel<HighestProfitEvent>;
-/**
- * Service for generating and saving highest profit markdown reports.
- *
- * Listens to highestProfitSubject and accumulates events per
- * symbol-strategy-exchange-frame combination. Provides getData(),
- * getReport(), and dump() methods matching the Partial pattern.
- */
-declare class HighestProfitMarkdownService {
-    private readonly loggerService;
-    private getStorage;
-    /**
-     * Subscribes to `highestProfitSubject` to start receiving `HighestProfitContract`
-     * events. Protected against multiple subscriptions via `singleshot` — subsequent
-     * calls return the same unsubscribe function without re-subscribing.
-     *
-     * The returned unsubscribe function clears the `singleshot` state, evicts all
-     * memoized `ReportStorage` instances, and detaches from `highestProfitSubject`.
-     *
-     * @returns Unsubscribe function; calling it tears down the subscription and
-     *   clears all accumulated data
-     *
-     * @example
-     * ```typescript
-     * const service = new HighestProfitMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Detaches from `highestProfitSubject` and clears all accumulated data.
-     *
-     * Calls the unsubscribe closure returned by `subscribe()`.
-     * If `subscribe()` was never called, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new HighestProfitMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Handles a single `HighestProfitContract` event emitted by `highestProfitSubject`.
-     *
-     * Routes the payload to the appropriate `ReportStorage` bucket via
-     * `getStorage(symbol, strategyName, exchangeName, frameName, backtest)` —
-     * where `strategyName` is taken from `data.signal.strategyName` — and
-     * delegates event construction to `ReportStorage.addEvent`.
-     *
-     * @param data - `HighestProfitContract` payload containing `symbol`,
-     *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
-     *   `frameName`
-     */
-    private tick;
-    /**
-     * Returns accumulated highest profit statistics for the given context.
-     *
-     * Delegates to the `ReportStorage` bucket identified by
-     * `(symbol, strategyName, exchangeName, frameName, backtest)`.
-     * If no events have been recorded yet for that combination, the returned
-     * model has an empty `eventList` and `totalEvents` of `0`.
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @returns Promise resolving to `HighestProfitStatisticsModel` with
-     *   `eventList` (newest first) and `totalEvents`
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<HighestProfitStatisticsModel>;
-    /**
-     * Generates a markdown highest profit report for the given context.
-     *
-     * Delegates to `ReportStorage.getReport`. The resulting string includes a
-     * markdown table (newest events first) followed by the total event count.
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param columns - Column definitions controlling the table layout;
-     *   defaults to `COLUMN_CONFIG.highest_profit_columns`
-     * @returns Promise resolving to the full markdown string
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
-    /**
-     * Generates the highest profit report and writes it to disk.
-     *
-     * Delegates to `ReportStorage.dump`. The filename follows the pattern:
-     * - Backtest: `{symbol}_{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
-     * - Live:     `{symbol}_{strategyName}_{exchangeName}_live-{timestamp}.md`
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param path - Directory to write the file into; defaults to `"./dump/highest_profit"`
-     * @param columns - Column definitions for table formatting;
-     *   defaults to `COLUMN_CONFIG.highest_profit_columns`
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
-    /**
-     * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
-     *
-     * - With `payload` — clears only the storage bucket identified by
-     *   `(symbol, strategyName, exchangeName, frameName, backtest)`;
-     *   subsequent calls for that combination start from an empty state.
-     * - Without `payload` — clears **all** storage buckets.
-     *
-     * Also called internally by the unsubscribe closure returned from `subscribe()`.
-     *
-     * @param payload - Optional scope to restrict which bucket is cleared;
-     *   omit to clear everything
-     *
-     * @example
-     * ```typescript
-     * // Clear one specific context
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1m-btc", backtest: true });
-     *
-     * // Clear all contexts
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing highest profit reports and statistics.
@@ -17684,60 +16366,6 @@ declare const HighestProfit: HighestProfitUtils;
  * Type alias for column configuration used in max drawdown markdown reports.
  */
 type Columns$4 = ColumnModel<MaxDrawdownEvent>;
-/**
- * Service for generating and saving max drawdown markdown reports.
- *
- * Listens to maxDrawdownSubject and accumulates events per
- * symbol-strategy-exchange-frame combination. Provides getData(),
- * getReport(), and dump() methods matching the HighestProfit pattern.
- */
-declare class MaxDrawdownMarkdownService {
-    private readonly loggerService;
-    private getStorage;
-    /**
-     * Subscribes to `maxDrawdownSubject` to start receiving `MaxDrawdownContract`
-     * events. Protected against multiple subscriptions via `singleshot`.
-     *
-     * @returns Unsubscribe function; calling it tears down the subscription and
-     *   clears all accumulated data
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Detaches from `maxDrawdownSubject` and clears all accumulated data.
-     *
-     * If `subscribe()` was never called, does nothing.
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
-     */
-    private tick;
-    /**
-     * Returns accumulated max drawdown statistics for the given context.
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<MaxDrawdownStatisticsModel>;
-    /**
-     * Generates a markdown max drawdown report for the given context.
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
-    /**
-     * Generates the max drawdown report and writes it to disk.
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
-    /**
-     * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
-     *
-     * - With `payload` — clears only the storage bucket for that combination.
-     * - Without `payload` — clears **all** storage buckets.
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing max drawdown reports and statistics.
@@ -17913,166 +16541,6 @@ declare const Constant: ConstantUtils;
  * @see RiskEvent for the event data structure
  */
 type Columns$3 = ColumnModel<RiskEvent>;
-/**
- * Service for generating and saving risk rejection markdown reports.
- *
- * Features:
- * - Listens to risk rejection events via riskSubject
- * - Accumulates all rejection events per symbol-strategy pair
- * - Generates markdown tables with detailed rejection information
- * - Provides statistics (total rejections, by symbol, by strategy)
- * - Saves reports to disk in dump/risk/{symbol}_{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new RiskMarkdownService();
- *
- * // Service automatically subscribes to subjects on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class RiskMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to risk rejection emitter to receive rejection events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from risk rejection emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes risk rejection events and accumulates them.
-     * Should be called from riskSubject subscription.
-     *
-     * @param data - Risk rejection event data with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickRejection;
-    /**
-     * Gets statistical data from all risk rejection events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol to get data for
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(stats.totalRejections, stats.bySymbol);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<RiskStatisticsModel>;
-    /**
-     * Generates markdown report with all risk rejection events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol to generate report for
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol to save report for
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/risk")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     *
-     * // Save to default path: ./dump/risk/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing risk rejection reports and statistics.
@@ -18327,163 +16795,6 @@ interface SyncStatisticsModel {
  * @see SyncEvent for the event data structure
  */
 type Columns$2 = ColumnModel<SyncEvent>;
-/**
- * Service for generating and saving signal sync markdown reports.
- *
- * Features:
- * - Listens to signal sync events via syncSubject (signal-open and signal-close)
- * - Accumulates all sync events per symbol-strategy-exchange-frame-backtest combination
- * - Generates markdown tables with detailed signal lifecycle information
- * - Provides statistics (total events, opens, closes)
- * - Saves reports to disk in dump/sync/
- *
- * @example
- * ```typescript
- * import { Markdown } from "backtest-kit";
- *
- * const unsubscribe = Markdown.enable({ sync: true });
- * // ... later
- * unsubscribe();
- * ```
- */
-declare class SyncMarkdownService {
-    private readonly loggerService;
-    private getStorage;
-    /**
-     * Subscribes to `syncSubject` to start receiving `SignalSyncContract` events.
-     * Protected against multiple subscriptions via `singleshot` — subsequent calls
-     * return the same unsubscribe function without re-subscribing.
-     *
-     * The returned unsubscribe function clears the `singleshot` state, evicts all
-     * memoized `ReportStorage` instances, and detaches from `syncSubject`.
-     *
-     * @returns Unsubscribe function; calling it tears down the subscription and
-     *   clears all accumulated data
-     *
-     * @example
-     * ```typescript
-     * const service = new SyncMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Detaches from `syncSubject` and clears all accumulated data.
-     *
-     * Calls the unsubscribe closure returned by `subscribe()`.
-     * If `subscribe()` was never called, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new SyncMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Handles a single `SignalSyncContract` event emitted by `syncSubject`.
-     *
-     * Maps the contract fields to a `SyncEvent`, enriching it with a
-     * `createdAt` ISO timestamp from `getContextTimestamp()` (backtest clock
-     * or real clock aligned to the nearest minute).
-     * For `"signal-close"` events, `closeReason` is preserved; for
-     * `"signal-open"` events it is set to `undefined`.
-     *
-     * Routes the constructed event to the appropriate `ReportStorage` bucket
-     * via `getStorage(symbol, strategyName, exchangeName, frameName, backtest)`.
-     *
-     * @param data - Discriminated union `SignalSyncContract`
-     *   (`SignalOpenContract | SignalCloseContract`)
-     */
-    private tick;
-    /**
-     * Returns accumulated sync statistics for the given context.
-     *
-     * Delegates to the `ReportStorage` bucket identified by
-     * `(symbol, strategyName, exchangeName, frameName, backtest)`.
-     * If no events have been recorded yet for that combination, the returned
-     * model has an empty `eventList` and all counters set to `0`.
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @returns Promise resolving to `SyncStatisticsModel` with `eventList`,
-     *   `totalEvents`, `openCount`, `closeCount`
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<SyncStatisticsModel>;
-    /**
-     * Generates a markdown sync report for the given context.
-     *
-     * Delegates to `ReportStorage.getReport`. The resulting string includes a
-     * markdown table (newest events first) followed by total / open / close
-     * counters.
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param columns - Column definitions controlling the table layout;
-     *   defaults to `COLUMN_CONFIG.sync_columns`
-     * @returns Promise resolving to the full markdown string
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
-    /**
-     * Generates the sync report and writes it to disk.
-     *
-     * Delegates to `ReportStorage.dump`. The filename follows the pattern:
-     * - Backtest: `{symbol}_{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
-     * - Live:     `{symbol}_{strategyName}_{exchangeName}_live-{timestamp}.md`
-     *
-     * @param symbol - Trading pair symbol (e.g. `"BTCUSDT"`)
-     * @param strategyName - Strategy identifier
-     * @param exchangeName - Exchange identifier (e.g. `"binance"`)
-     * @param frameName - Backtest frame identifier; empty string for live mode
-     * @param backtest - `true` for backtest mode, `false` for live mode
-     * @param path - Directory to write the file into; defaults to `"./dump/sync"`
-     * @param columns - Column definitions for table formatting;
-     *   defaults to `COLUMN_CONFIG.sync_columns`
-     * @throws {Error} If `subscribe()` has not been called before this method
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
-    /**
-     * Evicts memoized `ReportStorage` instances, releasing all accumulated event data.
-     *
-     * - With `payload` — clears only the storage bucket identified by
-     *   `(symbol, strategyName, exchangeName, frameName, backtest)`;
-     *   subsequent calls for that combination start from an empty state.
-     * - Without `payload` — clears **all** storage buckets.
-     *
-     * Also called internally by the unsubscribe closure returned from `subscribe()`.
-     *
-     * @param payload - Optional scope to restrict which bucket is cleared;
-     *   omit to clear everything
-     *
-     * @example
-     * ```typescript
-     * // Clear one specific context
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1m-btc", backtest: true });
-     *
-     * // Clear all contexts
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing signal sync lifecycle reports and statistics.
@@ -19977,166 +18288,6 @@ declare const Cache: CacheUtils;
  * @see BreakevenEvent for the event data structure
  */
 type Columns$1 = ColumnModel<BreakevenEvent>;
-/**
- * Service for generating and saving breakeven markdown reports.
- *
- * Features:
- * - Listens to breakeven events via breakevenSubject
- * - Accumulates all events per symbol-strategy pair
- * - Generates markdown tables with detailed event information
- * - Provides statistics (total breakeven events)
- * - Saves reports to disk in dump/breakeven/{symbol}_{strategyName}.md
- *
- * @example
- * ```typescript
- * const service = new BreakevenMarkdownService();
- *
- * // Service automatically subscribes to subjects on init
- * // No manual callback setup needed
- *
- * // Later: generate and save report
- * await service.dump("BTCUSDT", "my-strategy");
- * ```
- */
-declare class BreakevenMarkdownService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
-     * Each combination gets its own isolated storage instance.
-     */
-    private getStorage;
-    /**
-     * Subscribes to breakeven signal emitter to receive events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from breakeven signal emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * service.subscribe();
-     * // ... later
-     * service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-    /**
-     * Processes breakeven events and accumulates them.
-     * Should be called from breakevenSubject subscription.
-     *
-     * @param data - Breakeven event data with frameName wrapper
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * // Service automatically subscribes in init()
-     * ```
-     */
-    private tickBreakeven;
-    /**
-     * Gets statistical data from all breakeven events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getData().
-     *
-     * @param symbol - Trading pair symbol to get data for
-     * @param strategyName - Strategy name to get data for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @returns Statistical data object with all metrics
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * const stats = await service.getData("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(stats.totalEvents);
-     * ```
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BreakevenStatisticsModel>;
-    /**
-     * Generates markdown report with all breakeven events for a symbol-strategy pair.
-     * Delegates to ReportStorage.getReport().
-     *
-     * @param symbol - Trading pair symbol to generate report for
-     * @param strategyName - Strategy name to generate report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param columns - Column configuration for formatting the table
-     * @returns Markdown formatted report string with table of all events
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     * const markdown = await service.getReport("BTCUSDT", "my-strategy", "binance", "1h", false);
-     * console.log(markdown);
-     * ```
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
-    /**
-     * Saves symbol-strategy report to disk.
-     * Creates directory if it doesn't exist.
-     * Delegates to ReportStorage.dump().
-     *
-     * @param symbol - Trading pair symbol to save report for
-     * @param strategyName - Strategy name to save report for
-     * @param exchangeName - Exchange name
-     * @param frameName - Frame name
-     * @param backtest - True if backtest mode, false if live mode
-     * @param path - Directory path to save report (default: "./dump/breakeven")
-     * @param columns - Column configuration for formatting the table
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     *
-     * // Save to default path: ./dump/breakeven/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false);
-     *
-     * // Save to custom path: ./custom/path/BTCUSDT_my-strategy.md
-     * await service.dump("BTCUSDT", "my-strategy", "binance", "1h", false, "./custom/path");
-     * ```
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
-    /**
-     * Clears accumulated event data from storage.
-     * If payload is provided, clears only that specific symbol-strategy-exchange-frame-backtest combination's data.
-     * If nothing is provided, clears all data.
-     *
-     * @param payload - Optional payload with symbol, strategyName, exchangeName, frameName, backtest
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenMarkdownService();
-     *
-     * // Clear specific combination
-     * await service.clear({ symbol: "BTCUSDT", strategyName: "my-strategy", exchangeName: "binance", frameName: "1h", backtest: false });
-     *
-     * // Clear all data
-     * await service.clear();
-     * ```
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-}
 
 /**
  * Utility class for accessing breakeven protection reports and statistics.
@@ -20300,356 +18451,6 @@ declare const Breakeven: BreakevenUtils;
  * @see StrategyEvent for the event data structure
  */
 type Columns = ColumnModel<StrategyEvent>;
-/**
- * Service for accumulating strategy management events and generating markdown reports.
- *
- * Collects strategy actions (cancel-scheduled, close-pending, partial-profit,
- * partial-loss, trailing-stop, trailing-take, breakeven) in memory and provides
- * methods to retrieve statistics, generate reports, and export to files.
- *
- * Unlike StrategyReportService which writes each event to disk immediately,
- * this service accumulates events in ReportStorage instances (max 250 per
- * symbol-strategy pair) for batch reporting.
- *
- * Features:
- * - In-memory event accumulation with memoized storage per symbol-strategy pair
- * - Statistical data extraction (event counts by action type)
- * - Markdown report generation with configurable columns
- * - File export with timestamped filenames
- * - Selective or full cache clearing
- *
- * Lifecycle:
- * - Call subscribe() to enable event collection
- * - Events are collected automatically via cancelScheduled, closePending, etc.
- * - Use getData(), getReport(), or dump() to retrieve accumulated data
- * - Call unsubscribe() to disable collection and clear all data
- *
- * @example
- * ```typescript
- * strategyMarkdownService.subscribe();
- *
- * // Events are collected automatically during strategy execution
- * // ...
- *
- * // Get statistics
- * const stats = await strategyMarkdownService.getData("BTCUSDT", "my-strategy", "binance", "1h", true);
- *
- * // Generate markdown report
- * const report = await strategyMarkdownService.getReport("BTCUSDT", "my-strategy", "binance", "1h", true);
- *
- * // Export to file
- * await strategyMarkdownService.dump("BTCUSDT", "my-strategy", "binance", "1h", true);
- *
- * strategyMarkdownService.unsubscribe();
- * ```
- *
- * @see StrategyReportService for immediate event persistence to JSON files
- * @see Strategy for the high-level utility class that wraps this service
- */
-declare class StrategyMarkdownService {
-    readonly loggerService: {
-        readonly methodContextService: {
-            readonly context: IMethodContext;
-        };
-        readonly executionContextService: {
-            readonly context: IExecutionContext;
-        };
-        _commonLogger: ILogger;
-        readonly _methodContext: {};
-        readonly _executionContext: {};
-        log: (topic: string, ...args: any[]) => Promise<void>;
-        debug: (topic: string, ...args: any[]) => Promise<void>;
-        info: (topic: string, ...args: any[]) => Promise<void>;
-        warn: (topic: string, ...args: any[]) => Promise<void>;
-        setLogger: (logger: ILogger) => void;
-    };
-    /**
-     * Memoized factory for ReportStorage instances.
-     *
-     * Creates and caches ReportStorage per unique symbol-strategy-exchange-frame-backtest combination.
-     * Uses CREATE_KEY_FN for cache key generation.
-     *
-     * @internal
-     */
-    private getStorage;
-    /**
-     * Records a cancel-scheduled event when a scheduled signal is cancelled.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param cancelId - Optional identifier for the cancellation reason
-     */
-    cancelScheduled: (symbol: string, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, cancelId?: string) => Promise<void>;
-    /**
-     * Records a close-pending event when a pending signal is closed.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param closeId - Optional identifier for the close reason
-     */
-    closePending: (symbol: string, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, closeId?: string) => Promise<void>;
-    /**
-     * Records a partial-profit event when a portion of the position is closed at profit.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentToClose - Percentage of position to close (0-100)
-     * @param currentPrice - Current market price at time of partial close
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Records a partial-loss event when a portion of the position is closed at loss.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentToClose - Percentage of position to close (0-100)
-     * @param currentPrice - Current market price at time of partial close
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Records a trailing-stop event when the stop-loss is adjusted.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentShift - Percentage the stop-loss was shifted
-     * @param currentPrice - Current market price at time of adjustment
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Records a trailing-take event when the take-profit is adjusted.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param percentShift - Percentage the take-profit was shifted
-     * @param currentPrice - Current market price at time of adjustment
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Records a breakeven event when the stop-loss is moved to entry price.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param currentPrice - Current market price at time of breakeven activation
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Records an activate-scheduled event when a scheduled signal is activated early.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param currentPrice - Current market price at time of activation
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Entry price for the position
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     * @param activateId - Optional identifier for the activation reason
-     */
-    activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number, activateId?: string) => Promise<void>;
-    /**
-     * Records an average-buy (DCA) event when a new averaging entry is added to an open position.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param currentPrice - Price at which the new averaging entry was executed
-     * @param effectivePriceOpen - Averaged entry price after this addition
-     * @param totalEntries - Total number of DCA entries after this addition
-     * @param isBacktest - Whether this is a backtest or live trading event
-     * @param context - Strategy context with strategyName, exchangeName, frameName
-     * @param timestamp - Timestamp from StrategyCommitContract (execution context time)
-     * @param position - Trade direction: "long" or "short"
-     * @param priceOpen - Original entry price (unchanged by averaging)
-     * @param priceTakeProfit - Effective take profit price
-     * @param priceStopLoss - Effective stop loss price
-     * @param originalPriceTakeProfit - Original take profit before trailing
-     * @param originalPriceStopLoss - Original stop loss before trailing
-     * @param scheduledAt - Signal creation timestamp in milliseconds
-     * @param pendingAt - Pending timestamp in milliseconds
-     */
-    averageBuy: (symbol: string, currentPrice: number, effectivePriceOpen: number, totalEntries: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cost: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Retrieves aggregated statistics from accumulated strategy events.
-     *
-     * Returns counts for each action type and the full event list from the
-     * ReportStorage for the specified symbol-strategy pair.
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param strategyName - Name of the trading strategy
-     * @param exchangeName - Name of the exchange
-     * @param frameName - Timeframe name for backtest identification
-     * @param backtest - Whether to get backtest or live data
-     * @returns Promise resolving to StrategyStatisticsModel with event list and counts
-     * @throws Error if service not initialized (subscribe() not called)
-     */
-    getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<StrategyStatisticsModel>;
-    /**
-     * Generates a markdown report from accumulated strategy events.
-     *
-     * Creates a formatted markdown document containing:
-     * - Header with symbol and strategy name
-     * - Table of all events with configurable columns
-     * - Summary statistics with counts by action type
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param strategyName - Name of the trading strategy
-     * @param exchangeName - Name of the exchange
-     * @param frameName - Timeframe name for backtest identification
-     * @param backtest - Whether to get backtest or live data
-     * @param columns - Column configuration for the event table
-     * @returns Promise resolving to formatted markdown string
-     * @throws Error if service not initialized (subscribe() not called)
-     */
-    getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
-    /**
-     * Generates and saves a markdown report to disk.
-     *
-     * Creates the output directory if it doesn't exist and writes
-     * the report with a timestamped filename via Markdown.writeData().
-     *
-     * Filename format: `{symbol}_{strategyName}_{exchangeName}[_{frameName}_backtest|_live]-{timestamp}.md`
-     *
-     * @param symbol - Trading pair symbol (e.g., "BTCUSDT")
-     * @param strategyName - Name of the trading strategy
-     * @param exchangeName - Name of the exchange
-     * @param frameName - Timeframe name for backtest identification
-     * @param backtest - Whether to dump backtest or live data
-     * @param path - Output directory path (default: "./dump/strategy")
-     * @param columns - Column configuration for the event table
-     * @returns Promise that resolves when file is written
-     * @throws Error if service not initialized (subscribe() not called)
-     */
-    dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
-    /**
-     * Clears accumulated events from storage.
-     *
-     * Can clear either a specific symbol-strategy pair or all stored data.
-     *
-     * @param payload - Optional filter to clear specific storage. If omitted, clears all.
-     * @param payload.symbol - Trading pair symbol
-     * @param payload.strategyName - Strategy name
-     * @param payload.exchangeName - Exchange name
-     * @param payload.frameName - Frame name
-     * @param payload.backtest - Backtest mode flag
-     */
-    clear: (payload?: {
-        symbol: string;
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-        backtest: boolean;
-    }) => Promise<void>;
-    /**
-     * Initializes the service for event collection.
-     *
-     * Must be called before any events can be collected or reports generated.
-     * Uses singleshot pattern to ensure only one subscription exists at a time.
-     *
-     * @returns Cleanup function that clears the subscription and all accumulated data
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Stops event collection and clears all accumulated data.
-     *
-     * Invokes the cleanup function returned by subscribe(), which clears
-     * both the subscription and all ReportStorage instances.
-     * Safe to call multiple times - only acts if subscription exists.
-     */
-    unsubscribe: () => Promise<void>;
-}
 
 /**
  * Utility class for accessing strategy management reports and statistics.
@@ -27237,7 +25038,58 @@ declare class WalkerLogicPrivateService {
         setLogger: (logger: ILogger) => void;
     };
     readonly backtestLogicPublicService: BacktestLogicPublicService;
-    readonly backtestMarkdownService: BacktestMarkdownService;
+    readonly backtestMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _signalList: IStrategyTickResultClosed[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addSignal(data: IStrategyTickResultClosed): void;
+            getData(): Promise<BacktestStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$b[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$b[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _signalList: IStrategyTickResultClosed[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addSignal(data: IStrategyTickResultClosed): void;
+            getData(): Promise<BacktestStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$b[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$b[]): Promise<void>;
+        }>;
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BacktestStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$b[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$b[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
     readonly walkerSchemaService: WalkerSchemaService;
     /**
      * Runs walker comparison for a symbol.
@@ -28578,966 +26430,6 @@ declare class ColumnValidationService {
     validate: () => void;
 }
 
-/**
- * Service for logging backtest strategy tick events to SQLite database.
- *
- * Captures all backtest signal lifecycle events (idle, opened, active, closed)
- * and stores them in the Report database for analysis and debugging.
- *
- * Features:
- * - Listens to backtest signal events via signalBacktestEmitter
- * - Logs all tick event types with full signal details
- * - Stores events in Report.writeData() for persistence
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { BacktestReportService } from "backtest-kit";
- *
- * const reportService = new BacktestReportService();
- *
- * // Subscribe to backtest events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run backtest...
- * // Events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class BacktestReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes backtest tick events and logs them to the database.
-     * Handles all event types: idle, opened, active, closed.
-     *
-     * @param data - Backtest tick result with signal lifecycle information
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to backtest signal emitter to receive tick events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving backtest events
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from backtest signal emitter to stop receiving tick events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new BacktestReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging live trading strategy tick events to SQLite database.
- *
- * Captures all live trading signal lifecycle events (idle, opened, active, closed)
- * and stores them in the Report database for real-time monitoring and analysis.
- *
- * Features:
- * - Listens to live signal events via signalLiveEmitter
- * - Logs all tick event types with full signal details
- * - Stores events in Report.writeData() for persistence
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { LiveReportService } from "backtest-kit";
- *
- * const reportService = new LiveReportService();
- *
- * // Subscribe to live trading events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run live trading...
- * // Events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class LiveReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes live trading tick events and logs them to the database.
-     * Handles all event types: idle, opened, active, closed.
-     *
-     * @param data - Live trading tick result with signal lifecycle information
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to live signal emitter to receive tick events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving live trading events
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from live signal emitter to stop receiving tick events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new LiveReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging scheduled signal events to SQLite database.
- *
- * Captures all scheduled signal lifecycle events (scheduled, opened, cancelled)
- * and stores them in the Report database for tracking delayed order execution.
- *
- * Features:
- * - Listens to signal events via signalEmitter
- * - Logs scheduled, opened (from scheduled), and cancelled events
- * - Calculates duration between scheduling and execution/cancellation
- * - Stores events in Report.writeData() for schedule tracking
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { ScheduleReportService } from "backtest-kit";
- *
- * const reportService = new ScheduleReportService();
- *
- * // Subscribe to scheduled signal events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy with scheduled orders...
- * // Scheduled events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class ScheduleReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes signal tick events and logs scheduled signal lifecycle to the database.
-     * Handles scheduled, opened (from scheduled), and cancelled event types.
-     *
-     * @param data - Strategy tick result with signal lifecycle information
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to signal emitter to receive scheduled signal events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving scheduled signal events
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from signal emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new ScheduleReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging performance metrics to SQLite database.
- *
- * Captures all performance timing events from strategy execution
- * and stores them in the Report database for bottleneck analysis and optimization.
- *
- * Features:
- * - Listens to performance events via performanceEmitter
- * - Logs all timing metrics with duration and metadata
- * - Stores events in Report.writeData() for performance analysis
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { PerformanceReportService } from "backtest-kit";
- *
- * const reportService = new PerformanceReportService();
- *
- * // Subscribe to performance events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy...
- * // Performance metrics are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class PerformanceReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes performance tracking events and logs them to the database.
-     *
-     * @param event - Performance contract with timing and metric information
-     *
-     * @internal
-     */
-    private track;
-    /**
-     * Subscribes to performance emitter to receive timing events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving performance events
-     *
-     * @example
-     * ```typescript
-     * const service = new PerformanceReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from performance emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new PerformanceReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging walker optimization progress to SQLite database.
- *
- * Captures walker strategy optimization results and stores them in the Report database
- * for tracking parameter optimization and comparing strategy performance.
- *
- * Features:
- * - Listens to walker events via walkerEmitter
- * - Logs each strategy test result with metrics and statistics
- * - Tracks best strategy and optimization progress
- * - Stores events in Report.writeData() for optimization analysis
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { WalkerReportService } from "backtest-kit";
- *
- * const reportService = new WalkerReportService();
- *
- * // Subscribe to walker optimization events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run walker optimization...
- * // Each strategy result is automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class WalkerReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes walker optimization events and logs them to the database.
-     *
-     * @param data - Walker contract with strategy optimization results
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to walker emitter to receive optimization progress events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving walker optimization events
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from walker emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new WalkerReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging heatmap (closed signals) events to SQLite database.
- *
- * Captures closed signal events across all symbols for portfolio-wide
- * heatmap analysis and stores them in the Report database.
- *
- * Features:
- * - Listens to signal events via signalEmitter
- * - Logs only closed signals with PNL data
- * - Stores events in Report.writeData() for heatmap generation
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { HeatReportService } from "backtest-kit";
- *
- * const reportService = new HeatReportService();
- *
- * // Subscribe to signal events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy...
- * // Closed signals are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class HeatReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes signal tick events and logs closed signals to the database.
-     * Only processes closed signals - other actions are ignored.
-     *
-     * @param data - Strategy tick result with signal lifecycle information
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to signal emitter to receive closed signal events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving signal events
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from signal emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new HeatReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging partial profit/loss events to SQLite database.
- *
- * Captures all partial position exit events (profit and loss levels)
- * and stores them in the Report database for tracking partial closures.
- *
- * Features:
- * - Listens to partial profit events via partialProfitSubject
- * - Listens to partial loss events via partialLossSubject
- * - Logs all partial exit events with level and price information
- * - Stores events in Report.writeData() for persistence
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { PartialReportService } from "backtest-kit";
- *
- * const reportService = new PartialReportService();
- *
- * // Subscribe to partial events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy with partial exits...
- * // Partial events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class PartialReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes partial profit events and logs them to the database.
-     *
-     * @param data - Partial profit event data with signal, level, and price information
-     *
-     * @internal
-     */
-    private tickProfit;
-    /**
-     * Processes partial loss events and logs them to the database.
-     *
-     * @param data - Partial loss event data with signal, level, and price information
-     *
-     * @internal
-     */
-    private tickLoss;
-    /**
-     * Subscribes to partial profit/loss emitters to receive partial exit events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving partial events
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from partial profit/loss emitters to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new PartialReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging breakeven events to SQLite database.
- *
- * Captures all breakeven events (when signal reaches breakeven point)
- * and stores them in the Report database for analysis and tracking.
- *
- * Features:
- * - Listens to breakeven events via breakevenSubject
- * - Logs all breakeven achievements with full signal details
- * - Stores events in Report.writeData() for persistence
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { BreakevenReportService } from "backtest-kit";
- *
- * const reportService = new BreakevenReportService();
- *
- * // Subscribe to breakeven events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy...
- * // Breakeven events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class BreakevenReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes breakeven events and logs them to the database.
-     *
-     * @param data - Breakeven event data with signal and price information
-     *
-     * @internal
-     */
-    private tickBreakeven;
-    /**
-     * Subscribes to breakeven signal emitter to receive breakeven events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving breakeven events
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from breakeven signal emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new BreakevenReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging risk rejection events to SQLite database.
- *
- * Captures all signal rejection events from the risk management system
- * and stores them in the Report database for risk analysis and auditing.
- *
- * Features:
- * - Listens to risk rejection events via riskSubject
- * - Logs all rejected signals with reason and pending signal details
- * - Stores events in Report.writeData() for risk tracking
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { RiskReportService } from "backtest-kit";
- *
- * const reportService = new RiskReportService();
- *
- * // Subscribe to risk rejection events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy with risk management...
- * // Rejection events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class RiskReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes risk rejection events and logs them to the database.
-     *
-     * @param data - Risk event with rejection reason and pending signal information
-     *
-     * @internal
-     */
-    private tickRejection;
-    /**
-     * Subscribes to risk rejection emitter to receive rejection events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving risk rejection events
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from risk rejection emitter to stop receiving events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new RiskReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for persisting strategy management events to JSON report files.
- *
- * Handles logging of strategy actions (cancel-scheduled, close-pending, partial-profit,
- * partial-loss, trailing-stop, trailing-take, breakeven) to persistent storage via
- * the Report class. Each event is written as a separate JSON record.
- *
- * Unlike StrategyMarkdownService which accumulates events in memory for markdown reports,
- * this service writes each event immediately to disk for audit trail purposes.
- *
- * Lifecycle:
- * - Call subscribe() to enable event logging
- * - Events are written via Report.writeData() with "strategy" category
- * - Call unsubscribe() to disable event logging
- *
- * @see StrategyMarkdownService for in-memory event accumulation and markdown report generation
- * @see Report for the underlying persistence mechanism
- */
-declare class StrategyReportService {
-    readonly loggerService: {
-        readonly methodContextService: {
-            readonly context: IMethodContext;
-        };
-        readonly executionContextService: {
-            readonly context: IExecutionContext;
-        };
-        _commonLogger: ILogger;
-        readonly _methodContext: {};
-        readonly _executionContext: {};
-        log: (topic: string, ...args: any[]) => Promise<void>;
-        debug: (topic: string, ...args: any[]) => Promise<void>;
-        info: (topic: string, ...args: any[]) => Promise<void>;
-        warn: (topic: string, ...args: any[]) => Promise<void>;
-        setLogger: (logger: ILogger) => void;
-    };
-    /**
-     * Logs a cancel-scheduled event when a scheduled signal is cancelled.
-     */
-    cancelScheduled: (symbol: string, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cancelId?: string) => Promise<void>;
-    /**
-     * Logs a close-pending event when a pending signal is closed.
-     */
-    closePending: (symbol: string, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, closeId?: string) => Promise<void>;
-    /**
-     * Logs a partial-profit event when a portion of the position is closed at profit.
-     */
-    partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Logs a partial-loss event when a portion of the position is closed at loss.
-     */
-    partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Logs a trailing-stop event when the stop-loss is adjusted.
-     */
-    trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Logs a trailing-take event when the take-profit is adjusted.
-     */
-    trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Logs a breakeven event when the stop-loss is moved to entry price.
-     */
-    breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Logs an activate-scheduled event when a scheduled signal is activated early.
-     */
-    activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number, activateId?: string) => Promise<void>;
-    /**
-     * Logs an average-buy (DCA) event when a new averaging entry is added to an open position.
-     */
-    averageBuy: (symbol: string, currentPrice: number, effectivePriceOpen: number, totalEntries: number, isBacktest: boolean, context: {
-        strategyName: StrategyName;
-        exchangeName: ExchangeName;
-        frameName: FrameName;
-    }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cost: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, originalPriceOpen: number) => Promise<void>;
-    /**
-     * Initializes the service for event logging.
-     *
-     * Must be called before any events can be logged. Uses singleshot pattern
-     * to ensure only one subscription exists at a time.
-     *
-     * @returns Cleanup function that clears the subscription when called
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Stops event logging and cleans up the subscription.
-     *
-     * Safe to call multiple times - only clears if subscription exists.
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging signal synchronization events to JSONL report files.
- *
- * Captures all signal lifecycle sync events (signal-open, signal-close)
- * emitted by syncSubject and stores them in the Report database for
- * external order management audit trails.
- *
- * Features:
- * - Listens to sync events via syncSubject
- * - Logs signal-open events (scheduled limit order filled) with full signal details
- * - Logs signal-close events (position exited) with PNL and close reason
- * - Stores events in Report.writeData() for persistence
- * - Protected against multiple subscriptions using singleshot
- *
- * @example
- * ```typescript
- * import { SyncReportService } from "backtest-kit";
- *
- * const reportService = new SyncReportService();
- *
- * // Subscribe to sync events
- * const unsubscribe = reportService.subscribe();
- *
- * // Run strategy...
- * // Sync events are automatically logged
- *
- * // Later: unsubscribe
- * await reportService.unsubscribe();
- * ```
- */
-declare class SyncReportService {
-    /** Logger service for debug output */
-    private readonly loggerService;
-    /**
-     * Processes signal sync events and logs them to the database.
-     * Handles both signal-open and signal-close action types.
-     *
-     * @param data - Signal sync contract with lifecycle information
-     *
-     * @internal
-     */
-    private tick;
-    /**
-     * Subscribes to syncSubject to receive signal sync events.
-     * Protected against multiple subscriptions.
-     * Returns an unsubscribe function to stop receiving events.
-     *
-     * @returns Unsubscribe function to stop receiving sync events
-     *
-     * @example
-     * ```typescript
-     * const service = new SyncReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Unsubscribes from syncSubject to stop receiving sync events.
-     * Calls the unsubscribe function returned by subscribe().
-     * If not subscribed, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new SyncReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging highest profit events to the JSONL report database.
- *
- * Listens to highestProfitSubject and writes each new price record to
- * Report.writeData() for persistence and analytics.
- */
-declare class HighestProfitReportService {
-    private readonly loggerService;
-    /**
-     * Handles a single `HighestProfitContract` event emitted by `highestProfitSubject`.
-     *
-     * Writes a JSONL record to the `"highest_profit"` report database via
-     * `Report.writeData`, capturing the full signal snapshot at the moment
-     * the new profit record was set:
-     * - `timestamp`, `symbol`, `strategyName`, `exchangeName`, `frameName`, `backtest`
-     * - `signalId`, `position`, `currentPrice`
-     * - `priceOpen`, `priceTakeProfit`, `priceStopLoss` (effective values from the signal)
-     *
-     * `strategyName` and signal-level fields are sourced from `data.signal`
-     * rather than the contract root.
-     *
-     * @param data - `HighestProfitContract` payload containing `symbol`,
-     *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
-     *   `frameName`
-     */
-    private tick;
-    /**
-     * Subscribes to `highestProfitSubject` to start persisting profit records.
-     * Protected against multiple subscriptions via `singleshot` — subsequent
-     * calls return the same unsubscribe function without re-subscribing.
-     *
-     * The returned unsubscribe function clears the `singleshot` state and
-     * detaches from `highestProfitSubject`.
-     *
-     * @returns Unsubscribe function; calling it tears down the subscription
-     *
-     * @example
-     * ```typescript
-     * const service = new HighestProfitReportService();
-     * const unsubscribe = service.subscribe();
-     * // ... later
-     * unsubscribe();
-     * ```
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Detaches from `highestProfitSubject`, stopping further JSONL writes.
-     *
-     * Calls the unsubscribe closure returned by `subscribe()`.
-     * If `subscribe()` was never called, does nothing.
-     *
-     * @example
-     * ```typescript
-     * const service = new HighestProfitReportService();
-     * service.subscribe();
-     * // ... later
-     * await service.unsubscribe();
-     * ```
-     */
-    unsubscribe: () => Promise<void>;
-}
-
-/**
- * Service for logging max drawdown events to the JSONL report database.
- *
- * Listens to maxDrawdownSubject and writes each new drawdown record to
- * Report.writeData() for persistence and analytics.
- */
-declare class MaxDrawdownReportService {
-    private readonly loggerService;
-    /**
-     * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
-     *
-     * Writes a JSONL record to the `"max_drawdown"` report database via
-     * `Report.writeData`, capturing the full signal snapshot at the moment
-     * the new drawdown record was set:
-     * - `timestamp`, `symbol`, `strategyName`, `exchangeName`, `frameName`, `backtest`
-     * - `signalId`, `position`, `currentPrice`
-     * - `priceOpen`, `priceTakeProfit`, `priceStopLoss` (effective values from the signal)
-     *
-     * `strategyName` and signal-level fields are sourced from `data.signal`
-     * rather than the contract root.
-     *
-     * @param data - `MaxDrawdownContract` payload containing `symbol`,
-     *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
-     *   `frameName`
-     */
-    private tick;
-    /**
-     * Subscribes to `maxDrawdownSubject` to start persisting drawdown records.
-     * Protected against multiple subscriptions via `singleshot` — subsequent
-     * calls return the same unsubscribe function without re-subscribing.
-     *
-     * The returned unsubscribe function clears the `singleshot` state and
-     * detaches from `maxDrawdownSubject`.
-     *
-     * @returns Unsubscribe function; calling it tears down the subscription
-     */
-    subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
-    /**
-     * Detaches from `maxDrawdownSubject`, stopping further JSONL writes.
-     *
-     * Calls the unsubscribe closure returned by `subscribe()`.
-     * If `subscribe()` was never called, does nothing.
-     */
-    unsubscribe: () => Promise<void>;
-}
-
 declare const backtest: {
     exchangeValidationService: ExchangeValidationService;
     strategyValidationService: StrategyValidationService;
@@ -29548,32 +26440,1174 @@ declare const backtest: {
     actionValidationService: ActionValidationService;
     configValidationService: ConfigValidationService;
     columnValidationService: ColumnValidationService;
-    backtestReportService: BacktestReportService;
-    liveReportService: LiveReportService;
-    scheduleReportService: ScheduleReportService;
-    performanceReportService: PerformanceReportService;
-    walkerReportService: WalkerReportService;
-    heatReportService: HeatReportService;
-    partialReportService: PartialReportService;
-    breakevenReportService: BreakevenReportService;
-    riskReportService: RiskReportService;
-    strategyReportService: StrategyReportService;
-    syncReportService: SyncReportService;
-    highestProfitReportService: HighestProfitReportService;
-    maxDrawdownReportService: MaxDrawdownReportService;
-    backtestMarkdownService: BacktestMarkdownService;
-    liveMarkdownService: LiveMarkdownService;
-    scheduleMarkdownService: ScheduleMarkdownService;
-    performanceMarkdownService: PerformanceMarkdownService;
-    walkerMarkdownService: WalkerMarkdownService;
-    heatMarkdownService: HeatMarkdownService;
-    partialMarkdownService: PartialMarkdownService;
-    breakevenMarkdownService: BreakevenMarkdownService;
-    riskMarkdownService: RiskMarkdownService;
-    strategyMarkdownService: StrategyMarkdownService;
-    syncMarkdownService: SyncMarkdownService;
-    highestProfitMarkdownService: HighestProfitMarkdownService;
-    maxDrawdownMarkdownService: MaxDrawdownMarkdownService;
+    backtestReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    liveReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    scheduleReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    performanceReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        track: (event: PerformanceContract) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    walkerReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: WalkerContract) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    heatReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    partialReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tickProfit: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            level: PartialLevel;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        tickLoss: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            level: PartialLevel;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    breakevenReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tickBreakeven: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    riskReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tickRejection: (data: RiskEvent) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    strategyReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        cancelScheduled: (symbol: string, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cancelId?: string) => Promise<void>;
+        closePending: (symbol: string, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, closeId?: string) => Promise<void>;
+        partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number, activateId?: string) => Promise<void>;
+        averageBuy: (symbol: string, currentPrice: number, effectivePriceOpen: number, totalEntries: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cost: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, originalPriceOpen: number) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    syncReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: SignalSyncContract) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    highestProfitReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: {
+            symbol: string;
+            signal: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    maxDrawdownReportService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        tick: (data: {
+            symbol: string;
+            signal: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    backtestMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _signalList: IStrategyTickResultClosed[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addSignal(data: IStrategyTickResultClosed): void;
+            getData(): Promise<BacktestStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$b[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$b[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _signalList: IStrategyTickResultClosed[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addSignal(data: IStrategyTickResultClosed): void;
+            getData(): Promise<BacktestStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$b[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$b[]): Promise<void>;
+        }>;
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BacktestStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$b[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$b[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    liveMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: TickEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addIdleEvent(currentPrice: number): void;
+            addOpenedEvent(data: IStrategyTickResultOpened): void;
+            addActiveEvent(data: IStrategyTickResultActive): void;
+            addClosedEvent(data: IStrategyTickResultClosed): void;
+            addScheduledEvent(data: IStrategyTickResultScheduled): void;
+            addWaitingEvent(data: IStrategyTickResultWaiting): void;
+            addCancelledEvent(data: IStrategyTickResultCancelled): void;
+            getData(): Promise<LiveStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$a[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$a[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: TickEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addIdleEvent(currentPrice: number): void;
+            addOpenedEvent(data: IStrategyTickResultOpened): void;
+            addActiveEvent(data: IStrategyTickResultActive): void;
+            addClosedEvent(data: IStrategyTickResultClosed): void;
+            addScheduledEvent(data: IStrategyTickResultScheduled): void;
+            addWaitingEvent(data: IStrategyTickResultWaiting): void;
+            addCancelledEvent(data: IStrategyTickResultCancelled): void;
+            getData(): Promise<LiveStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$a[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$a[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<LiveStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$a[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$a[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    scheduleMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: ScheduledEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addScheduledEvent(data: IStrategyTickResultScheduled): void;
+            addOpenedEvent(data: IStrategyTickResultOpened): void;
+            addCancelledEvent(data: IStrategyTickResultCancelled): void;
+            getData(): Promise<ScheduleStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$9[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$9[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: ScheduledEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addScheduledEvent(data: IStrategyTickResultScheduled): void;
+            addOpenedEvent(data: IStrategyTickResultOpened): void;
+            addCancelledEvent(data: IStrategyTickResultCancelled): void;
+            getData(): Promise<ScheduleStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$9[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$9[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<ScheduleStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$9[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$9[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    performanceMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _events: PerformanceContract[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(event: PerformanceContract): void;
+            getData(strategyName: StrategyName): Promise<PerformanceStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$8[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$8[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _events: PerformanceContract[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(event: PerformanceContract): void;
+            getData(strategyName: StrategyName): Promise<PerformanceStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$8[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$8[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        track: (event: PerformanceContract) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PerformanceStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$8[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$8[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    walkerMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((walkerName: WalkerName) => {
+            _totalStrategies: number | null;
+            _bestStats: BacktestStatisticsModel | null;
+            _bestMetric: number | null;
+            _bestStrategy: StrategyName | null;
+            _strategyResults: IStrategyResult[];
+            readonly walkerName: WalkerName;
+            addResult(data: WalkerContract): void;
+            getData(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }): Promise<WalkerStatisticsModel>;
+            getComparisonTable(topN?: number, columns?: StrategyColumn[]): Promise<string>;
+            getPnlTable(columns?: PnlColumn[]): Promise<string>;
+            getReport(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]): Promise<string>;
+            dump(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _totalStrategies: number | null;
+            _bestStats: BacktestStatisticsModel | null;
+            _bestMetric: number | null;
+            _bestStrategy: StrategyName | null;
+            _strategyResults: IStrategyResult[];
+            readonly walkerName: WalkerName;
+            addResult(data: WalkerContract): void;
+            getData(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }): Promise<WalkerStatisticsModel>;
+            getComparisonTable(topN?: number, columns?: StrategyColumn[]): Promise<string>;
+            getPnlTable(columns?: PnlColumn[]): Promise<string>;
+            getReport(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]): Promise<string>;
+            dump(symbol: string, metric: WalkerMetric, context: {
+                exchangeName: ExchangeName;
+                frameName: FrameName;
+            }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: WalkerContract) => Promise<void>;
+        getData: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<WalkerCompleteContract>;
+        getReport: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<string>;
+        dump: (walkerName: WalkerName, symbol: string, metric: WalkerMetric, context: {
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, path?: string, strategyColumns?: StrategyColumn[], pnlColumns?: PnlColumn[]) => Promise<void>;
+        clear: (walkerName?: WalkerName) => Promise<void>;
+    };
+    heatMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            symbolData: Map<string, IStrategyTickResultClosed[]>;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            readonly backtest: boolean;
+            addSignal(data: IStrategyTickResultClosed): void;
+            calculateSymbolStats(symbol: string, signals: IStrategyTickResultClosed[]): IHeatmapRow;
+            getData(): Promise<HeatmapStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$7[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$7[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            symbolData: Map<string, IStrategyTickResultClosed[]>;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            readonly backtest: boolean;
+            addSignal(data: IStrategyTickResultClosed): void;
+            calculateSymbolStats(symbol: string, signals: IStrategyTickResultClosed[]): IHeatmapRow;
+            getData(): Promise<HeatmapStatisticsModel>;
+            getReport(strategyName: StrategyName, columns?: Columns$7[]): Promise<string>;
+            dump(strategyName: StrategyName, path?: string, columns?: Columns$7[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: IStrategyTickResult) => Promise<void>;
+        getData: (exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<HeatmapStatisticsModel>;
+        getReport: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$7[]) => Promise<string>;
+        dump: (strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$7[]) => Promise<void>;
+        clear: (payload?: {
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    partialMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: PartialEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addProfitEvent(data: IPublicSignalRow, currentPrice: number, level: PartialLevel, backtest: boolean, timestamp: number): void;
+            addLossEvent(data: IPublicSignalRow, currentPrice: number, level: PartialLevel, backtest: boolean, timestamp: number): void;
+            getData(): Promise<PartialStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$6[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: PartialEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addProfitEvent(data: IPublicSignalRow, currentPrice: number, level: PartialLevel, backtest: boolean, timestamp: number): void;
+            addLossEvent(data: IPublicSignalRow, currentPrice: number, level: PartialLevel, backtest: boolean, timestamp: number): void;
+            getData(): Promise<PartialStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$6[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$6[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tickProfit: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            level: PartialLevel;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        tickLoss: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            level: PartialLevel;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<PartialStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$6[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$6[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    breakevenMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: BreakevenEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addBreakevenEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<BreakevenStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$1[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$1[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: BreakevenEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addBreakevenEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<BreakevenStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$1[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$1[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tickBreakeven: (data: {
+            symbol: string;
+            data: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<BreakevenStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$1[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$1[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    riskMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: RiskEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addRejectionEvent(event: RiskEvent): void;
+            getData(): Promise<RiskStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$3[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$3[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: RiskEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addRejectionEvent(event: RiskEvent): void;
+            getData(): Promise<RiskStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$3[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$3[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tickRejection: (data: RiskEvent) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<RiskStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$3[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$3[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    strategyMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: StrategyEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(event: StrategyEvent): void;
+            getData(): Promise<StrategyStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: StrategyEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(event: StrategyEvent): void;
+            getData(): Promise<StrategyStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns[]): Promise<void>;
+        }>;
+        cancelScheduled: (symbol: string, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, cancelId?: string) => Promise<void>;
+        closePending: (symbol: string, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, closeId?: string) => Promise<void>;
+        partialProfit: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        partialLoss: (symbol: string, percentToClose: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        trailingStop: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        trailingTake: (symbol: string, percentShift: number, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        breakeven: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number) => Promise<void>;
+        activateScheduled: (symbol: string, currentPrice: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, totalEntries: number, originalPriceOpen: number, activateId?: string) => Promise<void>;
+        averageBuy: (symbol: string, currentPrice: number, effectivePriceOpen: number, totalEntries: number, isBacktest: boolean, context: {
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }, timestamp: number, signalId: string, pnl: IStrategyPnL, totalPartials: number, cost: number, position: "long" | "short", priceOpen: number, priceTakeProfit: number, priceStopLoss: number, originalPriceTakeProfit: number, originalPriceStopLoss: number, scheduledAt: number, pendingAt: number, originalPriceOpen: number) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<StrategyStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+    };
+    syncMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: SyncEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            readonly backtest: boolean;
+            addEvent(event: SyncEvent): void;
+            getData(): Promise<SyncStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$2[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$2[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: SyncEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            readonly backtest: boolean;
+            addEvent(event: SyncEvent): void;
+            getData(): Promise<SyncStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$2[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$2[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: SignalSyncContract) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<SyncStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$2[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$2[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    highestProfitMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: HighestProfitEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<HighestProfitStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$5[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: HighestProfitEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<HighestProfitStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$5[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$5[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: {
+            symbol: string;
+            signal: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<HighestProfitStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$5[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$5[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
+    maxDrawdownMarkdownService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        getStorage: ((symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => {
+            _eventList: MaxDrawdownEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<MaxDrawdownStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$4[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]): Promise<void>;
+        }) & functools_kit.IClearableMemoize<string> & functools_kit.IControlMemoize<string, {
+            _eventList: MaxDrawdownEvent[];
+            readonly symbol: string;
+            readonly strategyName: StrategyName;
+            readonly exchangeName: ExchangeName;
+            readonly frameName: FrameName;
+            addEvent(data: IPublicSignalRow, currentPrice: number, backtest: boolean, timestamp: number): void;
+            getData(): Promise<MaxDrawdownStatisticsModel>;
+            getReport(symbol: string, strategyName: StrategyName, columns?: Columns$4[]): Promise<string>;
+            dump(symbol: string, strategyName: StrategyName, path?: string, columns?: Columns$4[]): Promise<void>;
+        }>;
+        subscribe: (() => () => void) & functools_kit.ISingleshotClearable;
+        unsubscribe: () => Promise<void>;
+        tick: (data: {
+            symbol: string;
+            signal: IPublicSignalRow;
+            currentPrice: number;
+            backtest: boolean;
+            timestamp: number;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+        }) => Promise<void>;
+        getData: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => Promise<MaxDrawdownStatisticsModel>;
+        getReport: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, columns?: Columns$4[]) => Promise<string>;
+        dump: (symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean, path?: string, columns?: Columns$4[]) => Promise<void>;
+        clear: (payload?: {
+            symbol: string;
+            strategyName: StrategyName;
+            exchangeName: ExchangeName;
+            frameName: FrameName;
+            backtest: boolean;
+        }) => Promise<void>;
+    };
     backtestLogicPublicService: BacktestLogicPublicService;
     liveLogicPublicService: LiveLogicPublicService;
     walkerLogicPublicService: WalkerLogicPublicService;

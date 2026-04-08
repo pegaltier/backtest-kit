@@ -7,6 +7,7 @@ import { maxDrawdownSubject } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
+import { singleton } from "di-singleton";
 
 const MAX_DRAWDOWN_REPORT_METHOD_NAME_SUBSCRIBE = "MaxDrawdownReportService.subscribe";
 const MAX_DRAWDOWN_REPORT_METHOD_NAME_UNSUBSCRIBE = "MaxDrawdownReportService.unsubscribe";
@@ -18,8 +19,8 @@ const MAX_DRAWDOWN_REPORT_METHOD_NAME_TICK = "MaxDrawdownReportService.tick";
  * Listens to maxDrawdownSubject and writes each new drawdown record to
  * Report.writeData() for persistence and analytics.
  */
-export class MaxDrawdownReportService {
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export const MaxDrawdownReportService = singleton(class {
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
@@ -38,7 +39,7 @@ export class MaxDrawdownReportService {
    *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
    *   `frameName`
    */
-  private tick = async (data: {
+  public tick = async (data: {
     symbol: string;
     signal: IPublicSignalRow;
     currentPrice: number;
@@ -104,6 +105,8 @@ export class MaxDrawdownReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TMaxDrawdownReportService = InstanceType<typeof MaxDrawdownReportService>
 
 export default MaxDrawdownReportService;

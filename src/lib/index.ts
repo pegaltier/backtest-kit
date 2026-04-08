@@ -36,12 +36,12 @@ import LiveLogicPublicService from "./services/logic/public/LiveLogicPublicServi
 import WalkerLogicPublicService from "./services/logic/public/WalkerLogicPublicService";
 import LiveCommandService from "./services/command/LiveCommandService";
 import BacktestCommandService from "./services/command/BacktestCommandService";
-import BacktestMarkdownService from "./services/markdown/BacktestMarkdownService";
-import LiveMarkdownService from "./services/markdown/LiveMarkdownService";
-import ScheduleMarkdownService from "./services/markdown/ScheduleMarkdownService";
-import PerformanceMarkdownService from "./services/markdown/PerformanceMarkdownService";
-import WalkerMarkdownService from "./services/markdown/WalkerMarkdownService";
-import HeatMarkdownService from "./services/markdown/HeatMarkdownService";
+import { TBacktestMarkdownService } from "./services/markdown/BacktestMarkdownService";
+import { TLiveMarkdownService } from "./services/markdown/LiveMarkdownService";
+import { TScheduleMarkdownService } from "./services/markdown/ScheduleMarkdownService";
+import { TPerformanceMarkdownService } from "./services/markdown/PerformanceMarkdownService";
+import { TWalkerMarkdownService } from "./services/markdown/WalkerMarkdownService";
+import { THeatMarkdownService } from "./services/markdown/HeatMarkdownService";
 import ExchangeValidationService from "./services/validation/ExchangeValidationService";
 import StrategyValidationService from "./services/validation/StrategyValidationService";
 import FrameValidationService from "./services/validation/FrameValidationService";
@@ -50,31 +50,33 @@ import SizingValidationService from "./services/validation/SizingValidationServi
 import RiskValidationService from "./services/validation/RiskValidationService";
 import ActionValidationService from "./services/validation/ActionValidationService";
 import PartialConnectionService from "./services/connection/PartialConnectionService";
-import PartialMarkdownService from "./services/markdown/PartialMarkdownService";
+import { TPartialMarkdownService } from "./services/markdown/PartialMarkdownService";
 import PartialGlobalService from "./services/global/PartialGlobalService";
 import BreakevenConnectionService from "./services/connection/BreakevenConnectionService";
-import BreakevenMarkdownService from "./services/markdown/BreakevenMarkdownService";
+import { TBreakevenMarkdownService } from "./services/markdown/BreakevenMarkdownService";
 import BreakevenGlobalService from "./services/global/BreakevenGlobalService";
 import ConfigValidationService from "./services/validation/ConfigValidationService";
-import RiskMarkdownService from "./services/markdown/RiskMarkdownService";
+import { TRiskMarkdownService } from "./services/markdown/RiskMarkdownService";
 import ColumnValidationService from "./services/validation/ColumnValidationService";
-import BacktestReportService from "./services/report/BacktestReportService";
-import LiveReportService from "./services/report/LiveReportService";
-import ScheduleReportService from "./services/report/ScheduleReportService";
-import PerformanceReportService from "./services/report/PerformanceReportService";
-import WalkerReportService from "./services/report/WalkerReportService";
-import HeatReportService from "./services/report/HeatReportService";
-import PartialReportService from "./services/report/PartialReportService";
-import BreakevenReportService from "./services/report/BreakevenReportService";
-import RiskReportService from "./services/report/RiskReportService";
-import StrategyReportService from "./services/report/StrategyReportService";
-import SyncReportService from "./services/report/SyncReportService";
-import HighestProfitReportService from "./services/report/HighestProfitReportService";
-import MaxDrawdownReportService from "./services/report/MaxDrawdownReportService";
-import StrategyMarkdownService from "./services/markdown/StrategyMarkdownService";
-import SyncMarkdownService from "./services/markdown/SyncMarkdownService";
-import HighestProfitMarkdownService from "./services/markdown/HighestProfitMarkdownService";
-import MaxDrawdownMarkdownService from "./services/markdown/MaxDrawdownMarkdownService";
+import { TBacktestReportService } from "./services/report/BacktestReportService";
+import { TLiveReportService } from "./services/report/LiveReportService";
+import { TScheduleReportService } from "./services/report/ScheduleReportService";
+import { TPerformanceReportService } from "./services/report/PerformanceReportService";
+import { TWalkerReportService } from "./services/report/WalkerReportService";
+import { THeatReportService } from "./services/report/HeatReportService";
+import { TPartialReportService } from "./services/report/PartialReportService";
+import { TBreakevenReportService } from "./services/report/BreakevenReportService";
+import { TRiskReportService } from "./services/report/RiskReportService";
+import { TStrategyReportService } from "./services/report/StrategyReportService";
+import { TSyncReportService } from "./services/report/SyncReportService";
+import { THighestProfitReportService } from "./services/report/HighestProfitReportService";
+import { TMaxDrawdownReportService } from "./services/report/MaxDrawdownReportService";
+import { TStrategyMarkdownService } from "./services/markdown/StrategyMarkdownService";
+import {
+  TSyncMarkdownService,
+} from "./services/markdown/SyncMarkdownService";
+import { THighestProfitMarkdownService } from "./services/markdown/HighestProfitMarkdownService";
+import { TMaxDrawdownMarkdownService } from "./services/markdown/MaxDrawdownMarkdownService";
 import TimeMetaService from "./services/meta/TimeMetaService";
 import PriceMetaService from "./services/meta/PriceMetaService";
 import { TContextMetaService } from "./services/meta/ContextMetaService";
@@ -192,59 +194,59 @@ const logicPublicServices = {
 };
 
 const markdownServices = {
-  backtestMarkdownService: inject<BacktestMarkdownService>(
+  backtestMarkdownService: inject<TBacktestMarkdownService>(
     TYPES.backtestMarkdownService
   ),
-  liveMarkdownService: inject<LiveMarkdownService>(TYPES.liveMarkdownService),
-  scheduleMarkdownService: inject<ScheduleMarkdownService>(
+  liveMarkdownService: inject<TLiveMarkdownService>(TYPES.liveMarkdownService),
+  scheduleMarkdownService: inject<TScheduleMarkdownService>(
     TYPES.scheduleMarkdownService
   ),
-  performanceMarkdownService: inject<PerformanceMarkdownService>(
+  performanceMarkdownService: inject<TPerformanceMarkdownService>(
     TYPES.performanceMarkdownService
   ),
-  walkerMarkdownService: inject<WalkerMarkdownService>(
+  walkerMarkdownService: inject<TWalkerMarkdownService>(
     TYPES.walkerMarkdownService
   ),
-  heatMarkdownService: inject<HeatMarkdownService>(TYPES.heatMarkdownService),
-  partialMarkdownService: inject<PartialMarkdownService>(
+  heatMarkdownService: inject<THeatMarkdownService>(TYPES.heatMarkdownService),
+  partialMarkdownService: inject<TPartialMarkdownService>(
     TYPES.partialMarkdownService
   ),
-  breakevenMarkdownService: inject<BreakevenMarkdownService>(
+  breakevenMarkdownService: inject<TBreakevenMarkdownService>(
     TYPES.breakevenMarkdownService
   ),
-  riskMarkdownService: inject<RiskMarkdownService>(TYPES.riskMarkdownService),
-  strategyMarkdownService: inject<StrategyMarkdownService>(TYPES.strategyMarkdownService),
-  syncMarkdownService: inject<SyncMarkdownService>(TYPES.syncMarkdownService),
-  highestProfitMarkdownService: inject<HighestProfitMarkdownService>(TYPES.highestProfitMarkdownService),
-  maxDrawdownMarkdownService: inject<MaxDrawdownMarkdownService>(TYPES.maxDrawdownMarkdownService),
+  riskMarkdownService: inject<TRiskMarkdownService>(TYPES.riskMarkdownService),
+  strategyMarkdownService: inject<TStrategyMarkdownService>(TYPES.strategyMarkdownService),
+  syncMarkdownService: inject<TSyncMarkdownService>(TYPES.syncMarkdownService),
+  highestProfitMarkdownService: inject<THighestProfitMarkdownService>(TYPES.highestProfitMarkdownService),
+  maxDrawdownMarkdownService: inject<TMaxDrawdownMarkdownService>(TYPES.maxDrawdownMarkdownService),
 };
 
 const reportServices = {
-  backtestReportService: inject<BacktestReportService>(
+  backtestReportService: inject<TBacktestReportService>(
     TYPES.backtestReportService
   ),
-  liveReportService: inject<LiveReportService>(TYPES.liveReportService),
-  scheduleReportService: inject<ScheduleReportService>(
+  liveReportService: inject<TLiveReportService>(TYPES.liveReportService),
+  scheduleReportService: inject<TScheduleReportService>(
     TYPES.scheduleReportService
   ),
-  performanceReportService: inject<PerformanceReportService>(
+  performanceReportService: inject<TPerformanceReportService>(
     TYPES.performanceReportService
   ),
-  walkerReportService: inject<WalkerReportService>(
+  walkerReportService: inject<TWalkerReportService>(
     TYPES.walkerReportService
   ),
-  heatReportService: inject<HeatReportService>(TYPES.heatReportService),
-  partialReportService: inject<PartialReportService>(
+  heatReportService: inject<THeatReportService>(TYPES.heatReportService),
+  partialReportService: inject<TPartialReportService>(
     TYPES.partialReportService
   ),
-  breakevenReportService: inject<BreakevenReportService>(
+  breakevenReportService: inject<TBreakevenReportService>(
     TYPES.breakevenReportService
   ),
-  riskReportService: inject<RiskReportService>(TYPES.riskReportService),
-  strategyReportService: inject<StrategyReportService>(TYPES.strategyReportService),
-  syncReportService: inject<SyncReportService>(TYPES.syncReportService),
-  highestProfitReportService: inject<HighestProfitReportService>(TYPES.highestProfitReportService),
-  maxDrawdownReportService: inject<MaxDrawdownReportService>(TYPES.maxDrawdownReportService),
+  riskReportService: inject<TRiskReportService>(TYPES.riskReportService),
+  strategyReportService: inject<TStrategyReportService>(TYPES.strategyReportService),
+  syncReportService: inject<TSyncReportService>(TYPES.syncReportService),
+  highestProfitReportService: inject<THighestProfitReportService>(TYPES.highestProfitReportService),
+  maxDrawdownReportService: inject<TMaxDrawdownReportService>(TYPES.maxDrawdownReportService),
 };
 
 const validationServices = {

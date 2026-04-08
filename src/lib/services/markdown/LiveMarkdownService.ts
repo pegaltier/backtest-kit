@@ -21,6 +21,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in live trading markdown reports.
@@ -127,7 +128,7 @@ function isUnsafe(value: number | null): boolean {
  */
 class ReportStorage {
   /** Internal list of all tick events for this strategy */
-  private _eventList: TickEvent[] = [];
+   _eventList: TickEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -624,15 +625,15 @@ class ReportStorage {
  * await service.dump("my-strategy");
  * ```
  */
-export class LiveMarkdownService {
+export const LiveMarkdownService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -702,7 +703,7 @@ export class LiveMarkdownService {
    * }
    * ```
    */
-  private tick = async (data: IStrategyTickResult) => {
+  public tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("liveMarkdownService tick", {
       data,
     });
@@ -878,6 +879,8 @@ export class LiveMarkdownService {
     }
   };
 
-}
+})
+
+export type TLiveMarkdownService = InstanceType<typeof LiveMarkdownService>;
 
 export default LiveMarkdownService;

@@ -23,6 +23,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in walker strategy markdown reports.
@@ -138,13 +139,13 @@ function formatMetric(value: number | null): string {
 class ReportStorage {
 
   /** Walker metadata (set from first addResult call) */
-  private _totalStrategies: number | null = null;
-  private _bestStats: BacktestStatisticsModel | null = null;
-  private _bestMetric: number | null = null;
-  private _bestStrategy: StrategyName | null = null;
+   _totalStrategies: number | null = null;
+   _bestStats: BacktestStatisticsModel | null = null;
+   _bestMetric: number | null = null;
+   _bestStrategy: StrategyName | null = null;
 
   /** All strategy results for comparison table */
-  private _strategyResults: IStrategyResult[] = [];
+   _strategyResults: IStrategyResult[] = [];
 
   constructor(readonly walkerName: WalkerName) {
   }
@@ -223,7 +224,7 @@ class ReportStorage {
    * @param columns - Column configuration for formatting the strategy comparison table
    * @returns Markdown formatted comparison table
    */
-  private async getComparisonTable(
+   async getComparisonTable(
     topN: number = GLOBAL_CONFIG.CC_WALKER_MARKDOWN_TOP_N,
     columns: StrategyColumn[] = COLUMN_CONFIG.walker_strategy_columns
   ): Promise<string> {
@@ -271,7 +272,7 @@ class ReportStorage {
    * @param columns - Column configuration for formatting the PNL table
    * @returns Markdown formatted PNL table
    */
-  private async getPnlTable(
+   async getPnlTable(
     columns: PnlColumn[] = COLUMN_CONFIG.walker_pnl_columns
   ): Promise<string> {
     if (this._strategyResults.length === 0) {
@@ -425,15 +426,15 @@ class ReportStorage {
  * await service.dump("my-walker");
  * ```
  */
-export class WalkerMarkdownService {
+export const WalkerMarkdownService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a walker.
    * Each walker gets its own isolated storage instance.
    */
-  private getStorage = memoize<(walkerName: WalkerName) => ReportStorage>(
+  public getStorage = memoize<(walkerName: WalkerName) => ReportStorage>(
     ([walkerName]) => `${walkerName}`,
     (walkerName) => new ReportStorage(walkerName)
   );
@@ -494,7 +495,7 @@ export class WalkerMarkdownService {
    * walkerEmitter.subscribe((data) => service.tick(data));
    * ```
    */
-  private tick = async (data: WalkerContract) => {
+  public tick = async (data: WalkerContract) => {
     this.loggerService.log("walkerMarkdownService tick", {
       data,
     });
@@ -660,6 +661,8 @@ export class WalkerMarkdownService {
     this.getStorage.clear(walkerName);
   };
 
-}
+})
+
+export type TWalkerMarkdownService = InstanceType<typeof WalkerMarkdownService>;
 
 export default WalkerMarkdownService;

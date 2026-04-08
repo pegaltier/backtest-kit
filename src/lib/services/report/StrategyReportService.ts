@@ -18,6 +18,7 @@ import {
   TrailingStopCommit,
   TrailingTakeCommit,
 } from "../../../contract/StrategyCommit.contract";
+import { singleton } from "di-singleton";
 
 /**
  * Service for persisting strategy management events to JSON report files.
@@ -37,7 +38,7 @@ import {
  * @see StrategyMarkdownService for in-memory event accumulation and markdown report generation
  * @see Report for the underlying persistence mechanism
  */
-export class StrategyReportService {
+export const StrategyReportService = singleton(class {
   readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
@@ -958,6 +959,8 @@ export class StrategyReportService {
       lastSubscription();
     }
   };
-}
+})
+
+export type TStrategyReportService = InstanceType<typeof StrategyReportService>;
 
 export default StrategyReportService;

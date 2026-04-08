@@ -16,6 +16,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in performance metrics markdown reports.
@@ -128,7 +129,7 @@ function percentile(sortedArray: number[], p: number): number {
  */
 class PerformanceStorage {
   /** Internal list of all performance events for this strategy */
-  private _events: PerformanceContract[] = [];
+   _events: PerformanceContract[] = [];
 
   constructor(
     readonly symbol: string,
@@ -361,15 +362,15 @@ class PerformanceStorage {
  * await Performance.dump("BTCUSDT", "my-strategy");
  * ```
  */
-export class PerformanceMarkdownService {
+export const PerformanceMarkdownService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create PerformanceStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => PerformanceStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => PerformanceStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new PerformanceStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -424,7 +425,7 @@ export class PerformanceMarkdownService {
    *
    * @param event - Performance event with timing data
    */
-  private track = async (event: PerformanceContract) => {
+  public track = async (event: PerformanceContract) => {
     this.loggerService.log("performanceMarkdownService track", {
       event,
     });
@@ -575,6 +576,8 @@ export class PerformanceMarkdownService {
     }
   };
 
-}
+})
+
+export type TPerformanceMarkdownService = InstanceType<typeof PerformanceMarkdownService>;
 
 export default PerformanceMarkdownService;

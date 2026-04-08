@@ -12,6 +12,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in risk management markdown reports.
@@ -93,7 +94,7 @@ const CREATE_FILE_NAME_FN = (
  */
 class ReportStorage {
   /** Internal list of all risk rejection events for this symbol */
-  private _eventList: RiskEvent[] = [];
+   _eventList: RiskEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -252,15 +253,15 @@ class ReportStorage {
  * await service.dump("BTCUSDT", "my-strategy");
  * ```
  */
-export class RiskMarkdownService {
+export const RiskMarkdownService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName, backtest) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -321,7 +322,7 @@ export class RiskMarkdownService {
    * // Service automatically subscribes in init()
    * ```
    */
-  private tickRejection = async (data: RiskEvent) => {
+  public tickRejection = async (data: RiskEvent) => {
     this.loggerService.log("riskMarkdownService tickRejection", {
       data,
     });
@@ -482,6 +483,8 @@ export class RiskMarkdownService {
     }
   };
 
-}
+})
+
+export type TRiskMarkdownService = InstanceType<typeof RiskMarkdownService>
 
 export default RiskMarkdownService;

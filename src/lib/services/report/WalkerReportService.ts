@@ -6,6 +6,7 @@ import { singleshot } from "functools-kit";
 import { walkerEmitter } from "../../../config/emitters";
 import { Report } from "../../../classes/Report";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
+import { singleton } from "di-singleton";
 
 const WALKER_REPORT_METHOD_NAME_SUBSCRIBE = "WalkerReportService.subscribe";
 const WALKER_REPORT_METHOD_NAME_UNSUBSCRIBE = "WalkerReportService.unsubscribe";
@@ -40,9 +41,9 @@ const WALKER_REPORT_METHOD_NAME_TICK = "WalkerReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export class WalkerReportService {
+export const WalkerReportService = singleton(class {
   /** Logger service for debug output */
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes walker optimization events and logs them to the database.
@@ -51,7 +52,7 @@ export class WalkerReportService {
    *
    * @internal
    */
-  private tick = async (data: WalkerContract) => {
+  public tick = async (data: WalkerContract) => {
     this.loggerService.log(WALKER_REPORT_METHOD_NAME_TICK, { data });
 
     const signals = data.stats.signalList;
@@ -142,6 +143,8 @@ export class WalkerReportService {
       lastSubscription();
     }
   };
-}
+});
+
+export type TWalkerReportService = InstanceType<typeof WalkerReportService>;
 
 export default WalkerReportService;

@@ -15,6 +15,7 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
+import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in max drawdown markdown reports.
@@ -57,7 +58,7 @@ const CREATE_FILE_NAME_FN = (
  * Accumulates max drawdown events per symbol-strategy-exchange-frame combination.
  */
 class ReportStorage {
-  private _eventList: MaxDrawdownEvent[] = [];
+   _eventList: MaxDrawdownEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -183,10 +184,10 @@ class ReportStorage {
  * symbol-strategy-exchange-frame combination. Provides getData(),
  * getReport(), and dump() methods matching the HighestProfit pattern.
  */
-export class MaxDrawdownMarkdownService {
-  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export const MaxDrawdownMarkdownService = singleton(class {
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
-  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -224,7 +225,7 @@ export class MaxDrawdownMarkdownService {
   /**
    * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
    */
-  private tick = async (data: {
+  public tick = async (data: {
     symbol: string;
     signal: IPublicSignalRow;
     currentPrice: number;
@@ -304,6 +305,8 @@ export class MaxDrawdownMarkdownService {
       this.getStorage.clear();
     }
   };
-}
+})
+
+export type TMaxDrawdownMarkdownService = InstanceType<typeof MaxDrawdownMarkdownService>;
 
 export default MaxDrawdownMarkdownService;
