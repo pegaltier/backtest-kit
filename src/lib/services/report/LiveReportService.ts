@@ -1,12 +1,11 @@
 import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { signalLiveEmitter } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
-import { singleton } from "di-singleton";
 
 const LIVE_REPORT_METHOD_NAME_SUBSCRIBE = "LiveReportService.subscribe";
 const LIVE_REPORT_METHOD_NAME_UNSUBSCRIBE = "LiveReportService.unsubscribe";
@@ -40,9 +39,9 @@ const LIVE_REPORT_METHOD_NAME_TICK = "LiveReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export const LiveReportService = singleton(class {
+export class LiveReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes live trading tick events and logs them to the database.
@@ -52,7 +51,7 @@ export const LiveReportService = singleton(class {
    *
    * @internal
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log(LIVE_REPORT_METHOD_NAME_TICK, { data });
 
     const baseEvent = {
@@ -278,8 +277,6 @@ export const LiveReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TLiveReportService = InstanceType<typeof LiveReportService>;
+}
 
 export default LiveReportService;

@@ -1,14 +1,13 @@
 import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { partialProfitSubject, partialLossSubject } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
-import { singleton } from "di-singleton";
 
 const PARTIAL_REPORT_METHOD_NAME_SUBSCRIBE = "PartialReportService.subscribe";
 const PARTIAL_REPORT_METHOD_NAME_UNSUBSCRIBE = "PartialReportService.unsubscribe";
@@ -44,9 +43,9 @@ const PARTIAL_REPORT_METHOD_NAME_TICK_LOSS = "PartialReportService.tickLoss";
  * await reportService.unsubscribe();
  * ```
  */
-export const PartialReportService = singleton(class {
+export class PartialReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes partial profit events and logs them to the database.
@@ -55,7 +54,7 @@ export const PartialReportService = singleton(class {
    *
    * @internal
    */
-  public tickProfit = async (data: {
+  private tickProfit = async (data: {
     symbol: string;
     data: IPublicSignalRow;
     currentPrice: number;
@@ -116,7 +115,7 @@ export const PartialReportService = singleton(class {
    *
    * @internal
    */
-  public tickLoss = async (data: {
+  private tickLoss = async (data: {
     symbol: string;
     data: IPublicSignalRow;
     currentPrice: number;
@@ -216,8 +215,6 @@ export const PartialReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TPartialReportService = InstanceType<typeof PartialReportService>;
+}
 
 export default PartialReportService;

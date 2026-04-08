@@ -1,11 +1,10 @@
 import { PerformanceContract } from "../../../contract/Performance.contract";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
-import { singleton } from "di-singleton";
 
 const PERFORMANCE_REPORT_METHOD_NAME_SUBSCRIBE = "PerformanceReportService.subscribe";
 const PERFORMANCE_REPORT_METHOD_NAME_UNSUBSCRIBE = "PerformanceReportService.unsubscribe";
@@ -39,9 +38,9 @@ const PERFORMANCE_REPORT_METHOD_NAME_TRACK = "PerformanceReportService.track";
  * await reportService.unsubscribe();
  * ```
  */
-export const PerformanceReportService = singleton(class {
+export class PerformanceReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes performance tracking events and logs them to the database.
@@ -50,7 +49,7 @@ export const PerformanceReportService = singleton(class {
    *
    * @internal
    */
-  public track = async (event: PerformanceContract) => {
+  private track = async (event: PerformanceContract) => {
     this.loggerService.log(PERFORMANCE_REPORT_METHOD_NAME_TRACK, { event });
 
     await ReportWriter.writeData("performance", {
@@ -117,8 +116,6 @@ export const PerformanceReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TPerformanceReportService = InstanceType<typeof PerformanceReportService>;
+}
 
 export default PerformanceReportService;

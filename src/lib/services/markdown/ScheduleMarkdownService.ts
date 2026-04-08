@@ -7,7 +7,7 @@ import {
   StrategyName,
 } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { signalEmitter, signalLiveEmitter } from "../../../config/emitters";
@@ -18,7 +18,6 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
-import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in scheduled events markdown reports.
@@ -106,7 +105,7 @@ const CREATE_FILE_NAME_FN = (
  */
 class ReportStorage {
   /** Internal list of all scheduled events for this strategy */
-   _eventList: ScheduledEvent[] = [];
+  private _eventList: ScheduledEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -401,15 +400,15 @@ class ReportStorage {
  * await service.dump("my-strategy");
  * ```
  */
-export const ScheduleMarkdownService = singleton(class {
+export class ScheduleMarkdownService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -472,7 +471,7 @@ export const ScheduleMarkdownService = singleton(class {
    * // Service automatically subscribes in init()
    * ```
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("scheduleMarkdownService tick", {
       data,
     });
@@ -650,8 +649,6 @@ export const ScheduleMarkdownService = singleton(class {
     }
   };
 
-})
-
-export type TScheduleMarkdownService = InstanceType<typeof ScheduleMarkdownService>;
+}
 
 export default ScheduleMarkdownService;

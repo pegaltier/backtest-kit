@@ -1,7 +1,7 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { MarkdownWriter } from "../../../classes/Writer";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { maxDrawdownSubject } from "../../../config/emitters";
@@ -15,7 +15,6 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
-import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in max drawdown markdown reports.
@@ -58,7 +57,7 @@ const CREATE_FILE_NAME_FN = (
  * Accumulates max drawdown events per symbol-strategy-exchange-frame combination.
  */
 class ReportStorage {
-   _eventList: MaxDrawdownEvent[] = [];
+  private _eventList: MaxDrawdownEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -184,10 +183,10 @@ class ReportStorage {
  * symbol-strategy-exchange-frame combination. Provides getData(),
  * getReport(), and dump() methods matching the HighestProfit pattern.
  */
-export const MaxDrawdownMarkdownService = singleton(class {
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export class MaxDrawdownMarkdownService {
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
-  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -225,7 +224,7 @@ export const MaxDrawdownMarkdownService = singleton(class {
   /**
    * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.
    */
-  public tick = async (data: {
+  private tick = async (data: {
     symbol: string;
     signal: IPublicSignalRow;
     currentPrice: number;
@@ -305,8 +304,6 @@ export const MaxDrawdownMarkdownService = singleton(class {
       this.getStorage.clear();
     }
   };
-})
-
-export type TMaxDrawdownMarkdownService = InstanceType<typeof MaxDrawdownMarkdownService>;
+}
 
 export default MaxDrawdownMarkdownService;

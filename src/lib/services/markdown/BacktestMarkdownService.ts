@@ -4,7 +4,7 @@ import {
   StrategyName,
 } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
@@ -16,7 +16,6 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import { MarkdownWriter } from "../../../classes/Writer";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
-import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in backtest markdown reports.
@@ -123,7 +122,7 @@ function isUnsafe(value: number | null): boolean {
  */
 class ReportStorage {
   /** Internal list of all closed signals for this strategy */
-  _signalList: IStrategyTickResultClosed[] = [];
+  private _signalList: IStrategyTickResultClosed[] = [];
 
   constructor(
     readonly symbol: string,
@@ -342,15 +341,15 @@ class ReportStorage {
  * await service.saveReport("my-strategy");
  * ```
  */
-export const BacktestMarkdownService = singleton(class {
+export class BacktestMarkdownService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.
    * Each combination gets its own isolated storage instance.
    */
-  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -374,7 +373,7 @@ export const BacktestMarkdownService = singleton(class {
    * }
    * ```
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log("backtestMarkdownService tick", {
       data,
     });
@@ -582,8 +581,6 @@ export const BacktestMarkdownService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TBacktestMarkdownService = InstanceType<typeof BacktestMarkdownService>;
+}
 
 export default BacktestMarkdownService;

@@ -1,11 +1,10 @@
 import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
-import { singleton } from "di-singleton";
 
 const SCHEDULE_REPORT_METHOD_NAME_SUBSCRIBE = "ScheduleReportService.subscribe";
 const SCHEDULE_REPORT_METHOD_NAME_UNSUBSCRIBE = "ScheduleReportService.unsubscribe";
@@ -40,9 +39,9 @@ const SCHEDULE_REPORT_METHOD_NAME_TICK = "ScheduleReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export const ScheduleReportService = singleton(class {
+export class ScheduleReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal tick events and logs scheduled signal lifecycle to the database.
@@ -52,7 +51,7 @@ export const ScheduleReportService = singleton(class {
    *
    * @internal
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log(SCHEDULE_REPORT_METHOD_NAME_TICK, { data });
 
     const baseEvent = {
@@ -213,8 +212,6 @@ export const ScheduleReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TScheduleReportService = InstanceType<typeof ScheduleReportService>;
+}
 
 export default ScheduleReportService;

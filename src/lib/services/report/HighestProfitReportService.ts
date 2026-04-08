@@ -1,13 +1,12 @@
 import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { highestProfitSubject } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
-import { singleton } from "di-singleton";
 
 const HIGHEST_PROFIT_REPORT_METHOD_NAME_SUBSCRIBE = "HighestProfitReportService.subscribe";
 const HIGHEST_PROFIT_REPORT_METHOD_NAME_UNSUBSCRIBE = "HighestProfitReportService.unsubscribe";
@@ -19,8 +18,8 @@ const HIGHEST_PROFIT_REPORT_METHOD_NAME_TICK = "HighestProfitReportService.tick"
  * Listens to highestProfitSubject and writes each new price record to
  * ReportWriter.writeData() for persistence and analytics.
  */
-export const HighestProfitReportService = singleton(class {
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export class HighestProfitReportService {
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Handles a single `HighestProfitContract` event emitted by `highestProfitSubject`.
@@ -39,7 +38,7 @@ export const HighestProfitReportService = singleton(class {
    *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
    *   `frameName`
    */
-  public tick = async (data: {
+  private tick = async (data: {
     symbol: string;
     signal: IPublicSignalRow;
     currentPrice: number;
@@ -121,8 +120,6 @@ export const HighestProfitReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type THighestProfitReportService = InstanceType<typeof HighestProfitReportService>;
+}
 
 export default HighestProfitReportService;

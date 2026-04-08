@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { ReportWriter } from "../../../classes/Writer";
 import { compose, singleshot } from "functools-kit";
@@ -18,7 +18,6 @@ import {
   TrailingStopCommit,
   TrailingTakeCommit,
 } from "../../../contract/StrategyCommit.contract";
-import { singleton } from "di-singleton";
 
 /**
  * Service for persisting strategy management events to JSON report files.
@@ -38,7 +37,7 @@ import { singleton } from "di-singleton";
  * @see StrategyMarkdownService for in-memory event accumulation and markdown report generation
  * @see Report for the underlying persistence mechanism
  */
-export const StrategyReportService = singleton(class {
+export class StrategyReportService {
   readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
@@ -959,8 +958,6 @@ export const StrategyReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TStrategyReportService = InstanceType<typeof StrategyReportService>;
+}
 
 export default StrategyReportService;

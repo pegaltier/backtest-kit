@@ -1,12 +1,11 @@
 import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { signalBacktestEmitter } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
-import { singleton } from "di-singleton";
 
 const BACKTEST_REPORT_METHOD_NAME_SUBSCRIBE = "BacktestReportService.subscribe";
 const BACKTEST_REPORT_METHOD_NAME_UNSUBSCRIBE = "BacktestReportService.unsubscribe";
@@ -40,9 +39,9 @@ const BACKTEST_REPORT_METHOD_NAME_TICK = "BacktestReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export const BacktestReportService = singleton(class {
+export class BacktestReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes backtest tick events and logs them to the database.
@@ -52,7 +51,7 @@ export const BacktestReportService = singleton(class {
    *
    * @internal
    */
-  public tick = async (data: IStrategyTickResult) => {
+  private tick = async (data: IStrategyTickResult) => {
     this.loggerService.log(BACKTEST_REPORT_METHOD_NAME_TICK, { data });
 
     const baseEvent = {
@@ -209,8 +208,6 @@ export const BacktestReportService = singleton(class {
       lastSubscription();
     }
   };
-});
-
-export type TBacktestReportService = InstanceType<typeof BacktestReportService>;
+}
 
 export default BacktestReportService;

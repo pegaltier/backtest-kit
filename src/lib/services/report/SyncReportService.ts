@@ -1,11 +1,10 @@
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot, trycatch } from "functools-kit";
 import { syncSubject } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import SignalSyncContract from "../../../contract/SignalSync.contract";
-import { singleton } from "di-singleton";
 
 const SYNC_REPORT_METHOD_NAME_SUBSCRIBE = "SyncReportService.subscribe";
 const SYNC_REPORT_METHOD_NAME_UNSUBSCRIBE = "SyncReportService.unsubscribe";
@@ -41,9 +40,9 @@ const SYNC_REPORT_METHOD_NAME_TICK = "SyncReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export const SyncReportService = singleton(class {
+export class SyncReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal sync events and logs them to the database.
@@ -53,7 +52,7 @@ export const SyncReportService = singleton(class {
    *
    * @internal
    */
-  public tick = async (data: SignalSyncContract) => {
+  private tick = async (data: SignalSyncContract) => {
     this.loggerService.log(SYNC_REPORT_METHOD_NAME_TICK, { data });
 
     const baseEvent = {
@@ -152,8 +151,6 @@ export const SyncReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TSyncReportService = InstanceType<typeof SyncReportService>;
+}
 
 export default SyncReportService;

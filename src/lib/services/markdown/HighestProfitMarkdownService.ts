@@ -1,7 +1,7 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { MarkdownWriter } from "../../../classes/Writer";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { highestProfitSubject } from "../../../config/emitters";
@@ -15,7 +15,6 @@ import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
-import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in highest profit markdown reports.
@@ -59,7 +58,7 @@ const CREATE_FILE_NAME_FN = (
  * Accumulates highest profit events per symbol-strategy-exchange-frame combination.
  */
 class ReportStorage {
-   _eventList: HighestProfitEvent[] = [];
+  private _eventList: HighestProfitEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -237,10 +236,10 @@ class ReportStorage {
  * symbol-strategy-exchange-frame combination. Provides getData(),
  * getReport(), and dump() methods matching the Partial pattern.
  */
-export const HighestProfitMarkdownService = singleton(class {
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export class HighestProfitMarkdownService {
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
-  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName) => new ReportStorage(symbol, strategyName, exchangeName, frameName)
   );
@@ -308,7 +307,7 @@ export const HighestProfitMarkdownService = singleton(class {
    *   `signal`, `currentPrice`, `backtest`, `timestamp`, `exchangeName`,
    *   `frameName`
    */
-  public tick = async (data: {
+  private tick = async (data: {
     symbol: string;
     signal: IPublicSignalRow;
     currentPrice: number;
@@ -445,8 +444,6 @@ export const HighestProfitMarkdownService = singleton(class {
       this.getStorage.clear();
     }
   };
-})
-
-export type THighestProfitMarkdownService = InstanceType<typeof HighestProfitMarkdownService>;
+}
 
 export default HighestProfitMarkdownService;

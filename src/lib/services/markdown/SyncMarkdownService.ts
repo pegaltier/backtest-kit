@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { memoize, singleshot, trycatch } from "functools-kit";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
@@ -13,7 +13,6 @@ import { syncSubject } from "../../../config/emitters";
 import SignalSyncContract from "../../../contract/SignalSync.contract";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
-import { singleton } from "di-singleton";
 
 /**
  * Type alias for column configuration used in sync markdown reports.
@@ -63,7 +62,7 @@ const CREATE_FILE_NAME_FN = (
  * Maintains a chronological list of signal-open and signal-close events.
  */
 class ReportStorage {
-   _eventList: SyncEvent[] = [];
+  private _eventList: SyncEvent[] = [];
 
   constructor(
     readonly symbol: string,
@@ -250,10 +249,10 @@ class ReportStorage {
  * unsubscribe();
  * ```
  */
-export const SyncMarkdownService = singleton(class {
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+export class SyncMarkdownService {
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
-  public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
+  private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),
     (symbol, strategyName, exchangeName, frameName, backtest) => new ReportStorage(symbol, strategyName, exchangeName, frameName, backtest)
   );
@@ -324,7 +323,7 @@ export const SyncMarkdownService = singleton(class {
    * @param data - Discriminated union `SignalSyncContract`
    *   (`SignalOpenContract | SignalCloseContract`)
    */
-  public tick = async (data: SignalSyncContract) => {
+  private tick = async (data: SignalSyncContract) => {
     this.loggerService.log("syncMarkdownService tick", { data });
 
     const createdAt = new Date(getContextTimestamp()).toISOString();
@@ -488,8 +487,6 @@ export const SyncMarkdownService = singleton(class {
       this.getStorage.clear();
     }
   };
-})
-
-export type TSyncMarkdownService = InstanceType<typeof SyncMarkdownService>;
+}
 
 export default SyncMarkdownService;

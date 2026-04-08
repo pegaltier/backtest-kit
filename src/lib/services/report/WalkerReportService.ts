@@ -1,12 +1,11 @@
 import { WalkerContract } from "../../../contract/Walker.contract";
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { walkerEmitter } from "../../../config/emitters";
-import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
-import { singleton } from "di-singleton";
 import { ReportWriter } from "../../../classes/Writer";
+import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 
 const WALKER_REPORT_METHOD_NAME_SUBSCRIBE = "WalkerReportService.subscribe";
 const WALKER_REPORT_METHOD_NAME_UNSUBSCRIBE = "WalkerReportService.unsubscribe";
@@ -41,9 +40,9 @@ const WALKER_REPORT_METHOD_NAME_TICK = "WalkerReportService.tick";
  * await reportService.unsubscribe();
  * ```
  */
-export const WalkerReportService = singleton(class {
+export class WalkerReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes walker optimization events and logs them to the database.
@@ -52,7 +51,7 @@ export const WalkerReportService = singleton(class {
    *
    * @internal
    */
-  public tick = async (data: WalkerContract) => {
+  private tick = async (data: WalkerContract) => {
     this.loggerService.log(WALKER_REPORT_METHOD_NAME_TICK, { data });
 
     const signals = data.stats.signalList;
@@ -143,8 +142,6 @@ export const WalkerReportService = singleton(class {
       lastSubscription();
     }
   };
-});
-
-export type TWalkerReportService = InstanceType<typeof WalkerReportService>;
+}
 
 export default WalkerReportService;

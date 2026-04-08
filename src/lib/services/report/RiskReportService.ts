@@ -1,11 +1,10 @@
 import { inject } from "../../../lib/core/di";
-import { TLoggerService } from "../base/LoggerService";
+import LoggerService, { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { riskSubject } from "../../../config/emitters";
 import { ReportWriter } from "../../../classes/Writer";
 import { RiskEvent } from "../../../model/RiskStatistics.model";
-import { singleton } from "di-singleton";
 
 const RISK_REPORT_METHOD_NAME_SUBSCRIBE = "RiskReportService.subscribe";
 const RISK_REPORT_METHOD_NAME_UNSUBSCRIBE = "RiskReportService.unsubscribe";
@@ -39,9 +38,9 @@ const RISK_REPORT_METHOD_NAME_TICK = "RiskReportService.tickRejection";
  * await reportService.unsubscribe();
  * ```
  */
-export const RiskReportService = singleton(class {
+export class RiskReportService {
   /** Logger service for debug output */
-  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes risk rejection events and logs them to the database.
@@ -50,7 +49,7 @@ export const RiskReportService = singleton(class {
    *
    * @internal
    */
-  public tickRejection = async (data: RiskEvent) => {
+  private tickRejection = async (data: RiskEvent) => {
     this.loggerService.log(RISK_REPORT_METHOD_NAME_TICK, { data });
 
     await ReportWriter.writeData("risk", {
@@ -138,8 +137,6 @@ export const RiskReportService = singleton(class {
       lastSubscription();
     }
   };
-})
-
-export type TRiskReportService = InstanceType<typeof RiskReportService>;
+}
 
 export default RiskReportService;
