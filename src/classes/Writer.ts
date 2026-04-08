@@ -353,21 +353,60 @@ export class MarkdownDummy implements TMarkdownBase {
   }
 }
 
+/**
+ * Markdown writer with pluggable storage backend and instance memoization.
+ *
+ * Features:
+ * - Adapter pattern for swappable storage implementations (folder, JSONL, dummy)
+ * - Memoized storage instances (one per markdown type)
+ * - Default adapter: MarkdownFolderBase (one .md file per report)
+ * - Lazy initialization on first write
+ *
+ * Use `useMd()` for human-readable folder output, `useJsonl()` for centralized
+ * append-only logging, or `useDummy()` to suppress all markdown output.
+ */
 export class MarkdownWriterAdapter {
 
+  /**
+   * Current markdown storage adapter constructor.
+   * Defaults to MarkdownFolderBase for per-file storage.
+   * Can be changed via useMarkdownAdapter().
+   */
   private MarkdownFactory: TMarkdownBaseCtor = MarkdownFolderBase;
 
+  /**
+   * Memoized storage instances cache.
+   * Key: markdownName (backtest, live, walker, etc.)
+   * Value: TMarkdownBase instance created with current MarkdownFactory.
+   * Ensures single instance per markdown type for the lifetime of the application.
+   */
   private getMarkdownStorage = memoize(
     ([markdownName]: [MarkdownName]): string => markdownName,
     (markdownName: MarkdownName): TMarkdownBase =>
       Reflect.construct(this.MarkdownFactory, [markdownName])
   );
 
+  /**
+   * Sets the markdown storage adapter constructor.
+   * All future markdown instances will use this adapter.
+   *
+   * @param Ctor - Constructor for markdown storage adapter
+   */
   public useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void {
     LOGGER_SERVICE.info(MARKDOWN_METHOD_NAME_USE_ADAPTER);
     this.MarkdownFactory = Ctor;
   }
 
+  /**
+   * Writes markdown content to storage using the configured adapter.
+   * Automatically initializes storage on first write for each markdown type.
+   *
+   * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
+   * @param content - Markdown content to write
+   * @param options - Path and metadata options for the dump
+   * @returns Promise that resolves when write is complete
+   * @throws Error if write fails or storage initialization fails
+   */
   public async writeData(
     markdownName: MarkdownName,
     content: string,
@@ -385,21 +424,38 @@ export class MarkdownWriterAdapter {
     await markdown.dump(content, options);
   }
 
+  /**
+   * Switches to the folder-based markdown adapter (default).
+   * Each report is written as a separate .md file.
+   */
   public useMd() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_MD);
     this.useMarkdownAdapter(MarkdownFolderBase);
   }
 
+  /**
+   * Switches to the JSONL markdown adapter.
+   * All reports are appended to a single .jsonl file per markdown type.
+   */
   public useJsonl() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_JSONL);
     this.useMarkdownAdapter(MarkdownFileBase);
   }
 
+  /**
+   * Clears the memoized storage cache.
+   * Call this when process.cwd() changes between strategy iterations
+   * so new storage instances are created with the updated base path.
+   */
   public clear(): void {
     LOGGER_SERVICE.log(MARKDOWN_METHOD_NAME_CLEAR);
     this.getMarkdownStorage.clear();
   }
 
+  /**
+   * Switches to a dummy markdown adapter that discards all writes.
+   * All future markdown writes will be no-ops.
+   */
   public useDummy() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_DUMMY);
     this.useMarkdownAdapter(MarkdownDummy);
