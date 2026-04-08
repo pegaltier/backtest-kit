@@ -1,6 +1,6 @@
 import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { breakevenSubject } from "../../../config/emitters";
@@ -42,7 +42,7 @@ const BREAKEVEN_REPORT_METHOD_NAME_TICK = "BreakevenReportService.tickBreakeven"
  */
 export class BreakevenReportService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes breakeven events and logs them to the database.

@@ -1,7 +1,7 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { Markdown } from "../../../classes/Markdown";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { highestProfitSubject } from "../../../config/emitters";
@@ -237,7 +237,7 @@ class ReportStorage {
  * getReport(), and dump() methods matching the Partial pattern.
  */
 export class HighestProfitMarkdownService {
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),

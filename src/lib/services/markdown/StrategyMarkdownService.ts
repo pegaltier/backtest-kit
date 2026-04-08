@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { compose, memoize, singleshot } from "functools-kit";
 import { IStrategyPnL, StrategyName } from "../../../interfaces/Strategy.interface";
@@ -314,7 +314,7 @@ class ReportStorage {
  * @see Strategy for the high-level utility class that wraps this service
  */
 export class StrategyMarkdownService {
-  readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized factory for ReportStorage instances.

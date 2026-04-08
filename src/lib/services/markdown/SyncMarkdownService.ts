@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { memoize, singleshot, trycatch } from "functools-kit";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
@@ -250,7 +250,7 @@ class ReportStorage {
  * ```
  */
 export class SyncMarkdownService {
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   private getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),

@@ -5,7 +5,7 @@ import {
   StrategyName,
 } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot, str } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
@@ -553,7 +553,7 @@ class HeatmapStorage {
  */
 export class HeatMarkdownService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create HeatmapStorage for exchange, frame and backtest mode.

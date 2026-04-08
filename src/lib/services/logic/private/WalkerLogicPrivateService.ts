@@ -1,5 +1,5 @@
 import { inject } from "../../../core/di";
-import LoggerService from "../../base/LoggerService";
+import { TLoggerService } from "../../base/LoggerService";
 import TYPES from "../../../core/types";
 import { WalkerMetric, WalkerName } from "../../../../interfaces/Walker.interface";
 import { StrategyName } from "../../../../interfaces/Strategy.interface";
@@ -169,7 +169,7 @@ const CALL_COMPLETE_CALLBACKS_FN = trycatch(
  * Uses BacktestLogicPublicService internally for each strategy.
  */
 export class WalkerLogicPrivateService {
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
   private readonly backtestLogicPublicService =
     inject<BacktestLogicPublicService>(TYPES.backtestLogicPublicService);
   private readonly backtestMarkdownService = inject<BacktestMarkdownService>(

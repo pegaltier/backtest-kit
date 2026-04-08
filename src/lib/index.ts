@@ -1,7 +1,7 @@
 import "./core/provide";
 import { inject, init } from "./core/di";
 import TYPES from "./core/types";
-import LoggerService from "./services/base/LoggerService";
+import { TLoggerService } from "./services/base/LoggerService";
 import ExchangeConnectionService from "./services/connection/ExchangeConnectionService";
 import StrategyConnectionService from "./services/connection/StrategyConnectionService";
 import FrameConnectionService from "./services/connection/FrameConnectionService";
@@ -79,7 +79,7 @@ import TimeMetaService from "./services/meta/TimeMetaService";
 import PriceMetaService from "./services/meta/PriceMetaService";
 
 const baseServices = {
-  loggerService: inject<LoggerService>(TYPES.loggerService),
+  loggerService: inject<TLoggerService>(TYPES.loggerService),
 };
 
 const contextServices = {

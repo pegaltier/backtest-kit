@@ -20249,67 +20249,6 @@ declare class BreakevenUtils {
 declare const Breakeven: BreakevenUtils;
 
 /**
- * Logger service with automatic context injection.
- *
- * Features:
- * - Delegates to user-provided logger via setLogger()
- * - Automatically appends method context (strategyName, exchangeName, frameName)
- * - Automatically appends execution context (symbol, when, backtest)
- * - Defaults to NOOP_LOGGER if no logger configured
- *
- * Used throughout the framework for consistent logging with context.
- */
-declare class LoggerService implements ILogger {
-    private readonly methodContextService;
-    private readonly executionContextService;
-    private _commonLogger;
-    /**
-     * Gets current method context if available.
-     * Contains strategyName, exchangeName, frameName from MethodContextService.
-     */
-    private get methodContext();
-    /**
-     * Gets current execution context if available.
-     * Contains symbol, when, backtest from ExecutionContextService.
-     */
-    private get executionContext();
-    /**
-     * Logs general-purpose message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    log: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs debug-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    debug: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs info-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    info: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Logs warning-level message with automatic context injection.
-     *
-     * @param topic - Log topic/category
-     * @param args - Additional log arguments
-     */
-    warn: (topic: string, ...args: any[]) => Promise<void>;
-    /**
-     * Sets custom logger implementation.
-     *
-     * @param logger - Custom logger implementing ILogger interface
-     */
-    setLogger: (logger: ILogger) => void;
-}
-
-/**
  * Type alias for column configuration used in strategy markdown reports.
  *
  * @see ColumnModel for the base interface
@@ -20363,7 +20302,22 @@ type Columns = ColumnModel<StrategyEvent>;
  * @see Strategy for the high-level utility class that wraps this service
  */
 declare class StrategyMarkdownService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     /**
      * Memoized factory for ReportStorage instances.
      *
@@ -23256,7 +23210,22 @@ declare class ExchangeConnectionService implements IExchange {
  * Strategies are registered via addStrategy() and retrieved by name.
  */
 declare class StrategySchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new strategy schema.
@@ -24147,7 +24116,22 @@ type TStrategy$1 = {
  * ```
  */
 declare class StrategyConnectionService implements TStrategy$1 {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     readonly executionContextService: {
         readonly context: IExecutionContext;
     };
@@ -27037,7 +27021,22 @@ declare class WalkerCommandService implements TWalkerLogicPublicService {
  * Exchanges are registered via addExchange() and retrieved by name.
  */
 declare class ExchangeSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new exchange schema.
@@ -27086,7 +27085,22 @@ declare class ExchangeSchemaService {
  * Frames are registered via addFrame() and retrieved by name.
  */
 declare class FrameSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new frame schema.
@@ -27134,7 +27148,22 @@ declare class FrameSchemaService {
  * Sizing schemas are registered via addSizing() and retrieved by name.
  */
 declare class SizingSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new sizing schema.
@@ -27181,7 +27210,22 @@ declare class SizingSchemaService {
  * Risk profiles are registered via addRisk() and retrieved by name.
  */
 declare class RiskSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new risk schema.
@@ -27254,7 +27298,22 @@ declare class RiskSchemaService {
  * ```
  */
 declare class ActionSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new action schema.
@@ -27314,7 +27373,22 @@ declare class ActionSchemaService {
  * Walkers are registered via addWalker() and retrieved by name.
  */
 declare class WalkerSchemaService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     private _registry;
     /**
      * Registers a new walker schema.
@@ -27371,7 +27445,22 @@ declare class WalkerSchemaService {
  * Supports early termination via break in consumer.
  */
 declare class BacktestLogicPrivateService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     readonly strategyCoreService: StrategyCoreService;
     readonly exchangeCoreService: ExchangeCoreService;
     readonly frameCoreService: FrameCoreService;
@@ -29051,7 +29140,22 @@ declare class RiskReportService {
  * @see Report for the underlying persistence mechanism
  */
 declare class StrategyReportService {
-    readonly loggerService: LoggerService;
+    readonly loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
     /**
      * Logs a cancel-scheduled event when a scheduled signal is cancelled.
      */
@@ -29399,7 +29503,22 @@ declare const backtest: {
     methodContextService: {
         readonly context: IMethodContext;
     };
-    loggerService: LoggerService;
+    loggerService: {
+        readonly methodContextService: {
+            readonly context: IMethodContext;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        _commonLogger: ILogger;
+        readonly _methodContext: {};
+        readonly _executionContext: {};
+        log: (topic: string, ...args: any[]) => Promise<void>;
+        debug: (topic: string, ...args: any[]) => Promise<void>;
+        info: (topic: string, ...args: any[]) => Promise<void>;
+        warn: (topic: string, ...args: any[]) => Promise<void>;
+        setLogger: (logger: ILogger) => void;
+    };
 };
 
 interface Signal$2 extends ISignalDto {

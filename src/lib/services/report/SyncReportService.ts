@@ -1,5 +1,5 @@
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot, trycatch } from "functools-kit";
 import { syncSubject } from "../../../config/emitters";
@@ -42,7 +42,7 @@ const SYNC_REPORT_METHOD_NAME_TICK = "SyncReportService.tick";
  */
 export class SyncReportService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal sync events and logs them to the database.

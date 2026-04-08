@@ -1,7 +1,7 @@
 import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { partialProfitSubject, partialLossSubject } from "../../../config/emitters";
@@ -45,7 +45,7 @@ const PARTIAL_REPORT_METHOD_NAME_TICK_LOSS = "PartialReportService.tickLoss";
  */
 export class PartialReportService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes partial profit events and logs them to the database.

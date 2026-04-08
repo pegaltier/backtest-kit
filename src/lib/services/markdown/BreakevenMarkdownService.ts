@@ -1,7 +1,7 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { Markdown } from "../../../classes/Markdown";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { breakevenSubject } from "../../../config/emitters";
@@ -268,7 +268,7 @@ class ReportStorage {
  */
 export class BreakevenMarkdownService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.

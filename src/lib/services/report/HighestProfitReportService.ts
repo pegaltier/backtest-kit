@@ -1,6 +1,6 @@
 import { IPublicSignalRow } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { highestProfitSubject } from "../../../config/emitters";
@@ -19,7 +19,7 @@ const HIGHEST_PROFIT_REPORT_METHOD_NAME_TICK = "HighestProfitReportService.tick"
  * Report.writeData() for persistence and analytics.
  */
 export class HighestProfitReportService {
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Handles a single `HighestProfitContract` event emitted by `highestProfitSubject`.

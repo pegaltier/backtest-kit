@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { ActionName, IAction } from "../../../interfaces/Action.interface";
 import { memoize } from "functools-kit";
@@ -77,7 +77,7 @@ type TAction = {
  * ```
  */
 export class ActionConnectionService implements TAction {
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
   private readonly actionSchemaService = inject<ActionSchemaService>(
     TYPES.actionSchemaService
   );

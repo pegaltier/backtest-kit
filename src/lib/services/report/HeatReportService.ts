@@ -1,6 +1,6 @@
 import { IStrategyTickResult } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { signalEmitter } from "../../../config/emitters";
@@ -41,7 +41,7 @@ const HEAT_REPORT_METHOD_NAME_TICK = "HeatReportService.tick";
  */
 export class HeatReportService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal tick events and logs closed signals to the database.

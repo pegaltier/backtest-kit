@@ -5,7 +5,7 @@ import {
 } from "../../../contract/Performance.contract";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { memoize, singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
@@ -363,7 +363,7 @@ class PerformanceStorage {
  */
 export class PerformanceMarkdownService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create PerformanceStorage for a symbol-strategy-exchange-frame-backtest combination.

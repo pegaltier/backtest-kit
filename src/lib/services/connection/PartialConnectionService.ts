@@ -1,5 +1,5 @@
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
 import { IPartial, PartialLevel } from "../../../interfaces/Partial.interface";
@@ -160,7 +160,7 @@ export class PartialConnectionService implements IPartial {
   /**
    * Logger service injected from DI container.
    */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Action core service injected from DI container.

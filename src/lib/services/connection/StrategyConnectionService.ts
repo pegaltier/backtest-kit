@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import ExecutionContextService, { TExecutionContextService } from "../context/ExecutionContextService";
 import { ExchangeName, ICandleData } from "../../../interfaces/Exchange.interface";
@@ -518,7 +518,7 @@ type TStrategy = {
  * ```
  */
 export class StrategyConnectionService implements TStrategy {
-  public readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
   public readonly executionContextService = inject<TExecutionContextService>(
     TYPES.executionContextService
   );

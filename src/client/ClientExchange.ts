@@ -14,7 +14,6 @@ import {
   sleep,
   trycatch,
 } from "functools-kit";
-import backtest from "../lib";
 import { errorEmitter } from "../config/emitters";
 import { PersistCandleAdapter } from "../classes/Persist";
 import { Candle } from "../classes/Candle";

@@ -1,6 +1,6 @@
 import { PerformanceContract } from "../../../contract/Performance.contract";
 import { inject } from "../../../lib/core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
 import { singleshot } from "functools-kit";
 import { performanceEmitter } from "../../../config/emitters";
@@ -40,7 +40,7 @@ const PERFORMANCE_REPORT_METHOD_NAME_TRACK = "PerformanceReportService.track";
  */
 export class PerformanceReportService {
   /** Logger service for debug output */
-  private readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  private readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes performance tracking events and logs them to the database.

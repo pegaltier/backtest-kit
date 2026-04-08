@@ -1,5 +1,5 @@
 import { inject } from "../../core/di";
-import LoggerService from "../base/LoggerService";
+import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../core/types";
 import { Report } from "../../../classes/Report";
 import { compose, singleshot } from "functools-kit";
@@ -38,7 +38,7 @@ import {
  * @see Report for the underlying persistence mechanism
  */
 export class StrategyReportService {
-  readonly loggerService = inject<LoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Logs a cancel-scheduled event when a scheduled signal is cancelled.
