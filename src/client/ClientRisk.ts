@@ -98,6 +98,7 @@ const CREATE_NAME_FN = (strategyName: StrategyName, exchangeName: ExchangeName, 
 
 /** Wrapper to execute risk validation function with error handling */
 const DO_VALIDATION_FN = async (
+  self: ClientRisk,
   validation: IRiskValidationFn,
   params: IRiskValidationPayload
 ): Promise<RiskRejection> => {
@@ -109,7 +110,7 @@ const DO_VALIDATION_FN = async (
       error: errorData(error),
       message: getErrorMessage(error),
     };
-    backtest.loggerService.warn(message, payload);
+    self.params.logger.warn(message, payload);
     console.warn(message, payload);
     validationSubject.next(error);
     return payload.message;
@@ -128,13 +129,13 @@ const CALL_REJECTED_CALLBACKS_FN = trycatch(
     }
   },
   {
-    fallback: (error) => {
+    fallback: (error, self) => {
       const message = "ClientRisk CALL_REJECTED_CALLBACKS_FN thrown";
       const payload = {
         error: errorData(error),
         message: getErrorMessage(error),
       };
-      backtest.loggerService.warn(message, payload);
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       errorEmitter.next(error);
     },
@@ -153,13 +154,13 @@ const CALL_ALLOWED_CALLBACKS_FN = trycatch(
     }
   },
   {
-    fallback: (error) => {
+    fallback: (error, self) => {
       const message = "ClientRisk CALL_ALLOWED_CALLBACKS_FN thrown";
       const payload = {
         error: errorData(error),
         message: getErrorMessage(error),
       };
-      backtest.loggerService.warn(message, payload);
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       errorEmitter.next(error);
     },
@@ -350,6 +351,7 @@ export class ClientRisk implements IRisk {
     if (this.params.validations) {
       for (const validation of this.params.validations) {
         const rejection = await DO_VALIDATION_FN(
+          this,
           typeof validation === "function" ? validation : validation.validate,
           payload
         );

@@ -196,13 +196,18 @@ const READ_CANDLES_CACHE_FN = trycatch(
     return null;
   },
   {
-    fallback: async (error) => {
+    fallback: async (error, dto, since, until, self) => {
       const message = `ClientExchange READ_CANDLES_CACHE_FN: cache read failed`;
       const payload = {
+        request: {
+          dto,
+          since,
+          until,
+        },
         error: errorData(error),
         message: getErrorMessage(error),
       };
-      backtest.loggerService.warn(message, payload);
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       errorEmitter.next(error);
     },
@@ -245,13 +250,17 @@ const WRITE_CANDLES_CACHE_FN = trycatch(
     },
   ),
   {
-    fallback: async (error) => {
+    fallback: async (error, candles, dto, self) => {
       const message = `ClientExchange WRITE_CANDLES_CACHE_FN: cache write failed`;
       const payload = {
+        request: {
+          candlesLen: candles.length,
+          dto,
+        },
         error: errorData(error),
         message: getErrorMessage(error),
       };
-      backtest.loggerService.warn(message, payload);
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       errorEmitter.next(error);
     },
@@ -368,13 +377,13 @@ const CALL_CANDLE_DATA_CALLBACKS_FN = trycatch(
     }
   },
   {
-    fallback: (error) => {
+    fallback: (error, self) => {
       const message = "ClientExchange CALL_CANDLE_DATA_CALLBACKS_FN thrown";
       const payload = {
         error: errorData(error),
         message: getErrorMessage(error),
       };
-      backtest.loggerService.warn(message, payload);
+      self.params.logger.warn(message, payload);
       console.warn(message, payload);
       errorEmitter.next(error);
     },
