@@ -1,17 +1,6 @@
 import {
   compose,
-  getErrorMessage,
-  makeExtendable,
-  memoize,
-  singleshot,
-  timeout,
-  TIMEOUT_SYMBOL,
 } from "functools-kit";
-import { createWriteStream, WriteStream } from "fs";
-import * as fs from "fs/promises";
-import { join, dirname } from "path";
-import { exitEmitter } from "../config/emitters";
-import { getContextTimestamp } from "../helpers/getContextTimestamp";
 import LoggerService from "../lib/services/base/LoggerService";
 import BacktestMarkdownService from "../lib/services/markdown/BacktestMarkdownService";
 import BreakevenMarkdownService from "../lib/services/markdown/BreakevenMarkdownService";
@@ -27,11 +16,11 @@ import SyncMarkdownService from "../lib/services/markdown/SyncMarkdownService";
 import HighestProfitMarkdownService from "../lib/services/markdown/HighestProfitMarkdownService";
 import MaxDrawdownMarkdownService from "../lib/services/markdown/MaxDrawdownMarkdownService";
 import { IMarkdownTarget, MarkdownWriter, TMarkdownBaseCtor } from "./Writer";
+import backtest from "src/lib";
 
 const MARKDOWN_METHOD_NAME_ENABLE = "MarkdownUtils.enable";
 const MARKDOWN_METHOD_NAME_DISABLE = "MarkdownUtils.disable";
 const MARKDOWN_METHOD_NAME_USE_ADAPTER = "MarkdownAdapter.useMarkdownAdapter";
-const MARKDOWN_METHOD_NAME_WRITE_DATA = "MarkdownAdapter.writeData";
 const MARKDOWN_METHOD_NAME_USE_MD = "MarkdownAdapter.useMd";
 const MARKDOWN_METHOD_NAME_USE_JSONL = "MarkdownAdapter.useJsonl";
 const MARKDOWN_METHOD_NAME_USE_DUMMY = "MarkdownAdapter.useDummy";
@@ -39,33 +28,6 @@ const MARKDOWN_METHOD_NAME_CLEAR = "MarkdownAdapter.clear";
 
 /** Logger service injected as DI singleton */
 const LOGGER_SERVICE = new LoggerService();
-
-/** Backtest markdown service injected as DI singleton */
-const BACKTEST_MARKDOWN_SERVICE = new BacktestMarkdownService();
-/** Breakeven markdown service injected as DI singleton */
-const BREAKEVEN_MARKDOWN_SERVICE = new BreakevenMarkdownService();
-/** Heat markdown service injected as DI singleton */
-const HEAT_MARKDOWN_SERVICE = new HeatMarkdownService();
-/** Live markdown service injected as DI singleton */
-const LIVE_MARKDOWN_SERVICE = new LiveMarkdownService();
-/** Partial markdown service injected as DI singleton */
-const PARTIAL_MARKDOWN_SERVICE = new PartialMarkdownService();
-/** Performance markdown service injected as DI singleton */
-const PERFORMANCE_MARKDOWN_SERVICE = new PerformanceMarkdownService();
-/** Risk markdown service injected as DI singleton */
-const RISK_MARKDOWN_SERVICE = new RiskMarkdownService();
-/** Strategy markdown service injected as DI singleton */
-const STRATEGY_MARKDOWN_SERVICE = new StrategyMarkdownService();
-/** Schedule markdown service injected as DI singleton */
-const SCHEDULE_MARKDOWN_SERVICE = new ScheduleMarkdownService();
-/** Walker markdown service injected as DI singleton */
-const WALKER_MARKDOWN_SERVICE = new WalkerMarkdownService();
-/** Sync markdown service injected as DI singleton */
-const SYNC_MARKDOWN_SERVICE = new SyncMarkdownService();
-/** Highest profit markdown service injected as DI singleton */
-const HIGHEST_PROFIT_MARKDOWN_SERVICE = new HighestProfitMarkdownService();
-/** Max drawdown markdown service injected as DI singleton */
-const MAX_DRAWDOWN_MARKDOWN_SERVICE = new MaxDrawdownMarkdownService();
 
 /**
  * Default configuration that enables all markdown services.
@@ -153,43 +115,43 @@ export class MarkdownUtils {
     });
     const unList: Function[] = [];
     if (bt) {
-      unList.push(BACKTEST_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.backtestMarkdownService.subscribe());
     }
     if (breakeven) {
-      unList.push(BREAKEVEN_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.breakevenMarkdownService.subscribe());
     }
     if (heat) {
-      unList.push(HEAT_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.heatMarkdownService.subscribe());
     }
     if (live) {
-      unList.push(LIVE_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.liveMarkdownService.subscribe());
     }
     if (partial) {
-      unList.push(PARTIAL_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.partialMarkdownService.subscribe());
     }
     if (performance) {
-      unList.push(PERFORMANCE_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.performanceMarkdownService.subscribe());
     }
     if (risk) {
-      unList.push(RISK_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.riskMarkdownService.subscribe());
     }
     if (strategy) {
-      unList.push(STRATEGY_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.strategyMarkdownService.subscribe());
     }
     if (schedule) {
-      unList.push(SCHEDULE_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.scheduleMarkdownService.subscribe());
     }
     if (walker) {
-      unList.push(WALKER_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.walkerMarkdownService.subscribe());
     }
     if (sync) {
-      unList.push(SYNC_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.syncMarkdownService.subscribe());
     }
     if (highest_profit) {
-      unList.push(HIGHEST_PROFIT_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.highestProfitMarkdownService.subscribe());
     }
     if (max_drawdown) {
-      unList.push(MAX_DRAWDOWN_MARKDOWN_SERVICE.subscribe());
+      unList.push(backtest.maxDrawdownMarkdownService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -261,43 +223,43 @@ export class MarkdownUtils {
       highest_profit,
     });
     if (bt) {
-      BACKTEST_MARKDOWN_SERVICE.unsubscribe();
+      backtest.backtestMarkdownService.unsubscribe();
     }
     if (breakeven) {
-      BREAKEVEN_MARKDOWN_SERVICE.unsubscribe();
+      backtest.breakevenMarkdownService.unsubscribe();
     }
     if (heat) {
-      HEAT_MARKDOWN_SERVICE.unsubscribe();
+      backtest.heatMarkdownService.unsubscribe();
     }
     if (live) {
-      LIVE_MARKDOWN_SERVICE.unsubscribe();
+      backtest.liveMarkdownService.unsubscribe();
     }
     if (partial) {
-      PARTIAL_MARKDOWN_SERVICE.unsubscribe();
+      backtest.partialMarkdownService.unsubscribe();
     }
     if (performance) {
-      PERFORMANCE_MARKDOWN_SERVICE.unsubscribe();
+      backtest.performanceMarkdownService.unsubscribe();
     }
     if (risk) {
-      RISK_MARKDOWN_SERVICE.unsubscribe();
+      backtest.riskMarkdownService.unsubscribe();
     }
     if (strategy) {
-      STRATEGY_MARKDOWN_SERVICE.unsubscribe();
+      backtest.strategyMarkdownService.unsubscribe();
     }
     if (schedule) {
-      SCHEDULE_MARKDOWN_SERVICE.unsubscribe();
+      backtest.scheduleMarkdownService.unsubscribe();
     }
     if (walker) {
-      WALKER_MARKDOWN_SERVICE.unsubscribe();
+      backtest.walkerMarkdownService.unsubscribe();
     }
     if (sync) {
-      SYNC_MARKDOWN_SERVICE.unsubscribe();
+      backtest.syncMarkdownService.unsubscribe();
     }
     if (highest_profit) {
-      HIGHEST_PROFIT_MARKDOWN_SERVICE.unsubscribe();
+      backtest.highestProfitMarkdownService.unsubscribe();
     }
     if (max_drawdown) {
-      MAX_DRAWDOWN_MARKDOWN_SERVICE.unsubscribe();
+      backtest.maxDrawdownMarkdownService.unsubscribe();
     }
   };
 }

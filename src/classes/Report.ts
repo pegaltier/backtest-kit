@@ -27,6 +27,7 @@ import SyncReportService from "../lib/services/report/SyncReportService";
 import HighestProfitReportService from "../lib/services/report/HighestProfitReportService";
 import MaxDrawdownReportService from "../lib/services/report/MaxDrawdownReportService";
 import { IReportTarget, ReportWriter, TReportBaseCtor } from "./Writer";
+import backtest from "src/lib";
 
 const REPORT_UTILS_METHOD_NAME_USE_REPORT_ADAPTER =
   "ReportUtils.useReportAdapter";
@@ -38,33 +39,6 @@ const REPORT_UTILS_METHOD_NAME_CLEAR = "ReportUtils.clear";
 
 /** Logger service injected as DI singleton */
 const LOGGER_SERVICE = new LoggerService();
-
-/** Backtest report service injected as DI singleton */
-const BACKTEST_REPORT_SERVICE = new BacktestReportService();
-/** Breakeven report service injected as DI singleton */
-const BREAKEVEN_REPORT_SERVICE = new BreakevenReportService();
-/** Heat report service injected as DI singleton */
-const HEAT_REPORT_SERVICE = new HeatReportService();
-/** Live report service injected as DI singleton */
-const LIVE_REPORT_SERVICE = new LiveReportService();
-/** Partial report service injected as DI singleton */
-const PARTIAL_REPORT_SERVICE = new PartialReportService();
-/** Performance report service injected as DI singleton */
-const PERFORMANCE_REPORT_SERVICE = new PerformanceReportService();
-/** Risk report service injected as DI singleton */
-const RISK_REPORT_SERVICE = new RiskReportService();
-/** Strategy report service injected as DI singleton */
-const STRATEGY_REPORT_SERVICE = new StrategyReportService();
-/** Schedule report service injected as DI singleton */
-const SCHEDULE_REPORT_SERVICE = new ScheduleReportService();
-/** Walker report service injected as DI singleton */
-const WALKER_REPORT_SERVICE = new WalkerReportService();
-/** Sync report service injected as DI singleton */
-const SYNC_REPORT_SERVICE = new SyncReportService();
-/** Highest profit report service injected as DI singleton */
-const HIGHEST_PROFIT_REPORT_SERVICE = new HighestProfitReportService();
-/** Max drawdown report service injected as DI singleton */
-const MAX_DRAWDOWN_REPORT_SERVICE = new MaxDrawdownReportService();
 
 /**
  * Default configuration that enables all report services.
@@ -151,43 +125,43 @@ export class ReportUtils {
     });
     const unList: Function[] = [];
     if (bt) {
-      unList.push(BACKTEST_REPORT_SERVICE.subscribe());
+      unList.push(backtest.backtestReportService.subscribe());
     }
     if (breakeven) {
-      unList.push(BREAKEVEN_REPORT_SERVICE.subscribe());
+      unList.push(backtest.breakevenReportService.subscribe());
     }
     if (heat) {
-      unList.push(HEAT_REPORT_SERVICE.subscribe());
+      unList.push(backtest.heatReportService.subscribe());
     }
     if (live) {
-      unList.push(LIVE_REPORT_SERVICE.subscribe());
+      unList.push(backtest.liveReportService.subscribe());
     }
     if (partial) {
-      unList.push(PARTIAL_REPORT_SERVICE.subscribe());
+      unList.push(backtest.partialReportService.subscribe());
     }
     if (performance) {
-      unList.push(PERFORMANCE_REPORT_SERVICE.subscribe());
+      unList.push(backtest.performanceReportService.subscribe());
     }
     if (risk) {
-      unList.push(RISK_REPORT_SERVICE.subscribe());
+      unList.push(backtest.riskReportService.subscribe());
     }
     if (schedule) {
-      unList.push(SCHEDULE_REPORT_SERVICE.subscribe());
+      unList.push(backtest.scheduleReportService.subscribe());
     }
     if (walker) {
-      unList.push(WALKER_REPORT_SERVICE.subscribe());
+      unList.push(backtest.walkerReportService.subscribe());
     }
     if (strategy) {
-      unList.push(STRATEGY_REPORT_SERVICE.subscribe());
+      unList.push(backtest.strategyReportService.subscribe());
     }
     if (sync) {
-      unList.push(SYNC_REPORT_SERVICE.subscribe());
+      unList.push(backtest.syncReportService.subscribe());
     }
     if (highest_profit) {
-      unList.push(HIGHEST_PROFIT_REPORT_SERVICE.subscribe());
+      unList.push(backtest.highestProfitReportService.subscribe());
     }
     if (max_drawdown) {
-      unList.push(MAX_DRAWDOWN_REPORT_SERVICE.subscribe());
+      unList.push(backtest.maxDrawdownReportService.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -257,43 +231,43 @@ export class ReportUtils {
       sync,
     });
     if (bt) {
-      BACKTEST_REPORT_SERVICE.unsubscribe();
+      backtest.backtestReportService.unsubscribe();
     }
     if (breakeven) {
-      BREAKEVEN_REPORT_SERVICE.unsubscribe();
+      backtest.breakevenReportService.unsubscribe();
     }
     if (heat) {
-      HEAT_REPORT_SERVICE.unsubscribe();
+      backtest.heatReportService.unsubscribe();
     }
     if (live) {
-      LIVE_REPORT_SERVICE.unsubscribe();
+      backtest.liveReportService.unsubscribe();
     }
     if (partial) {
-      PARTIAL_REPORT_SERVICE.unsubscribe();
+      backtest.partialReportService.unsubscribe();
     }
     if (performance) {
-      PERFORMANCE_REPORT_SERVICE.unsubscribe();
+      backtest.performanceReportService.unsubscribe();
     }
     if (risk) {
-      RISK_REPORT_SERVICE.unsubscribe();
+      backtest.riskReportService.unsubscribe();
     }
     if (schedule) {
-      SCHEDULE_REPORT_SERVICE.unsubscribe();
+      backtest.scheduleReportService.unsubscribe();
     }
     if (walker) {
-      WALKER_REPORT_SERVICE.unsubscribe();
+      backtest.walkerReportService.unsubscribe();
     }
     if (strategy) {
-      STRATEGY_REPORT_SERVICE.unsubscribe();
+      backtest.strategyReportService.unsubscribe();
     }
     if (sync) {
-      SYNC_REPORT_SERVICE.unsubscribe();
+      backtest.syncReportService.unsubscribe();
     }
     if (highest_profit) {
-      HIGHEST_PROFIT_REPORT_SERVICE.unsubscribe();
+      backtest.highestProfitReportService.unsubscribe();
     }
     if (max_drawdown) {
-      MAX_DRAWDOWN_REPORT_SERVICE.unsubscribe();
+      backtest.maxDrawdownReportService.unsubscribe();
     }
   };
 }
