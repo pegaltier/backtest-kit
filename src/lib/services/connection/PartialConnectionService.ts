@@ -13,7 +13,6 @@ import {
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
 import ActionCoreService from "../core/ActionCoreService";
-import backtest from "../../../lib";
 
 /**
  * Creates a unique key for memoizing ClientPartial instances.

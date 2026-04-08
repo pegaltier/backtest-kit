@@ -272,6 +272,8 @@ interface IRiskParams extends IRiskSchema {
     exchangeName: ExchangeName;
     /** Logger service for debug output */
     logger: ILogger;
+    /** Execution context service (symbol, when, backtest flag) */
+    execution: TExecutionContextService;
     /** True if backtest mode, false if live mode */
     backtest: boolean;
     /**
@@ -23557,6 +23559,9 @@ declare class RiskConnectionService implements TRisk$1 {
         setLogger: (logger: ILogger) => void;
     };
     readonly riskSchemaService: RiskSchemaService;
+    readonly executionContextService: {
+        readonly context: IExecutionContext;
+    };
     /**
      * Action core service injected from DI container.
      */
@@ -29584,6 +29589,28 @@ declare const backtest: {
     breakevenGlobalService: BreakevenGlobalService;
     timeMetaService: TimeMetaService;
     priceMetaService: PriceMetaService;
+    contextMetaService: {
+        readonly loggerService: {
+            readonly methodContextService: {
+                readonly context: IMethodContext;
+            };
+            readonly executionContextService: {
+                readonly context: IExecutionContext;
+            };
+            _commonLogger: ILogger;
+            readonly _methodContext: {};
+            readonly _executionContext: {};
+            log: (topic: string, ...args: any[]) => Promise<void>;
+            debug: (topic: string, ...args: any[]) => Promise<void>;
+            info: (topic: string, ...args: any[]) => Promise<void>;
+            warn: (topic: string, ...args: any[]) => Promise<void>;
+            setLogger: (logger: ILogger) => void;
+        };
+        readonly executionContextService: {
+            readonly context: IExecutionContext;
+        };
+        getContextTimestamp: () => number;
+    };
     exchangeCoreService: ExchangeCoreService;
     strategyCoreService: StrategyCoreService;
     actionCoreService: ActionCoreService;

@@ -77,6 +77,7 @@ import HighestProfitMarkdownService from "./services/markdown/HighestProfitMarkd
 import MaxDrawdownMarkdownService from "./services/markdown/MaxDrawdownMarkdownService";
 import TimeMetaService from "./services/meta/TimeMetaService";
 import PriceMetaService from "./services/meta/PriceMetaService";
+import { TContextMetaService } from "./services/meta/ContextMetaService";
 
 const baseServices = {
   loggerService: inject<TLoggerService>(TYPES.loggerService),
@@ -142,6 +143,7 @@ const coreServices = {
 const metaServices = {
   timeMetaService: inject<TimeMetaService>(TYPES.timeMetaService),
   priceMetaService: inject<PriceMetaService>(TYPES.priceMetaService),
+  contextMetaService: inject<TContextMetaService>(TYPES.contextMetaService),
 }
 
 const globalServices = {

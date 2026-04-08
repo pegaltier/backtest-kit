@@ -11,6 +11,7 @@ import { FrameName } from "../../../interfaces/Frame.interface";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 import ActionCoreService from "../core/ActionCoreService";
 import backtest from "../../../lib";
+import { TExecutionContextService } from "../context/ExecutionContextService";
 
 /**
  * Creates a unique key for memoizing ClientRisk instances.
@@ -134,6 +135,7 @@ export class RiskConnectionService implements TRisk {
   public readonly riskSchemaService = inject<RiskSchemaService>(
     TYPES.riskSchemaService
   );
+  public readonly executionContextService = inject<TExecutionContextService>(TYPES.executionContextService);
 
   /**
    * Action core service injected from DI container.
@@ -160,6 +162,7 @@ export class RiskConnectionService implements TRisk {
       return new ClientRisk({
         ...schema,
         logger: this.loggerService,
+        execution: this.executionContextService,
         backtest,
         exchangeName,
         onRejected: CREATE_COMMIT_REJECTION_FN(this, exchangeName, frameName),
