@@ -13,6 +13,7 @@ import * as fs from "fs/promises";
 import { join, dirname } from "path";
 import { exitEmitter } from "../config/emitters";
 import { getContextTimestamp } from "../helpers/getContextTimestamp";
+import LoggerService from "../lib/services/base/LoggerService";
 
 const MARKDOWN_METHOD_NAME_ENABLE = "MarkdownUtils.enable";
 const MARKDOWN_METHOD_NAME_DISABLE = "MarkdownUtils.disable";
@@ -24,6 +25,9 @@ const MARKDOWN_METHOD_NAME_USE_MD = "MarkdownAdapter.useMd";
 const MARKDOWN_METHOD_NAME_USE_JSONL = "MarkdownAdapter.useJsonl";
 const MARKDOWN_METHOD_NAME_USE_DUMMY = "MarkdownAdapter.useDummy";
 const MARKDOWN_METHOD_NAME_CLEAR = "MarkdownAdapter.clear";
+
+/** Logger service injected as DI singleton */
+const LOGGER_SERVICE = new LoggerService();
 
 /**
  * Configuration interface for selective markdown service enablement.
@@ -233,7 +237,7 @@ class MarkdownFileBase implements TMarkdownBase {
    * @throws Error if stream not initialized or write timeout exceeded
    */
   async dump(data: string, options: IMarkdownDumpOptions): Promise<void> {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_FILE_DUMP, {
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_FILE_DUMP, {
       markdownName: this.markdownName,
       options,
     });
@@ -329,7 +333,7 @@ class MarkdownFolderBase implements TMarkdownBase {
    * @throws Error if directory creation or file write fails
    */
   async dump(content: string, options: IMarkdownDumpOptions): Promise<void> {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_FOLDER_DUMP, {
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_FOLDER_DUMP, {
       markdownName: this.markdownName,
       options,
     });
@@ -418,7 +422,7 @@ export class MarkdownUtils {
     highest_profit = false,
     max_drawdown = false,
   }: Partial<IMarkdownTarget> = WILDCARD_TARGET) => {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_ENABLE, {
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_ENABLE, {
       backtest: bt,
       breakeven,
       heat,
@@ -527,7 +531,7 @@ export class MarkdownUtils {
     highest_profit = false,
     max_drawdown = false,
   }: Partial<IMarkdownTarget> = WILDCARD_TARGET) => {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_DISABLE, {
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_DISABLE, {
       backtest: bt,
       breakeven,
       heat,
@@ -621,7 +625,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    * @param Ctor - Constructor for markdown storage adapter
    */
   public useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void {
-    backtest.loggerService.info(MARKDOWN_METHOD_NAME_USE_ADAPTER);
+    LOGGER_SERVICE.info(MARKDOWN_METHOD_NAME_USE_ADAPTER);
     this.MarkdownFactory = Ctor;
   }
 
@@ -642,7 +646,7 @@ export class MarkdownAdapter extends MarkdownUtils {
     content: string,
     options: IMarkdownDumpOptions
   ): Promise<void> {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_WRITE_DATA, {
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_WRITE_DATA, {
       markdownName,
       options,
     });
@@ -660,7 +664,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    * Each dump creates a separate .md file.
    */
   public useMd() {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_USE_MD);
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_MD);
     this.useMarkdownAdapter(MarkdownFolderBase);
   }
 
@@ -670,7 +674,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    * All dumps append to a single .jsonl file per markdown type.
    */
   public useJsonl() {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_USE_JSONL);
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_JSONL);
     this.useMarkdownAdapter(MarkdownFileBase);
   }
 
@@ -680,7 +684,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    * so new storage instances are created with the updated base path.
    */
   public clear(): void {
-    backtest.loggerService.log(MARKDOWN_METHOD_NAME_CLEAR);
+    LOGGER_SERVICE.log(MARKDOWN_METHOD_NAME_CLEAR);
     this.getMarkdownStorage.clear();
   }
 
@@ -689,7 +693,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    * All future markdown writes will be no-ops.
    */
   public useDummy() {
-    backtest.loggerService.debug(MARKDOWN_METHOD_NAME_USE_DUMMY);
+    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_DUMMY);
     this.useMarkdownAdapter(MarkdownDummy);
   }
 }

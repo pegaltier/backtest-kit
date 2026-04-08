@@ -13,6 +13,7 @@ import {
 } from "functools-kit";
 import { exitEmitter, shutdownEmitter } from "../config/emitters";
 import { getContextTimestamp } from "../helpers/getContextTimestamp";
+import LoggerService from "../lib/services/base/LoggerService";
 
 const REPORT_BASE_METHOD_NAME_CTOR = "ReportBase.CTOR";
 const REPORT_BASE_METHOD_NAME_WAIT_FOR_INIT = "ReportBase.waitForInit";
@@ -31,6 +32,9 @@ const REPORT_UTILS_METHOD_NAME_CLEAR = "ReportUtils.clear";
 const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
 /** Symbol key for the timeout-protected write function on ReportBase instances. */
 const WRITE_SAFE_SYMBOL = Symbol("write-safe");
+
+/** Logger service injected as DI singleton */
+const LOGGER_SERVICE = new LoggerService();
 
 /**
  * Configuration interface for selective report service enablement.
@@ -157,7 +161,7 @@ class ReportBase implements TReportBase {
     readonly reportName: ReportName,
     readonly baseDir = join(process.cwd(), "./dump/report")
   ) {
-    lib.loggerService.debug(REPORT_BASE_METHOD_NAME_CTOR, {
+    LOGGER_SERVICE.debug(REPORT_BASE_METHOD_NAME_CTOR, {
       reportName: this.reportName,
       baseDir,
     });
@@ -208,7 +212,7 @@ class ReportBase implements TReportBase {
    * @returns Promise that resolves when initialization is complete
    */
   async waitForInit(initial: boolean): Promise<void> {
-    lib.loggerService.debug(REPORT_BASE_METHOD_NAME_WAIT_FOR_INIT, {
+    LOGGER_SERVICE.debug(REPORT_BASE_METHOD_NAME_WAIT_FOR_INIT, {
       reportName: this.reportName,
       initial,
     });
@@ -228,7 +232,7 @@ class ReportBase implements TReportBase {
    * @throws Error if stream not initialized or write timeout exceeded
    */
   async write<T = any>(data: T, options: IReportDumpOptions): Promise<void> {
-    lib.loggerService.debug(REPORT_BASE_METHOD_NAME_WRITE, {
+    LOGGER_SERVICE.debug(REPORT_BASE_METHOD_NAME_WRITE, {
       reportName: this.reportName,
       options,
     });
@@ -373,7 +377,7 @@ export class ReportUtils {
     highest_profit = false,
     max_drawdown = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
-    lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_ENABLE, {
+    LOGGER_SERVICE.debug(REPORT_UTILS_METHOD_NAME_ENABLE, {
       backtest: bt,
       breakeven,
       heat,
@@ -480,7 +484,7 @@ export class ReportUtils {
     highest_profit = false,
     max_drawdown = false,
   }: Partial<IReportTarget> = WILDCARD_TARGET) => {
-    lib.loggerService.debug(REPORT_UTILS_METHOD_NAME_DISABLE, {
+    LOGGER_SERVICE.debug(REPORT_UTILS_METHOD_NAME_DISABLE, {
       backtest: bt,
       breakeven,
       heat,
@@ -574,7 +578,7 @@ export class ReportAdapter extends ReportUtils {
    * @param Ctor - Constructor for report storage adapter
    */
   public useReportAdapter(Ctor: TReportBaseCtor): void {
-    lib.loggerService.info(REPORT_UTILS_METHOD_NAME_USE_REPORT_ADAPTER);
+    LOGGER_SERVICE.info(REPORT_UTILS_METHOD_NAME_USE_REPORT_ADAPTER);
     this.ReportFactory = Ctor;
   }
 
@@ -595,7 +599,7 @@ export class ReportAdapter extends ReportUtils {
     data: T,
     options: IReportDumpOptions
   ): Promise<void> => {
-    lib.loggerService.info(REPORT_UTILS_METHOD_NAME_WRITE_DATA, {
+    LOGGER_SERVICE.info(REPORT_UTILS_METHOD_NAME_WRITE_DATA, {
       reportName,
       options,
     });
@@ -613,7 +617,7 @@ export class ReportAdapter extends ReportUtils {
    * so new storage instances are created with the updated base path.
    */
   public clear(): void {
-    lib.loggerService.log(REPORT_UTILS_METHOD_NAME_CLEAR);
+    LOGGER_SERVICE.log(REPORT_UTILS_METHOD_NAME_CLEAR);
     this.getReportStorage.clear();
   }
 
@@ -622,7 +626,7 @@ export class ReportAdapter extends ReportUtils {
    * All future report writes will be no-ops.
    */
   public useDummy() {
-    lib.loggerService.log(REPORT_UTILS_METHOD_NAME_USE_DUMMY);
+    LOGGER_SERVICE.log(REPORT_UTILS_METHOD_NAME_USE_DUMMY);
     this.useReportAdapter(ReportDummy);
   }
 
@@ -631,7 +635,7 @@ export class ReportAdapter extends ReportUtils {
    * All future report writes will use JSONL storage.
    */
   public useJsonl() {
-    lib.loggerService.log(REPORT_UTILS_METHOD_NAME_USE_JSONL);
+    LOGGER_SERVICE.log(REPORT_UTILS_METHOD_NAME_USE_JSONL);
     this.useReportAdapter(ReportBase);
   }
 }
