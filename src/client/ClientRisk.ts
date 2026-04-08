@@ -25,7 +25,7 @@ import { IRiskSignalRow, ISignalRow, StrategyName } from "../interfaces/Strategy
 import { GLOBAL_CONFIG } from "../config/params";
 import toProfitLossDto from "../helpers/toProfitLossDto";
 import alignToInterval from "../utils/alignToInterval";
-import ExecutionContextService from "src/lib/services/context/ExecutionContextService";
+import ExecutionContextService from "../lib/services/context/ExecutionContextService";
 
 /** Type for active position map */
 type RiskMap = Map<string, IRiskActivePosition>;
