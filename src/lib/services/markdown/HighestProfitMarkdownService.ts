@@ -238,7 +238,7 @@ class ReportStorage {
  * getReport(), and dump() methods matching the Partial pattern.
  */
 export const HighestProfitMarkdownService = singleton(class {
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   public getStorage = memoize<(symbol: string, strategyName: StrategyName, exchangeName: ExchangeName, frameName: FrameName, backtest: boolean) => ReportStorage>(
     ([symbol, strategyName, exchangeName, frameName, backtest]) => CREATE_KEY_FN(symbol, strategyName, exchangeName, frameName, backtest),

@@ -20,7 +20,7 @@ const MAX_DRAWDOWN_REPORT_METHOD_NAME_TICK = "MaxDrawdownReportService.tick";
  * Report.writeData() for persistence and analytics.
  */
 export const MaxDrawdownReportService = singleton(class {
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Handles a single `MaxDrawdownContract` event emitted by `maxDrawdownSubject`.

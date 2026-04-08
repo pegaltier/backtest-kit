@@ -331,7 +331,7 @@ class ReportStorage {
  */
 export const PartialMarkdownService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Memoized function to get or create ReportStorage for a symbol-strategy-exchange-frame-backtest combination.

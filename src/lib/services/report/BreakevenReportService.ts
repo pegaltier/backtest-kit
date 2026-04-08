@@ -43,7 +43,7 @@ const BREAKEVEN_REPORT_METHOD_NAME_TICK = "BreakevenReportService.tickBreakeven"
  */
 export const BreakevenReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes breakeven events and logs them to the database.

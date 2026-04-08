@@ -42,7 +42,7 @@ const SCHEDULE_REPORT_METHOD_NAME_TICK = "ScheduleReportService.tick";
  */
 export const ScheduleReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal tick events and logs scheduled signal lifecycle to the database.

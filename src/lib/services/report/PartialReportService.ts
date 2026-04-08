@@ -46,7 +46,7 @@ const PARTIAL_REPORT_METHOD_NAME_TICK_LOSS = "PartialReportService.tickLoss";
  */
 export const PartialReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes partial profit events and logs them to the database.

@@ -42,7 +42,7 @@ const BACKTEST_REPORT_METHOD_NAME_TICK = "BacktestReportService.tick";
  */
 export const BacktestReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes backtest tick events and logs them to the database.

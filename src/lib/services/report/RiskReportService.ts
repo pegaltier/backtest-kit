@@ -41,7 +41,7 @@ const RISK_REPORT_METHOD_NAME_TICK = "RiskReportService.tickRejection";
  */
 export const RiskReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes risk rejection events and logs them to the database.

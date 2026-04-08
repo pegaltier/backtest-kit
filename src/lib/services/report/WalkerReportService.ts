@@ -43,7 +43,7 @@ const WALKER_REPORT_METHOD_NAME_TICK = "WalkerReportService.tick";
  */
 export const WalkerReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes walker optimization events and logs them to the database.

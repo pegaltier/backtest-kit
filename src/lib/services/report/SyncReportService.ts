@@ -43,7 +43,7 @@ const SYNC_REPORT_METHOD_NAME_TICK = "SyncReportService.tick";
  */
 export const SyncReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes signal sync events and logs them to the database.

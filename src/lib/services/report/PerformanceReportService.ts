@@ -41,7 +41,7 @@ const PERFORMANCE_REPORT_METHOD_NAME_TRACK = "PerformanceReportService.track";
  */
 export const PerformanceReportService = singleton(class {
   /** Logger service for debug output */
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Processes performance tracking events and logs them to the database.

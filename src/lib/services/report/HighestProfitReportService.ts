@@ -20,7 +20,7 @@ const HIGHEST_PROFIT_REPORT_METHOD_NAME_TICK = "HighestProfitReportService.tick"
  * Report.writeData() for persistence and analytics.
  */
 export const HighestProfitReportService = singleton(class {
-  public readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
+  readonly loggerService = inject<TLoggerService>(TYPES.loggerService);
 
   /**
    * Handles a single `HighestProfitContract` event emitted by `highestProfitSubject`.
