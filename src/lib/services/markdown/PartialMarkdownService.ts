@@ -1,5 +1,5 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import { PartialLevel } from "../../../interfaces/Partial.interface";
 import { inject } from "../../../lib/core/di";
 import { TLoggerService } from "../base/LoggerService";
@@ -296,7 +296,7 @@ class ReportStorage {
     const markdown = await this.getReport(symbol, strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("partial", markdown, {
+    await MarkdownWriter.writeData("partial", markdown, {
       path,
       file: filename,
       symbol: this.symbol,

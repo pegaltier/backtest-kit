@@ -12683,6 +12683,7 @@ declare class MarkdownFolderBase implements TMarkdownBase {
      */
     dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
 }
+
 /**
  * Utility class for managing markdown report services.
  *
@@ -12771,38 +12772,12 @@ declare class MarkdownUtils {
  */
 declare class MarkdownAdapter extends MarkdownUtils {
     /**
-     * Current markdown storage adapter constructor.
-     * Defaults to MarkdownFolderBase for separate file storage.
-     * Can be changed via useMarkdownAdapter().
-     */
-    private MarkdownFactory;
-    /**
-     * Memoized storage instances cache.
-     * Key: markdownName (backtest, live, walker, etc.)
-     * Value: TMarkdownBase instance created with current MarkdownFactory.
-     * Ensures single instance per markdown type for the lifetime of the application.
-     */
-    private getMarkdownStorage;
-    /**
      * Sets the markdown storage adapter constructor.
      * All future markdown instances will use this adapter.
      *
      * @param Ctor - Constructor for markdown storage adapter
      */
     useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void;
-    /**
-     * Writes markdown data to storage using the configured adapter.
-     * Automatically initializes storage on first write for each markdown type.
-     *
-     * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
-     * @param content - Markdown content to write
-     * @param options - Path, file, and metadata options
-     * @returns Promise that resolves when write is complete
-     * @throws Error if write fails or storage initialization fails
-     *
-     * @internal - Use service-specific dump methods instead (e.g., Backtest.dump)
-     */
-    writeData(markdownName: MarkdownName, content: string, options: IMarkdownDumpOptions): Promise<void>;
     /**
      * Switches to folder-based markdown storage (default).
      * Shorthand for useMarkdownAdapter(MarkdownFolderBase).

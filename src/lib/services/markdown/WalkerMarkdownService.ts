@@ -1,4 +1,4 @@
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import {
   WalkerName,
   WalkerMetric,
@@ -398,7 +398,7 @@ class ReportStorage {
     const markdown = await this.getReport(symbol, metric, context, strategyColumns, pnlColumns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.walkerName, timestamp);
-    await Markdown.writeData("walker", markdown, {
+    await MarkdownWriter.writeData("walker", markdown, {
       path,
       file: filename,
       symbol: symbol,

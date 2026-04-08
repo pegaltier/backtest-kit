@@ -391,12 +391,15 @@ export {
 
 export {
   Markdown,
+} from "./classes/Markdown";
+
+export {
   MarkdownFileBase,
   MarkdownFolderBase,
   MarkdownName,
   TMarkdownBase,
   IMarkdownDumpOptions,
-} from "./classes/Markdown";
+} from "./classes/Writer"
 
 export {
   Log,

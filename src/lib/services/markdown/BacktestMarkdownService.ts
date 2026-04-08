@@ -13,7 +13,7 @@ import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import { getContextTimestamp } from "../../../helpers/getContextTimestamp";
 import { GLOBAL_CONFIG } from "../../../config/params";
 import { singleton } from "di-singleton";
@@ -303,7 +303,7 @@ class ReportStorage {
     const markdown = await this.getReport(strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("backtest", markdown, {
+    await MarkdownWriter.writeData("backtest", markdown, {
       path,
       file: filename,
       symbol: this.symbol,

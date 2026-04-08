@@ -1,4 +1,4 @@
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import {
   IStrategyTickResult,
   IStrategyTickResultScheduled,
@@ -368,7 +368,7 @@ class ReportStorage {
     const markdown = await this.getReport(strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("schedule", markdown, {
+    await MarkdownWriter.writeData("schedule", markdown, {
       path,
       file: filename,
       symbol: this.symbol,

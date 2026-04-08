@@ -7,19 +7,30 @@ import {
   timeout,
   TIMEOUT_SYMBOL,
 } from "functools-kit";
-import backtest from "../lib";
 import { createWriteStream, WriteStream } from "fs";
 import * as fs from "fs/promises";
 import { join, dirname } from "path";
 import { exitEmitter } from "../config/emitters";
 import { getContextTimestamp } from "../helpers/getContextTimestamp";
 import LoggerService from "../lib/services/base/LoggerService";
+import BacktestMarkdownService from "src/lib/services/markdown/BacktestMarkdownService";
+import BreakevenMarkdownService from "src/lib/services/markdown/BreakevenMarkdownService";
+import HeatMarkdownService from "src/lib/services/markdown/HeatMarkdownService";
+import LiveMarkdownService from "src/lib/services/markdown/LiveMarkdownService";
+import PartialMarkdownService from "src/lib/services/markdown/PartialMarkdownService";
+import PerformanceMarkdownService from "src/lib/services/markdown/PerformanceMarkdownService";
+import RiskMarkdownService from "src/lib/services/markdown/RiskMarkdownService";
+import StrategyMarkdownService from "src/lib/services/markdown/StrategyMarkdownService";
+import ScheduleMarkdownService from "src/lib/services/markdown/ScheduleMarkdownService";
+import WalkerMarkdownService from "src/lib/services/markdown/WalkerMarkdownService";
+import SyncMarkdownService from "src/lib/services/markdown/SyncMarkdownService";
+import HighestProfitMarkdownService from "src/lib/services/markdown/HighestProfitMarkdownService";
+import MaxDrawdownMarkdownService from "src/lib/services/markdown/MaxDrawdownMarkdownService";
+import { IMarkdownTarget, MarkdownWriter, TMarkdownBaseCtor } from "./Writer";
 
 const MARKDOWN_METHOD_NAME_ENABLE = "MarkdownUtils.enable";
 const MARKDOWN_METHOD_NAME_DISABLE = "MarkdownUtils.disable";
 const MARKDOWN_METHOD_NAME_USE_ADAPTER = "MarkdownAdapter.useMarkdownAdapter";
-const MARKDOWN_METHOD_NAME_FILE_DUMP = "MarkdownFileAdapter.dump";
-const MARKDOWN_METHOD_NAME_FOLDER_DUMP = "MarkdownFolderAdapter.dump";
 const MARKDOWN_METHOD_NAME_WRITE_DATA = "MarkdownAdapter.writeData";
 const MARKDOWN_METHOD_NAME_USE_MD = "MarkdownAdapter.useMd";
 const MARKDOWN_METHOD_NAME_USE_JSONL = "MarkdownAdapter.useJsonl";
@@ -29,43 +40,32 @@ const MARKDOWN_METHOD_NAME_CLEAR = "MarkdownAdapter.clear";
 /** Logger service injected as DI singleton */
 const LOGGER_SERVICE = new LoggerService();
 
-/**
- * Configuration interface for selective markdown service enablement.
- * Controls which markdown report services should be activated.
- */
-interface IMarkdownTarget {
-  /** Enable strategy event tracking reports (entry/exit signals) */
-  strategy: boolean;
-  /** Enable risk rejection tracking reports (signals blocked by risk limits) */
-  risk: boolean;
-  /** Enable breakeven event tracking reports (when stop loss moves to entry) */
-  breakeven: boolean;
-  /** Enable partial profit/loss event tracking reports */
-  partial: boolean;
-  /** Enable portfolio heatmap analysis reports across all symbols */
-  heat: boolean;
-  /** Enable walker strategy comparison and optimization reports */
-  walker: boolean;
-  /** Enable performance metrics and bottleneck analysis reports */
-  performance: boolean;
-  /** Enable scheduled signal tracking reports (signals waiting for trigger) */
-  schedule: boolean;
-  /** Enable live trading event reports (all tick events) */
-  live: boolean;
-  /** Enable backtest markdown reports (main strategy results with full trade history) */
-  backtest: boolean;
-  /** Enable signal sync lifecycle reports (signal-open and signal-close events) */
-  sync: boolean;
-  /** Enable highest profit milestone tracking reports */
-  highest_profit: boolean;
-  /** Enable max drawdown milestone tracking reports */
-  max_drawdown: boolean;
-}
-
-/** Symbol key for the singleshot waitForInit function on MarkdownFileBase instances. */
-const WAIT_FOR_INIT_SYMBOL = Symbol("wait-for-init");
-/** Symbol key for the timeout-protected write function on MarkdownFileBase instances. */
-const WRITE_SAFE_SYMBOL = Symbol("write-safe");
+/** Backtest markdown service injected as DI singleton */
+const BACKTEST_MARKDOWN_SERVICE = new BacktestMarkdownService();
+/** Breakeven markdown service injected as DI singleton */
+const BREAKEVEN_MARKDOWN_SERVICE = new BreakevenMarkdownService();
+/** Heat markdown service injected as DI singleton */
+const HEAT_MARKDOWN_SERVICE = new HeatMarkdownService();
+/** Live markdown service injected as DI singleton */
+const LIVE_MARKDOWN_SERVICE = new LiveMarkdownService();
+/** Partial markdown service injected as DI singleton */
+const PARTIAL_MARKDOWN_SERVICE = new PartialMarkdownService();
+/** Performance markdown service injected as DI singleton */
+const PERFORMANCE_MARKDOWN_SERVICE = new PerformanceMarkdownService();
+/** Risk markdown service injected as DI singleton */
+const RISK_MARKDOWN_SERVICE = new RiskMarkdownService();
+/** Strategy markdown service injected as DI singleton */
+const STRATEGY_MARKDOWN_SERVICE = new StrategyMarkdownService();
+/** Schedule markdown service injected as DI singleton */
+const SCHEDULE_MARKDOWN_SERVICE = new ScheduleMarkdownService();
+/** Walker markdown service injected as DI singleton */
+const WALKER_MARKDOWN_SERVICE = new WalkerMarkdownService();
+/** Sync markdown service injected as DI singleton */
+const SYNC_MARKDOWN_SERVICE = new SyncMarkdownService();
+/** Highest profit markdown service injected as DI singleton */
+const HIGHEST_PROFIT_MARKDOWN_SERVICE = new HighestProfitMarkdownService();
+/** Max drawdown markdown service injected as DI singleton */
+const MAX_DRAWDOWN_MARKDOWN_SERVICE = new MaxDrawdownMarkdownService();
 
 /**
  * Default configuration that enables all markdown services.
@@ -86,291 +86,6 @@ const WILDCARD_TARGET: IMarkdownTarget = {
   highest_profit: true,
   max_drawdown: true,
 };
-
-/**
- * Union type of all valid markdown report names.
- * Used for type-safe identification of markdown services.
- */
-export type MarkdownName = keyof IMarkdownTarget;
-
-/**
- * Options for markdown dump operations.
- * Contains path information and metadata for filtering.
- */
-export interface IMarkdownDumpOptions {
-  /** Directory path relative to process.cwd() */
-  path: string;
-  /** File name including extension */
-  file: string;
-  /** Trading pair symbol (e.g., "BTCUSDT") */
-  symbol: string;
-  /** Strategy name */
-  strategyName: string;
-  /** Exchange name */
-  exchangeName: string;
-  /** Frame name (timeframe identifier) */
-  frameName: string;
-  /** Signal unique identifier */
-  signalId: string;
-}
-
-/**
- * Base interface for markdown storage adapters.
- * All markdown adapters must implement this interface.
- */
-export type TMarkdownBase = {
-  /**
-   * Initialize markdown storage and prepare for writes.
-   * Uses singleshot to ensure one-time execution.
-   *
-   * @param initial - Whether this is the first initialization
-   * @returns Promise that resolves when initialization is complete
-   */
-  waitForInit(initial: boolean): Promise<void>;
-
-  /**
-   * Dump markdown content to storage.
-   *
-   * @param content - Markdown content to write
-   * @param options - Metadata and path options for the dump
-   * @returns Promise that resolves when write is complete
-   * @throws Error if write fails or stream is not initialized
-   */
-  dump(content: string, options: IMarkdownDumpOptions): Promise<void>;
-};
-
-/**
- * Constructor type for markdown storage adapters.
- * Used for custom markdown storage implementations.
- */
-export type TMarkdownBaseCtor = new (
-  markdownName: MarkdownName
-) => TMarkdownBase;
-
-/**
- * JSONL-based markdown adapter with append-only writes.
- *
- * Features:
- * - Writes markdown reports as JSONL entries to a single file per markdown type
- * - Stream-based writes with backpressure handling
- * - 15-second timeout protection for write operations
- * - Automatic directory creation
- * - Error handling via exitEmitter
- * - Search metadata for filtering (symbol, strategy, exchange, frame, signalId)
- *
- * File format: ./dump/markdown/{markdownName}.jsonl
- * Each line contains: markdownName, data, symbol, strategyName, exchangeName, frameName, signalId, timestamp
- *
- * Use this adapter for centralized logging and post-processing with JSONL tools.
- */
-class MarkdownFileBase implements TMarkdownBase {
-  /** Absolute path to the JSONL file for this markdown type */
-  _filePath: string;
-
-  /** WriteStream instance for append-only writes, null until initialized */
-  _stream: WriteStream | null = null;
-
-  /** Base directory for all JSONL markdown files */
-  _baseDir = join(process.cwd(), "./dump/markdown");
-
-  /**
-   * Creates a new JSONL markdown adapter instance.
-   *
-   * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
-   */
-  constructor(readonly markdownName: MarkdownName) {
-    this._filePath = join(this._baseDir, `${markdownName}.jsonl`);
-  }
-
-  /**
-   * Singleshot initialization function that creates directory and stream.
-   * Protected by singleshot to ensure one-time execution.
-   * Sets up error handler that emits to exitEmitter.
-   */
-  [WAIT_FOR_INIT_SYMBOL] = singleshot(async (): Promise<void> => {
-    await fs.mkdir(this._baseDir, { recursive: true });
-    this._stream = createWriteStream(this._filePath, { flags: "a" });
-    this._stream.on("error", (err) => {
-      exitEmitter.next(
-        new Error(
-          `MarkdownFileAdapter stream error for markdownName=${
-            this.markdownName
-          } message=${getErrorMessage(err)}`
-        )
-      );
-    });
-  });
-
-  /**
-   * Timeout-protected write function with backpressure handling.
-   * Waits for drain event if write buffer is full.
-   * Times out after 15 seconds and returns TIMEOUT_SYMBOL.
-   */
-  [WRITE_SAFE_SYMBOL] = timeout(async (line: string) => {
-    if (!this._stream.write(line)) {
-      await new Promise<void>((resolve) => {
-        this._stream!.once("drain", resolve);
-      });
-    }
-  }, 15_000);
-
-  /**
-   * Initializes the JSONL file and write stream.
-   * Safe to call multiple times - singleshot ensures one-time execution.
-   *
-   * @returns Promise that resolves when initialization is complete
-   */
-  async waitForInit(): Promise<void> {
-    await this[WAIT_FOR_INIT_SYMBOL]();
-  }
-
-  /**
-   * Writes markdown content to JSONL file with metadata.
-   * Appends a single line with JSON object containing:
-   * - markdownName: Type of report
-   * - data: Markdown content
-   * - Search flags: symbol, strategyName, exchangeName, frameName, signalId
-   * - timestamp: Current timestamp in milliseconds
-   *
-   * @param data - Markdown content to write
-   * @param options - Path and metadata options
-   * @throws Error if stream not initialized or write timeout exceeded
-   */
-  async dump(data: string, options: IMarkdownDumpOptions): Promise<void> {
-    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_FILE_DUMP, {
-      markdownName: this.markdownName,
-      options,
-    });
-
-    if (!this._stream) {
-      throw new Error(
-        `Stream not initialized for markdown ${this.markdownName}. Call waitForInit() first.`
-      );
-    }
-
-    const searchFlags: Partial<IMarkdownDumpOptions> = {};
-
-    {
-      if (options.symbol) {
-        searchFlags.symbol = options.symbol;
-      }
-
-      if (options.strategyName) {
-        searchFlags.strategyName = options.strategyName;
-      }
-
-      if (options.exchangeName) {
-        searchFlags.exchangeName = options.exchangeName;
-      }
-
-      if (options.frameName) {
-        searchFlags.frameName = options.frameName;
-      }
-
-      if (options.signalId) {
-        searchFlags.signalId = options.signalId;
-      }
-    }
-
-    const line =
-      JSON.stringify({
-        markdownName: this.markdownName,
-        data,
-        ...searchFlags,
-        timestamp: getContextTimestamp(),
-      }) + "\n";
-
-    const status = await this[WRITE_SAFE_SYMBOL](line);
-    if (status === TIMEOUT_SYMBOL) {
-      throw new Error(`Timeout writing to markdown ${this.markdownName}`);
-    }
-  }
-}
-
-//@ts-ignore
-MarkdownFileBase = makeExtendable(MarkdownFileBase);
-
-/**
- * Folder-based markdown adapter with separate files per report.
- *
- * Features:
- * - Writes each markdown report as a separate .md file
- * - File path based on options.path and options.file
- * - Automatic directory creation
- * - No stream management (direct writeFile)
- * - Suitable for human-readable report directories
- *
- * File format: {options.path}/{options.file}
- * Example: ./dump/backtest/BTCUSDT_my-strategy_binance_2024-Q1_backtest-1736601234567.md
- *
- * Use this adapter (default) for organized report directories and manual review.
- */
-class MarkdownFolderBase implements TMarkdownBase {
-  /**
-   * Creates a new folder-based markdown adapter instance.
-   *
-   * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
-   */
-  constructor(readonly markdownName: MarkdownName) {}
-
-  /**
-   * No-op initialization for folder adapter.
-   * This adapter doesn't need initialization since it uses direct writeFile.
-   *
-   * @returns Promise that resolves immediately
-   */
-  async waitForInit(): Promise<void> {
-    void 0;
-  }
-
-  /**
-   * Writes markdown content to a separate file.
-   * Creates directory structure automatically.
-   * File path is determined by options.path and options.file.
-   *
-   * @param content - Markdown content to write
-   * @param options - Path and file options for the dump
-   * @throws Error if directory creation or file write fails
-   */
-  async dump(content: string, options: IMarkdownDumpOptions): Promise<void> {
-    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_FOLDER_DUMP, {
-      markdownName: this.markdownName,
-      options,
-    });
-
-    // Combine into full file path
-    const filePath = join(process.cwd(), options.path, options.file);
-
-    // Extract directory from file path
-    const dir = dirname(filePath);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(filePath, content, "utf8");
-  }
-}
-
-// @ts-ignore
-MarkdownFolderBase = makeExtendable(MarkdownFolderBase);
-
-/**
- * Dummy markdown adapter that discards all writes.
- * Used for disabling markdown report generation.
- */
-export class MarkdownDummy implements TMarkdownBase {
-  /**
-   * No-op dump function.
-   * @returns Promise that resolves immediately
-   */
-  async dump() {
-    void 0;
-  }
-  /**
-   * No-op initialization function.
-   * @returns Promise that resolves immediately
-   */
-  async waitForInit() {
-    void 0;
-  }
-}
 
 /**
  * Utility class for managing markdown report services.
@@ -438,43 +153,43 @@ export class MarkdownUtils {
     });
     const unList: Function[] = [];
     if (bt) {
-      unList.push(backtest.backtestMarkdownService.subscribe());
+      unList.push(BACKTEST_MARKDOWN_SERVICE.subscribe());
     }
     if (breakeven) {
-      unList.push(backtest.breakevenMarkdownService.subscribe());
+      unList.push(BREAKEVEN_MARKDOWN_SERVICE.subscribe());
     }
     if (heat) {
-      unList.push(backtest.heatMarkdownService.subscribe());
+      unList.push(HEAT_MARKDOWN_SERVICE.subscribe());
     }
     if (live) {
-      unList.push(backtest.liveMarkdownService.subscribe());
+      unList.push(LIVE_MARKDOWN_SERVICE.subscribe());
     }
     if (partial) {
-      unList.push(backtest.partialMarkdownService.subscribe());
+      unList.push(PARTIAL_MARKDOWN_SERVICE.subscribe());
     }
     if (performance) {
-      unList.push(backtest.performanceMarkdownService.subscribe());
+      unList.push(PERFORMANCE_MARKDOWN_SERVICE.subscribe());
     }
     if (risk) {
-      unList.push(backtest.riskMarkdownService.subscribe());
+      unList.push(RISK_MARKDOWN_SERVICE.subscribe());
     }
     if (strategy) {
-      unList.push(backtest.strategyMarkdownService.subscribe());
+      unList.push(STRATEGY_MARKDOWN_SERVICE.subscribe());
     }
     if (schedule) {
-      unList.push(backtest.scheduleMarkdownService.subscribe());
+      unList.push(SCHEDULE_MARKDOWN_SERVICE.subscribe());
     }
     if (walker) {
-      unList.push(backtest.walkerMarkdownService.subscribe());
+      unList.push(WALKER_MARKDOWN_SERVICE.subscribe());
     }
     if (sync) {
-      unList.push(backtest.syncMarkdownService.subscribe());
+      unList.push(SYNC_MARKDOWN_SERVICE.subscribe());
     }
     if (highest_profit) {
-      unList.push(backtest.highestProfitMarkdownService.subscribe());
+      unList.push(HIGHEST_PROFIT_MARKDOWN_SERVICE.subscribe());
     }
     if (max_drawdown) {
-      unList.push(backtest.maxDrawdownMarkdownService.subscribe());
+      unList.push(MAX_DRAWDOWN_MARKDOWN_SERVICE.subscribe());
     }
     return compose(...unList.map((un) => () => void un()));
   };
@@ -546,43 +261,43 @@ export class MarkdownUtils {
       highest_profit,
     });
     if (bt) {
-      backtest.backtestMarkdownService.unsubscribe();
+      BACKTEST_MARKDOWN_SERVICE.unsubscribe();
     }
     if (breakeven) {
-      backtest.breakevenMarkdownService.unsubscribe();
+      BREAKEVEN_MARKDOWN_SERVICE.unsubscribe();
     }
     if (heat) {
-      backtest.heatMarkdownService.unsubscribe();
+      HEAT_MARKDOWN_SERVICE.unsubscribe();
     }
     if (live) {
-      backtest.liveMarkdownService.unsubscribe();
+      LIVE_MARKDOWN_SERVICE.unsubscribe();
     }
     if (partial) {
-      backtest.partialMarkdownService.unsubscribe();
+      PARTIAL_MARKDOWN_SERVICE.unsubscribe();
     }
     if (performance) {
-      backtest.performanceMarkdownService.unsubscribe();
+      PERFORMANCE_MARKDOWN_SERVICE.unsubscribe();
     }
     if (risk) {
-      backtest.riskMarkdownService.unsubscribe();
+      RISK_MARKDOWN_SERVICE.unsubscribe();
     }
     if (strategy) {
-      backtest.strategyMarkdownService.unsubscribe();
+      STRATEGY_MARKDOWN_SERVICE.unsubscribe();
     }
     if (schedule) {
-      backtest.scheduleMarkdownService.unsubscribe();
+      SCHEDULE_MARKDOWN_SERVICE.unsubscribe();
     }
     if (walker) {
-      backtest.walkerMarkdownService.unsubscribe();
+      WALKER_MARKDOWN_SERVICE.unsubscribe();
     }
     if (sync) {
-      backtest.syncMarkdownService.unsubscribe();
+      SYNC_MARKDOWN_SERVICE.unsubscribe();
     }
     if (highest_profit) {
-      backtest.highestProfitMarkdownService.unsubscribe();
+      HIGHEST_PROFIT_MARKDOWN_SERVICE.unsubscribe();
     }
     if (max_drawdown) {
-      backtest.maxDrawdownMarkdownService.unsubscribe();
+      MAX_DRAWDOWN_MARKDOWN_SERVICE.unsubscribe();
     }
   };
 }
@@ -599,24 +314,6 @@ export class MarkdownUtils {
  * - Convenience methods: useMd(), useJsonl()
  */
 export class MarkdownAdapter extends MarkdownUtils {
-  /**
-   * Current markdown storage adapter constructor.
-   * Defaults to MarkdownFolderBase for separate file storage.
-   * Can be changed via useMarkdownAdapter().
-   */
-  private MarkdownFactory: TMarkdownBaseCtor = MarkdownFolderBase;
-
-  /**
-   * Memoized storage instances cache.
-   * Key: markdownName (backtest, live, walker, etc.)
-   * Value: TMarkdownBase instance created with current MarkdownFactory.
-   * Ensures single instance per markdown type for the lifetime of the application.
-   */
-  private getMarkdownStorage = memoize(
-    ([markdownName]: [MarkdownName]): string => markdownName,
-    (markdownName: MarkdownName): TMarkdownBase =>
-      Reflect.construct(this.MarkdownFactory, [markdownName])
-  );
 
   /**
    * Sets the markdown storage adapter constructor.
@@ -626,36 +323,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    */
   public useMarkdownAdapter(Ctor: TMarkdownBaseCtor): void {
     LOGGER_SERVICE.info(MARKDOWN_METHOD_NAME_USE_ADAPTER);
-    this.MarkdownFactory = Ctor;
-  }
-
-  /**
-   * Writes markdown data to storage using the configured adapter.
-   * Automatically initializes storage on first write for each markdown type.
-   *
-   * @param markdownName - Type of markdown report (backtest, live, walker, etc.)
-   * @param content - Markdown content to write
-   * @param options - Path, file, and metadata options
-   * @returns Promise that resolves when write is complete
-   * @throws Error if write fails or storage initialization fails
-   *
-   * @internal - Use service-specific dump methods instead (e.g., Backtest.dump)
-   */
-  public async writeData(
-    markdownName: MarkdownName,
-    content: string,
-    options: IMarkdownDumpOptions
-  ): Promise<void> {
-    LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_WRITE_DATA, {
-      markdownName,
-      options,
-    });
-
-    const isInitial = !this.getMarkdownStorage.has(markdownName);
-    const markdown = this.getMarkdownStorage(markdownName);
-    await markdown.waitForInit(isInitial);
-
-    await markdown.dump(content, options);
+    return MarkdownWriter.useMarkdownAdapter(Ctor);
   }
 
   /**
@@ -665,7 +333,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    */
   public useMd() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_MD);
-    this.useMarkdownAdapter(MarkdownFolderBase);
+    MarkdownWriter.useMd();
   }
 
   /**
@@ -675,7 +343,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    */
   public useJsonl() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_JSONL);
-    this.useMarkdownAdapter(MarkdownFileBase);
+    MarkdownWriter.useJsonl();
   }
 
   /**
@@ -685,7 +353,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    */
   public clear(): void {
     LOGGER_SERVICE.log(MARKDOWN_METHOD_NAME_CLEAR);
-    this.getMarkdownStorage.clear();
+    MarkdownWriter.clear();
   }
 
   /**
@@ -694,7 +362,7 @@ export class MarkdownAdapter extends MarkdownUtils {
    */
   public useDummy() {
     LOGGER_SERVICE.debug(MARKDOWN_METHOD_NAME_USE_DUMMY);
-    this.useMarkdownAdapter(MarkdownDummy);
+    MarkdownWriter.useDummy();
   }
 }
 
@@ -704,4 +372,3 @@ export class MarkdownAdapter extends MarkdownUtils {
  */
 export const Markdown = new MarkdownAdapter();
 
-export { MarkdownFileBase, MarkdownFolderBase }

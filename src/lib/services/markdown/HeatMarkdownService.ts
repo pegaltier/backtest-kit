@@ -1,4 +1,4 @@
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import {
   IStrategyTickResult,
   IStrategyTickResultClosed,
@@ -491,7 +491,7 @@ class HeatmapStorage {
   }
 
   /**
-   * Generates the markdown report and persists it via `Markdown.writeData`.
+   * Generates the markdown report and persists it via `MarkdownWriter.writeData`.
    *
    * The filename is built by `CREATE_FILE_NAME_FN`:
    * - Backtest: `{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
@@ -514,7 +514,7 @@ class HeatmapStorage {
     const markdown = await this.getReport(strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("heat", markdown, {
+    await MarkdownWriter.writeData("heat", markdown, {
       path,
       file: filename,
       symbol: "",

@@ -1,5 +1,5 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import { inject } from "../../../lib/core/di";
 import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
@@ -193,7 +193,7 @@ class ReportStorage {
   }
 
   /**
-   * Generates the markdown report and persists it via `Markdown.writeData`.
+   * Generates the markdown report and persists it via `MarkdownWriter.writeData`.
    *
    * The filename is built by `CREATE_FILE_NAME_FN`:
    * - Backtest: `{symbol}_{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
@@ -218,7 +218,7 @@ class ReportStorage {
     const markdown = await this.getReport(symbol, strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("highest_profit", markdown, {
+    await MarkdownWriter.writeData("highest_profit", markdown, {
       path,
       file: filename,
       symbol: this.symbol,

@@ -5,7 +5,7 @@ import { memoize, singleshot, trycatch } from "functools-kit";
 import { StrategyName } from "../../../interfaces/Strategy.interface";
 import { ExchangeName } from "../../../interfaces/Exchange.interface";
 import { FrameName } from "../../../interfaces/Frame.interface";
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import { SyncStatisticsModel, SyncEvent } from "../../../model/SyncStatistics.model";
 import { ColumnModel } from "../../../model/Column.model";
 import { COLUMN_CONFIG } from "../../../config/columns";
@@ -194,7 +194,7 @@ class ReportStorage {
   }
 
   /**
-   * Generates the markdown report and persists it via `Markdown.writeData`.
+   * Generates the markdown report and persists it via `MarkdownWriter.writeData`.
    *
    * The filename is built by `CREATE_FILE_NAME_FN`:
    * - Backtest: `{symbol}_{strategyName}_{exchangeName}_{frameName}_backtest-{timestamp}.md`
@@ -219,7 +219,7 @@ class ReportStorage {
     const markdown = await this.getReport(symbol, strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("sync", markdown, {
+    await MarkdownWriter.writeData("sync", markdown, {
       path,
       file: filename,
       symbol: this.symbol,
@@ -245,7 +245,7 @@ class ReportStorage {
  * ```typescript
  * import { Markdown } from "backtest-kit";
  *
- * const unsubscribe = Markdown.enable({ sync: true });
+ * const unsubscribe = MarkdownWriter.enable({ sync: true });
  * // ... later
  * unsubscribe();
  * ```

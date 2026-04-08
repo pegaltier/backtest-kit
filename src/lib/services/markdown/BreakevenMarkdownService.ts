@@ -1,5 +1,5 @@
 import { IPublicSignalRow, StrategyName } from "../../../interfaces/Strategy.interface";
-import { Markdown } from "../../../classes/Markdown";
+import { MarkdownWriter } from "../../../classes/Writer";
 import { inject } from "../../../lib/core/di";
 import { TLoggerService } from "../base/LoggerService";
 import TYPES from "../../../lib/core/types";
@@ -234,7 +234,7 @@ class ReportStorage {
     const markdown = await this.getReport(symbol, strategyName, columns);
     const timestamp = getContextTimestamp();
     const filename = CREATE_FILE_NAME_FN(this.symbol, strategyName, this.exchangeName, this.frameName, timestamp);
-    await Markdown.writeData("breakeven", markdown, {
+    await MarkdownWriter.writeData("breakeven", markdown, {
       path,
       file: filename,
       symbol: this.symbol,
