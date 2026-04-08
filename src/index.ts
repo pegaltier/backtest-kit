@@ -390,6 +390,11 @@ export {
 } from "./classes/Markdown";
 
 export {
+  MarkdownWriter,
+  ReportWriter,
+} from "./classes/Writer"
+
+export {
   MarkdownFileBase,
   MarkdownFolderBase,
   MarkdownName,
