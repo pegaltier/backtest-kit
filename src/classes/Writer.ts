@@ -150,7 +150,7 @@ export type TMarkdownBaseCtor = new (
  *
  * Use this adapter for centralized logging and post-processing with JSONL tools.
  */
-export class MarkdownFileBase implements TMarkdownBase {
+class MarkdownFileBase implements TMarkdownBase {
   /** Absolute path to the JSONL file for this markdown type */
   _filePath: string;
 
@@ -274,9 +274,6 @@ export class MarkdownFileBase implements TMarkdownBase {
   }
 }
 
-//@ts-ignore
-MarkdownFileBase = makeExtendable(MarkdownFileBase);
-
 /**
  * Folder-based markdown adapter with separate files per report.
  *
@@ -292,7 +289,7 @@ MarkdownFileBase = makeExtendable(MarkdownFileBase);
  *
  * Use this adapter (default) for organized report directories and manual review.
  */
-export class MarkdownFolderBase implements TMarkdownBase {
+class MarkdownFolderBase implements TMarkdownBase {
   /**
    * Creates a new folder-based markdown adapter instance.
    *
@@ -334,9 +331,6 @@ export class MarkdownFolderBase implements TMarkdownBase {
     await fs.writeFile(filePath, content, "utf8");
   }
 }
-
-// @ts-ignore
-MarkdownFolderBase = makeExtendable(MarkdownFolderBase);
 
 /**
  * Dummy markdown adapter that discards all writes.
@@ -522,7 +516,7 @@ export type TReportBaseCtor = new (
  *
  * Use this adapter for event logging and post-processing analytics.
  */
-export class ReportBase implements TReportBase {
+class ReportBase implements TReportBase {
   /** Absolute path to the JSONL file for this report type */
   _filePath: string;
 
@@ -661,9 +655,6 @@ export class ReportBase implements TReportBase {
   }
 }
 
-// @ts-ignore
-ReportBase = makeExtendable(ReportBase);
-
 /**
  * Dummy report adapter that discards all writes.
  * Used for disabling report logging.
@@ -785,5 +776,14 @@ export class ReportWriterAdapter {
     this.useReportAdapter(ReportBase);
   }
 }
+
+// @ts-ignore
+MarkdownFolderBase = makeExtendable(MarkdownFolderBase);
+// @ts-ignore
+MarkdownFileBase = makeExtendable(MarkdownFileBase);
+// @ts-ignore
+ReportBase = makeExtendable(ReportBase);
+
+export { MarkdownFolderBase, MarkdownFileBase, ReportBase }
 
 export const ReportWriter = new ReportWriterAdapter();
