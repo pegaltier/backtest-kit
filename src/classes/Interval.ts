@@ -405,6 +405,10 @@ export class IntervalUtils {
   ): TIntervalFn & { clear(): void } => {
     backtest.loggerService.info(INTERVAL_METHOD_NAME_FN, { context });
 
+    {
+      this._getInstance(run, context.interval);
+    }
+
     const wrappedFn = (symbol: string, _when: Date): Promise<ISignalIntervalDto | null> => {
       const instance = this._getInstance(run, context.interval);
       return instance.run(symbol);
@@ -458,6 +462,10 @@ export class IntervalUtils {
     }
   ): T & { clear(): Promise<void> } => {
     backtest.loggerService.info(INTERVAL_METHOD_NAME_FILE, { context });
+
+    {
+      this._getFileInstance(run, context.interval, context.name);
+    }
 
     const wrappedFn = (...args: Parameters<T>): Promise<ISignalIntervalDto | null> => {
       const instance = this._getFileInstance(run, context.interval, context.name);

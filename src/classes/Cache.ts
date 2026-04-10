@@ -545,6 +545,10 @@ export class CacheUtils {
       context,
     });
 
+    {
+      this._getFnInstance(run, context.interval, context.key);
+    }
+
     const wrappedFn = (...args: Parameters<T>): ReturnType<T> => {
       const instance = this._getFnInstance(run, context.interval, context.key);
       return instance.run(...args).value;
@@ -622,6 +626,10 @@ export class CacheUtils {
     }
   ): T & { clear(): Promise<void> } => {
     backtest.loggerService.info(CACHE_METHOD_NAME_FILE, { context });
+
+    {
+      this._getFileInstance(run, context.interval, context.name, context.key);
+    }
 
     const wrappedFn = (...args: Parameters<T>): ReturnType<T> => {
       const instance = this._getFileInstance(run, context.interval, context.name, context.key);
