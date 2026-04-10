@@ -424,6 +424,7 @@ export { Performance } from "./classes/Performance";
 export { Walker } from "./classes/Walker";
 export { Heat } from "./classes/Heat";
 export { PositionSize } from "./classes/PositionSize";
+export { Position } from "./classes/Position";
 export { Partial } from "./classes/Partial";
 export { HighestProfit } from "./classes/HighestProfit";
 export { MaxDrawdown } from "./classes/MaxDrawdown";
