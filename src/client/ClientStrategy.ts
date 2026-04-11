@@ -515,6 +515,7 @@ const GET_SIGNAL_FN = trycatch(
       self.params.getSignal(
         self.params.execution.context.symbol,
         self.params.execution.context.when,
+        currentPrice,
       ),
       sleep(timeoutMs).then(() => TIMEOUT_SYMBOL),
     ]);
