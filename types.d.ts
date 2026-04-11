@@ -20528,6 +20528,7 @@ declare class IntervalUtils {
         key?: (args: Parameters<F>) => string;
     }) => F & {
         clear(): void;
+        gc(): number | undefined;
     };
     /**
      * Wrap an async signal function with persistent file-based once-per-interval firing.
