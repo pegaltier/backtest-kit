@@ -20378,6 +20378,12 @@ declare class CacheUtils {
      * so new instances are created with the updated base path.
      */
     clear: () => void;
+    /**
+     * Resets the CacheFileInstance index counter to zero.
+     * This is useful when process.cwd() changes between strategy iterations to ensure
+     * that new CacheFileInstance objects start with index 0 and do not collide with old instances.
+     */
+    resetCounter: () => void;
 }
 /**
  * Singleton instance of CacheUtils for convenient function caching.
@@ -20509,6 +20515,12 @@ declare class IntervalUtils {
      * so new instances are created with the updated base path.
      */
     clear: () => void;
+    /**
+     * Resets the IntervalFileInstance index counter to zero.
+     * This is useful when process.cwd() changes between strategy iterations to ensure
+     * that new IntervalFileInstance objects start with index 0 and do not collide with old instances.
+     */
+    resetCounter: () => void;
 }
 /**
  * Singleton instance of `IntervalUtils` for convenient once-per-interval signal firing.

@@ -252,7 +252,7 @@ export class IntervalFileInstance<T extends object = object> {
    * Resets the index counter to zero.
    * Call this when clearing all instances (e.g. on `IntervalUtils.clear()`).
    */
-  public static clearCounter(): void {
+  public static resetCounter(): void {
     IntervalFileInstance._indexCounter = 0;
   }
 
@@ -510,7 +510,7 @@ export class IntervalUtils {
    */
   public resetCounter = () => {
     backtest.loggerService.info(INTERVAL_METHOD_NAME_RESET_COUNTER);
-    IntervalFileInstance.clearCounter();
+    IntervalFileInstance.resetCounter();
   }
 }
 

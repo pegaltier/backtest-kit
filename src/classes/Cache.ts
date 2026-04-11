@@ -366,7 +366,7 @@ export class CacheFileInstance<T extends CacheFileFunction = CacheFileFunction> 
   /**
    * Clears the index counter.
    */
-  public static clearCounter(): void {
+  public static resetCounter(): void {
     CacheFileInstance._indexCounter = 0;
   }
 
@@ -687,7 +687,7 @@ export class CacheUtils {
    */
   public resetCounter = () => {
     backtest.loggerService.info(CACHE_METHOD_NAME_RESET_COUNTER);
-    CacheFileInstance.clearCounter();
+    CacheFileInstance.resetCounter();
   }
 }
 
