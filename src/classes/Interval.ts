@@ -540,6 +540,7 @@ export class IntervalUtils {
   public dispose = (run: Function) => {
     backtest.loggerService.info(INTERVAL_METHOD_NAME_DISPOSE, { run });
     this._getInstance.clear(run);
+    this._getFileInstance.clear(run);
   };
 
   /**
