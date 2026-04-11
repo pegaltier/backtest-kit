@@ -9,6 +9,7 @@ const INTERVAL_METHOD_NAME_RUN = "IntervalFnInstance.run";
 const INTERVAL_FILE_INSTANCE_METHOD_NAME_RUN = "IntervalFileInstance.run";
 const INTERVAL_METHOD_NAME_FN = "IntervalUtils.fn";
 const INTERVAL_METHOD_NAME_FN_CLEAR = "IntervalUtils.fn.clear";
+const INTERVAL_METHOD_NAME_FN_GC = "IntervalUtils.fn.gc";
 const INTERVAL_METHOD_NAME_FILE = "IntervalUtils.file";
 const INTERVAL_METHOD_NAME_FILE_CLEAR = "IntervalUtils.file.clear";
 const INTERVAL_METHOD_NAME_DISPOSE = "IntervalUtils.dispose";
@@ -244,6 +245,31 @@ export class IntervalFnInstance<F extends Function = Function> {
       }
     }
   };
+
+  /**
+   * Garbage collect expired state entries.
+   *
+   * Removes all entries whose aligned timestamp differs from the current interval boundary.
+   * Call this periodically to free memory from stale state entries.
+   *
+   * Requires active execution context to get current time.
+   *
+   * @returns Number of entries removed
+   */
+  public gc = (): number => {
+    const currentWhen = backtest.executionContextService.context.when;
+    const currentAligned = align(currentWhen.getTime(), this.interval);
+    let removed = 0;
+
+    for (const [key, storedAligned] of this._stateMap.entries()) {
+      if (storedAligned !== currentAligned) {
+        this._stateMap.delete(key);
+        removed++;
+      }
+    }
+
+    return removed;
+  };
 }
 
 /**
@@ -442,7 +468,7 @@ export class IntervalUtils {
   public fn = <F extends Function>(
     run: F,
     context: { interval: CandleInterval; key?: (args: Parameters<F>) => string }
-  ): F & { clear(): void } => {
+  ): F & { clear(): void; gc(): number | undefined } => {
     backtest.loggerService.info(INTERVAL_METHOD_NAME_FN, { context });
 
     const wrappedFn = (...args: Parameters<F>): ReturnType<F> => {
@@ -463,7 +489,16 @@ export class IntervalUtils {
       this._getInstance.get(run)?.clear();
     };
 
-    return wrappedFn as unknown as F & { clear(): void };
+    wrappedFn.gc = () => {
+      backtest.loggerService.info(INTERVAL_METHOD_NAME_FN_GC);
+      if (!ExecutionContextService.hasContext()) {
+        backtest.loggerService.warn(`${INTERVAL_METHOD_NAME_FN_GC} called without execution context, skipping`);
+        return;
+      }
+      return this._getInstance.get(run)?.gc();
+    };
+
+    return wrappedFn as unknown as F & { clear(): void; gc(): number | undefined };
   };
 
   /**
